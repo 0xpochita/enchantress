@@ -10,11 +10,15 @@ import {
   routeIndex,
   WALLET_BALANCES,
 } from "@/lib/market";
-import { DepositPanel } from "./DepositPanel";
+import type { RoutedAllocation, Venue } from "@/types/market";
 import { FundsPanel } from "./FundsPanel";
 import { IndexHeader } from "./IndexHeader";
 import { IndexStats } from "./IndexStats";
 import { TransactionHistory } from "./TransactionHistory";
+
+function uniqueVenues(allocations: RoutedAllocation[]): Venue[] {
+  return [...new Map(allocations.map((a) => [a.venue.id, a.venue])).values()];
+}
 
 const DEFAULT_DEPOSIT_TOKEN_ID = "eth-base";
 
@@ -38,8 +42,8 @@ export function IndexDetailView({ indexId }: { indexId: string }) {
         assets={allocations.map((a) => a.asset)}
         aggregator={getAggregator(index.aggregatorId)}
       />
-      <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
-        <div className="flex min-w-0 flex-col gap-6">
+      <div className="flex flex-col gap-6">
+        <div className="min-w-0">
           <FundsPanel
             key={index.id}
             title={
@@ -49,18 +53,16 @@ export function IndexDetailView({ indexId }: { indexId: string }) {
             }
             allocations={allocations}
             summary={<IndexStats index={index} apy={apy} />}
-          />
-          <TransactionHistory
-            transactions={getIndexTransactions(index.id)}
-            indexName={index.name}
-            assets={allocations.map((a) => a.asset)}
-          />
-        </div>
-        <div className="lg:sticky lg:top-24 lg:self-start">
-          <DepositPanel
             apy={apy}
             catalog={catalog}
             defaultTokenId={DEFAULT_DEPOSIT_TOKEN_ID}
+          />
+        </div>
+        <div className="min-w-0">
+          <TransactionHistory
+            transactions={getIndexTransactions(index.id)}
+            indexName={index.name}
+            protocols={uniqueVenues(allocations)}
           />
         </div>
       </div>

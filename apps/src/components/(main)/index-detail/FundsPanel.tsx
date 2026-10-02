@@ -4,7 +4,14 @@ import { FolderOpen, ListTree } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { type ReactNode, useState } from "react";
 import { Card } from "@/components/ui";
+import { useDepositAction } from "@/hooks/useDepositAction";
 import type { RoutedAllocation } from "@/types/market";
+import { formatUsd } from "@/utils/format";
+import {
+  type TokenCatalog,
+  TokenSelectModal,
+} from "../token-select/TokenSelectModal";
+import { DepositBar } from "./DepositBar";
 import { FundsFolder } from "./FundsFolder";
 import { FundsTree } from "./FundsTree";
 
@@ -60,35 +67,74 @@ interface FundsPanelProps {
   title: string;
   allocations: RoutedAllocation[];
   summary: ReactNode;
+  apy: number;
+  catalog: TokenCatalog;
+  defaultTokenId: string;
 }
 
-export function FundsPanel({ title, allocations, summary }: FundsPanelProps) {
+export function FundsPanel({
+  title,
+  allocations,
+  summary,
+  apy,
+  catalog,
+  defaultTokenId,
+}: FundsPanelProps) {
   const [view, setView] = useState<View>("Tree");
+  const panel = useDepositAction({ ...catalog, defaultTokenId });
+  const hasAmount = panel.valueUsd > 0;
+  const previewUsd =
+    panel.action === "Deposit" ? panel.valueUsd : -panel.valueUsd;
+  const heading = hasAmount
+    ? `How your ${formatUsd(panel.valueUsd)} ${panel.action.toLowerCase()} is split`
+    : title;
   return (
-    <Card className="flex flex-col gap-4 p-6">
+    <Card className="flex flex-col gap-5 p-6">
       <div className="border-b border-line pb-6">{summary}</div>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-sm text-ink-muted">{title}</h2>
-          <p className="text-xs text-ink-subtle">{HINTS[view]}</p>
-        </div>
-        <ViewToggle view={view} onChange={setView} />
-      </div>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={view}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.2 }}
-        >
-          {view === "Tree" ? (
-            <FundsTree allocations={allocations} />
-          ) : (
-            <FundsFolder allocations={allocations} />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,20rem)_1fr]">
+        <div className="flex flex-col gap-3 lg:sticky lg:top-24 lg:self-start">
+          <DepositBar panel={panel} apy={apy} sliceCount={allocations.length} />
+          {panel.statusMessage && (
+            <output className="px-1 text-sm text-positive">
+              {panel.statusMessage}
+            </output>
           )}
-        </motion.div>
-      </AnimatePresence>
+        </div>
+        <div className="flex min-w-0 flex-col gap-5 lg:border-l lg:border-line lg:pl-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-sm text-ink-muted">{heading}</h2>
+              <p className="text-xs text-ink-subtle">{HINTS[view]}</p>
+            </div>
+            <ViewToggle view={view} onChange={setView} />
+          </div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={view}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              {view === "Tree" ? (
+                <FundsTree
+                  allocations={allocations}
+                  previewUsd={hasAmount ? previewUsd : 0}
+                />
+              ) : (
+                <FundsFolder allocations={allocations} />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+      <TokenSelectModal
+        isOpen={panel.isPickerOpen}
+        onClose={panel.closePicker}
+        catalog={catalog}
+        selectedId={panel.tokenId}
+        onSelect={(token) => panel.setTokenId(token.id)}
+      />
     </Card>
   );
 }
