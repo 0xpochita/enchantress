@@ -1,4 +1,3 @@
-import { Card, Stat } from "@/components/ui";
 import type { Index } from "@/types/market";
 import {
   formatCompactUsd,
@@ -33,19 +32,18 @@ export function IndexStats({ index, apy }: { index: Index; apy: number }) {
     },
   ];
   return (
-    <ul className="grid gap-4 sm:grid-cols-2">
+    <dl className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
       {stats.map((stat) => (
-        <li key={stat.label}>
-          <Card className="h-full p-6">
-            <Stat
-              label={stat.label}
-              value={stat.value}
-              hint={stat.hint}
-              tone={stat.tone}
-            />
-          </Card>
-        </li>
+        <div key={stat.label} className="flex min-w-0 flex-col gap-1">
+          <dt className="text-xs text-ink-muted">{stat.label}</dt>
+          <dd
+            className={`truncate text-xl font-light ${stat.tone === "positive" ? "text-positive" : ""}`}
+          >
+            {stat.value}
+          </dd>
+          <dd className="truncate text-xs text-ink-subtle">{stat.hint}</dd>
+        </div>
       ))}
-    </ul>
+    </dl>
   );
 }
