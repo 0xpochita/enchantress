@@ -13,8 +13,8 @@ export interface HubProtocol {
 
 const ARC_DIAMETERS = ["100%", "72%", "44%"];
 const ORBITS = [
-  { diameter: "100%", durationS: 36, direction: 1, size: 44 },
-  { diameter: "72%", durationS: 26, direction: -1, size: 36 },
+  { diameter: "100%", durationS: 36, direction: 1, size: 56 },
+  { diameter: "72%", durationS: 26, direction: -1, size: 46 },
 ];
 const POP_DELAY_S = 0.25;
 const POP_STAGGER_S = 0.09;
@@ -123,11 +123,11 @@ export function ProtocolHub({ protocols }: { protocols: HubProtocol[] }) {
         {protocols.length} protocols on Monad · up to{" "}
         <span className="text-brand">{formatPercent(bestApy)} APY</span>
       </p>
-      <div className="relative mt-auto aspect-[2/1] w-full max-w-lg">
+      <div className="relative mt-auto aspect-[2/1] w-[130%] max-w-none flex-none">
         <HubArcs />
         <HubNodes protocols={protocols} />
         <motion.div
-          className="-translate-x-1/2 -translate-y-1/2 absolute top-[82%] left-1/2 flex size-20 items-center justify-center overflow-hidden rounded-full bg-ink-subtle/45"
+          className="-translate-x-1/2 -translate-y-1/2 absolute top-[84%] left-1/2 flex size-28 items-center justify-center overflow-hidden rounded-full bg-ink-subtle/45"
           initial={{ scale: 0.6, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 220, damping: 16 }}
@@ -138,11 +138,11 @@ export function ProtocolHub({ protocols }: { protocols: HubProtocol[] }) {
           />
           <LogoMark
             tone="light"
-            className="relative size-9 object-contain dark:hidden"
+            className="relative size-12 object-contain dark:hidden"
           />
           <LogoMark
             tone="dark"
-            className="relative hidden size-9 object-contain dark:block"
+            className="relative hidden size-12 object-contain dark:block"
           />
         </motion.div>
       </div>
