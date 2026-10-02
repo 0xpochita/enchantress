@@ -5,7 +5,6 @@ import {
   DEFAULT_DEPOSIT_TOKEN_ID,
   POPULAR_TOKEN_IDS,
   TOKENS,
-  WALLET_ADDRESS,
   WALLET_BALANCES,
 } from "@/lib/mock/tokens";
 import { buildTransactions } from "@/lib/mock/transactions";
@@ -32,7 +31,6 @@ export {
   PORTFOLIO_AS_OF,
   POPULAR_TOKEN_IDS,
   VAULT_CHAIN_ID,
-  WALLET_ADDRESS,
   WALLET_BALANCES,
 };
 

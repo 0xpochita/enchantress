@@ -1,11 +1,11 @@
 "use client";
 
 import { Check, Copy } from "lucide-react";
-import { useState } from "react";
+import { buttonClassName } from "@/components/ui";
+import { useSession } from "@/features/wallet";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { shortenAddress } from "@/utils/format";
 import { identiconCells } from "@/utils/identicon";
-
-const COPIED_MS = 1500;
 
 function Identicon({ address }: { address: string }) {
   return (
@@ -24,17 +24,12 @@ function Identicon({ address }: { address: string }) {
 }
 
 function CopyButton({ value }: { value: string }) {
-  const [isCopied, setIsCopied] = useState(false);
-  const copy = async () => {
-    await navigator.clipboard.writeText(value);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), COPIED_MS);
-  };
+  const { isCopied, copy } = useCopyToClipboard();
   const Icon = isCopied ? Check : Copy;
   return (
     <button
       type="button"
-      onClick={copy}
+      onClick={() => copy(value)}
       aria-label={isCopied ? "Address copied" : "Copy address"}
       className="rounded-md p-1.5 text-ink-muted transition-colors duration-200 hover:bg-surface-raised hover:text-ink"
     >
@@ -43,14 +38,36 @@ function CopyButton({ value }: { value: string }) {
   );
 }
 
-export function WalletHeader({ address }: { address: string }) {
+function SignedOutHeader({ onLogin }: { onLogin: () => void }) {
+  return (
+    <header className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-4xl font-light tracking-tight">Portfolio</h1>
+        <p className="text-sm text-ink-muted">
+          Log in to see your positions and activity.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onLogin}
+        className={buttonClassName("primary", "px-5 py-2.5 text-sm")}
+      >
+        Log in
+      </button>
+    </header>
+  );
+}
+
+export function WalletHeader() {
+  const session = useSession();
+  if (!session.address) return <SignedOutHeader onLogin={session.login} />;
   return (
     <header className="flex flex-wrap items-center gap-4">
-      <Identicon address={address} />
+      <Identicon address={session.address} />
       <h1 className="text-4xl font-light tracking-tight">
-        {shortenAddress(address)}
+        {shortenAddress(session.address)}
       </h1>
-      <CopyButton value={address} />
+      <CopyButton value={session.address} />
     </header>
   );
 }

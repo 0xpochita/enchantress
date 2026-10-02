@@ -3,7 +3,6 @@ import {
   getUserPurchases,
   PORTFOLIO_AS_OF,
   type PortfolioPosition,
-  WALLET_ADDRESS,
 } from "@/lib/market";
 import type { IndexTransaction } from "@/types/market";
 import {
@@ -79,7 +78,7 @@ export function PortfolioView() {
   const purchases = getUserPurchases();
   return (
     <>
-      <WalletHeader address={WALLET_ADDRESS} />
+      <WalletHeader />
       <PortfolioTabs
         panels={{
           Positions: (
