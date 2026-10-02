@@ -40,11 +40,12 @@ export function ExploreHero({
         className="-right-12 -bottom-20 hidden size-80 md:block"
       />
       <div className="relative flex max-w-xl flex-col gap-3">
-        <h1 className="text-4xl font-light tracking-tight md:text-5xl">
-          Yield indexes on Monad
+        <h1 className="text-3xl font-light tracking-tight md:text-4xl">
+          Earn across Monad DeFi
         </h1>
         <p className="text-ink-muted">
-          One deposit from any chain, split across the best DeFi vaults.
+          Pick an index and deposit from any chain. Each slice goes to the
+          protocol paying the most for it.
         </p>
       </div>
       <dl className="relative flex w-fit flex-wrap divide-x divide-line">
