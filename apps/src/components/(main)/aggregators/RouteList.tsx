@@ -1,8 +1,11 @@
+import { motion } from "motion/react";
 import { Card, SegmentedControl, TokenStack } from "@/components/ui";
 import { ALL_AGGREGATORS, type DepositRoutes } from "@/hooks/useDepositRoutes";
 import type { Aggregator, IndexQuote } from "@/types/market";
 import { formatPercent, formatSignedPercent, formatUsd } from "@/utils/format";
 import type { RankedRoute } from "@/utils/routes";
+
+const ROW_STAGGER_S = 0.06;
 
 interface RouteListProps {
   deposit: DepositRoutes;
@@ -19,7 +22,7 @@ export function RouteList({
   const filterLabel = (id: string) =>
     aggregators.find((a) => a.id === id)?.name ?? "All";
   return (
-    <Card className="flex min-h-0 flex-col gap-4 p-6 lg:max-h-[38rem]">
+    <Card className="flex h-full min-h-0 flex-col gap-4 p-6 lg:max-h-[38rem]">
       <h2 className="text-sm text-ink-muted">Routes</h2>
       <SegmentedControl
         label="Aggregator"
@@ -29,18 +32,29 @@ export function RouteList({
         getLabel={filterLabel}
       />
       <ul className="flex min-h-0 flex-col divide-y divide-line overflow-y-auto">
-        {deposit.routes.map((route) => {
+        {deposit.routes.map((route, position) => {
           const quote = quotesById.get(route.indexId);
           if (!quote) return null;
           return (
-            <li key={route.indexId} className="py-1">
+            <motion.li
+              key={route.indexId}
+              layout
+              className="py-1"
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{
+                delay: position * ROW_STAGGER_S,
+                duration: 0.3,
+                ease: "easeOut",
+              }}
+            >
               <RouteRow
                 route={route}
                 quote={quote}
                 isSelected={route.indexId === deposit.selected?.indexId}
                 onSelect={() => deposit.selectIndex(route.indexId)}
               />
-            </li>
+            </motion.li>
           );
         })}
       </ul>

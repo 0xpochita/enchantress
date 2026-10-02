@@ -7,11 +7,13 @@ import {
   getTokens,
   getVaultAsset,
   getVenue,
+  getVenues,
   POPULAR_TOKEN_IDS,
   WALLET_BALANCES,
 } from "@/lib/market";
 import type { IndexQuote } from "@/types/market";
 import { DepositAggregator } from "./DepositAggregator";
+import type { HubProtocol } from "./ProtocolHub";
 
 const DEFAULT_DEPOSIT_TOKEN_ID = "eth-base";
 
@@ -28,6 +30,14 @@ function buildQuotes(): IndexQuote[] {
     venues: [...new Set(index.allocations.map((a) => a.venueId))].flatMap(
       (venueId) => getVenue(venueId) ?? [],
     ),
+  }));
+}
+
+function buildHubProtocols(): HubProtocol[] {
+  return getVenues().map((venue) => ({
+    name: venue.name,
+    iconKey: venue.iconKey,
+    apy: Math.max(0, ...venue.markets.map((m) => m.apy)),
   }));
 }
 
@@ -52,6 +62,7 @@ export function AggregatorsView() {
       <DepositAggregator
         catalog={catalog}
         quotes={buildQuotes()}
+        protocols={buildHubProtocols()}
         aggregators={getAggregators()}
         defaultTokenId={DEFAULT_DEPOSIT_TOKEN_ID}
       />
