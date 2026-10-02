@@ -40,11 +40,11 @@ Monad mainnet is `eip155:143`, testnet `eip155:10143`. Not in Privy's default ch
 | --- | --- |
 | Embedded wallet, signing, `eth_sendTransaction` | Works as generic EVM chain |
 | Gas sponsorship (app pays) | Listed: Monad and Monad Testnet. User-pays mode: not listed |
-| Swaps (same chain) | Listed: Monad and Monad Testnet. Cross-chain routes exclude Monad |
+| Swaps (same chain) | Listed: Monad and Monad Testnet. Cross-chain: use `aurora-intents-swap` |
 | Transfer API (wallet actions) | Not listed; use low-level `eth_sendTransaction` |
 | Wallet automations deposit detection | Listed (`eip155:143`) |
 | Earn vaults | Not listed; contact sales@privy.io |
-| Universal deposit (cross-chain into Monad) | Not documented; test quote endpoint first |
+| Universal deposit (cross-chain into Monad) | Not documented; use `aurora-intents-deposits` (Monad supported) |
 | Card onramp, fiat payouts | Not listed |
 | Balance API, tx history, `transaction.*` webhooks | Not confirmed; read balances onchain |
 

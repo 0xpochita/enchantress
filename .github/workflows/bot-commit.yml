@@ -1,0 +1,31 @@
+name: Bot commit
+
+on:
+  push:
+    branches: ["bot/**"]
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  squash-to-main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Squash branch onto main as github-actions[bot]
+        env:
+          BRANCH: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge --squash "origin/$BRANCH"
+          git commit -m "$(git log -1 --format=%B "origin/$BRANCH")"
+          git push origin main
+          git push origin --delete "$BRANCH"
+          gh workflow run ci.yml --ref main
