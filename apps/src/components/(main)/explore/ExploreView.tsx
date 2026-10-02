@@ -1,7 +1,6 @@
 import {
   getAggregators,
   getBestVenueApy,
-  getChains,
   getIndexes,
   getVenues,
 } from "@/lib/market";
@@ -16,7 +15,6 @@ export function ExploreView({ aggregatorId }: { aggregatorId?: string }) {
         indexCount={getIndexes().length}
         vaultCount={getVenues().length}
         bestApy={getBestVenueApy()}
-        chainCount={getChains().length}
       />
       <section
         aria-labelledby="indexes-heading"

@@ -1,24 +1,35 @@
-import { BRAND_FADE_SURFACE, Card, HalftoneArt } from "@/components/ui";
+import {
+  BRAND_FADE_SURFACE,
+  Card,
+  CryptoIcon,
+  HalftoneArt,
+} from "@/components/ui";
 import { formatPercent } from "@/utils/format";
 
 interface ExploreHeroProps {
   indexCount: number;
   vaultCount: number;
   bestApy: number;
-  chainCount: number;
 }
 
 export function ExploreHero({
   indexCount,
   vaultCount,
   bestApy,
-  chainCount,
 }: ExploreHeroProps) {
   const stats = [
     { label: "Indexes", value: String(indexCount) },
     { label: "Vaults on Monad", value: String(vaultCount) },
     { label: "Best APY", value: formatPercent(bestApy) },
-    { label: "Source chains", value: String(chainCount) },
+    {
+      label: "Chain",
+      value: (
+        <>
+          <CryptoIcon iconKey="monad" label="" size={24} />
+          Monad
+        </>
+      ),
+    },
   ];
   return (
     <Card
@@ -40,7 +51,9 @@ export function ExploreHero({
         {stats.map((stat) => (
           <div key={stat.label} className="flex flex-col gap-1 px-5 first:pl-0">
             <dt className="order-last text-xs text-ink-muted">{stat.label}</dt>
-            <dd className="text-2xl font-light">{stat.value}</dd>
+            <dd className="flex h-8 items-center gap-2 text-2xl font-light">
+              {stat.value}
+            </dd>
           </div>
         ))}
       </dl>
