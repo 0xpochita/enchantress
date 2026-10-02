@@ -77,10 +77,6 @@ summary {
   cursor: pointer;
 }
 
-dialog::backdrop {
-  background: var(--overlay);
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

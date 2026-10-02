@@ -1,6 +1,7 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { type ReactNode, type SyntheticEvent, useEffect, useRef } from "react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -9,24 +10,59 @@ interface ModalProps {
   children: ReactNode;
 }
 
+const PANEL_SPRING = { type: "spring", stiffness: 380, damping: 32 } as const;
+
 export function Modal({ isOpen, onClose, label, children }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (isOpen && !dialog.open) dialog.showModal();
-    if (!isOpen && dialog.open) dialog.close();
+    if (isOpen && dialog && !dialog.open) dialog.showModal();
   }, [isOpen]);
+
+  const handleCancel = (event: SyntheticEvent) => {
+    event.preventDefault();
+    onClose();
+  };
 
   return (
     <dialog
       ref={dialogRef}
       aria-label={label}
-      onClose={onClose}
-      className="m-auto w-[calc(100%-2rem)] max-w-3xl rounded-lg border border-line bg-surface p-0 text-ink"
+      onCancel={handleCancel}
+      onClose={() => {
+        if (isOpen) onClose();
+      }}
+      className="fixed inset-0 m-0 size-full max-h-none max-w-none items-center justify-center bg-transparent p-4 text-ink backdrop:bg-transparent open:flex"
     >
-      {children}
+      <AnimatePresence onExitComplete={() => dialogRef.current?.close()}>
+        {isOpen && (
+          <>
+            <motion.button
+              key="overlay"
+              type="button"
+              tabIndex={-1}
+              aria-label="Close dialog"
+              onClick={onClose}
+              className="fixed inset-0 cursor-default bg-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.div
+              key="panel"
+              className="relative w-full max-w-3xl overflow-hidden rounded-lg border border-line bg-surface shadow-2xl"
+              initial={{ opacity: 0, y: 24, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.97 }}
+              transition={PANEL_SPRING}
+            >
+              {children}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </dialog>
   );
 }
