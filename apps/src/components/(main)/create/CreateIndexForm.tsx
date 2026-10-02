@@ -10,6 +10,7 @@ import {
   TokenSelectModal,
 } from "../token-select/TokenSelectModal";
 import { BuilderPanel } from "./BuilderPanel";
+import { CreateFlowModal } from "./CreateFlowModal";
 import { DraftPreview } from "./DraftPreview";
 
 interface CreateIndexFormProps {
@@ -26,6 +27,9 @@ export function CreateIndexForm({
   const chain = tokenCatalog.chains.find(
     (c) => c.id === draft.depositToken?.chainId,
   );
+  const balance =
+    tokenCatalog.balances.find((b) => b.tokenId === draft.depositTokenId)
+      ?.amount ?? 0;
   const protocolCount = new Set(draft.allocations.map((a) => a.venue.id)).size;
   const stats: StatItem[] = [
     {
@@ -76,6 +80,7 @@ export function CreateIndexForm({
           />
         </div>
       </Card>
+      <CreateFlowModal draft={draft} chain={chain} balance={balance} />
       <TokenSelectModal
         isOpen={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}

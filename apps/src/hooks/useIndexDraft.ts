@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
+import { useSubmitFlow } from "@/hooks/useSubmitFlow";
 import { type DraftCatalog, type DraftState, deriveDraft } from "@/utils/draft";
-
-export type DraftStatus = "idle" | "submitted";
 
 function toggle(list: string[], value: string): string[] {
   return list.includes(value)
@@ -9,17 +8,21 @@ function toggle(list: string[], value: string): string[] {
     : [...list, value];
 }
 
-export function useIndexDraft(catalog: DraftCatalog) {
-  const [state, setState] = useState<DraftState>({
+function initialState(catalog: DraftCatalog): DraftState {
+  return {
     name: "",
     assetSymbols: [],
     weightMode: "equal",
     customPercents: {},
     amount: "",
     depositTokenId: catalog.defaultDepositTokenId,
-  });
-  const [status, setStatus] = useState<DraftStatus>("idle");
+  };
+}
+
+export function useIndexDraft(catalog: DraftCatalog) {
+  const [state, setState] = useState<DraftState>(() => initialState(catalog));
   const derived = useMemo(() => deriveDraft(catalog, state), [catalog, state]);
+  const flow = useSubmitFlow(() => setState(initialState(catalog)));
   const update = (patch: Partial<DraftState>) =>
     setState((current) => ({ ...current, ...patch }));
   const toggleAsset = (symbol: string) =>
@@ -30,11 +33,10 @@ export function useIndexDraft(catalog: DraftCatalog) {
   return {
     ...state,
     ...derived,
-    status,
+    ...flow,
     update,
     toggleAsset,
     setCustomPercent,
-    submit: () => setStatus("submitted"),
   };
 }
 

@@ -49,6 +49,7 @@ function AmountRow({
       <input
         id="create-amount"
         inputMode="decimal"
+        autoComplete="off"
         placeholder="0.00"
         value={draft.amount}
         onChange={(e) =>
@@ -108,12 +109,7 @@ export function BuilderPanel({
         <AmountRow draft={draft} chain={chain} onPickToken={onPickToken} />
         <RouteDetails chain={chain} sliceCount={draft.allocations.length} />
       </Step>
-      <SubmitBar
-        status={draft.status}
-        errors={draft.errors}
-        depositUsd={draft.depositUsd}
-        onSubmit={draft.submit}
-      />
+      <SubmitBar errors={draft.errors} onSubmit={draft.review} />
     </div>
   );
 }
