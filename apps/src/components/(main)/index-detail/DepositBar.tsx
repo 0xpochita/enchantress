@@ -1,52 +1,17 @@
-import Image from "next/image";
 import { buttonClassName, SegmentedControl } from "@/components/ui";
 import {
   DEPOSIT_ACTIONS,
   type useDepositAction,
 } from "@/hooks/useDepositAction";
 import { formatPercent, formatUsd } from "@/utils/format";
-import { estimateRouteFeeUsd } from "@/utils/routes";
 import { yearlyRewardsUsd } from "@/utils/yield-index";
+import { RouteDetails } from "../routing/RouteDetails";
 import { TokenButton } from "../token-select/TokenButton";
 
 interface DepositBarProps {
   panel: ReturnType<typeof useDepositAction>;
   apy: number;
   sliceCount: number;
-}
-
-const VAULT_CHAIN_ID = "monad";
-
-function RouteDetails({ panel, sliceCount }: Omit<DepositBarProps, "apy">) {
-  const isCrossChain = panel.chain?.id !== VAULT_CHAIN_ID;
-  return (
-    <dl className="flex flex-col gap-2 border-t border-line px-1 pt-4 text-xs">
-      <div className="flex items-center justify-between gap-3">
-        <dt className="text-ink-muted">Route</dt>
-        <dd className="flex items-center gap-1.5 text-right">
-          {isCrossChain ? (
-            <>
-              {panel.chain?.name} to Monad via
-              <Image
-                src="/logo/aurora-logo.avif"
-                alt=""
-                width={14}
-                height={15}
-                className="rounded-sm"
-              />
-              Aurora Intents
-            </>
-          ) : (
-            "Already on Monad"
-          )}
-        </dd>
-      </div>
-      <div className="flex items-center justify-between gap-3">
-        <dt className="text-ink-muted">Est. fee</dt>
-        <dd>~{formatUsd(estimateRouteFeeUsd(isCrossChain, sliceCount))}</dd>
-      </div>
-    </dl>
-  );
 }
 
 export function DepositBar({ panel, apy, sliceCount }: DepositBarProps) {
@@ -91,7 +56,7 @@ export function DepositBar({ panel, apy, sliceCount }: DepositBarProps) {
         {formatPercent(apy)}
       </span>
       <div className="mt-auto flex flex-col gap-4">
-        <RouteDetails panel={panel} sliceCount={sliceCount} />
+        <RouteDetails chain={panel.chain} sliceCount={sliceCount} />
         <button
           type="button"
           disabled={panel.valueUsd <= 0}

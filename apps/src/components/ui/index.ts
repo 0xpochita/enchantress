@@ -8,6 +8,7 @@ export { LogoMark } from "./LogoMark";
 export { Modal } from "./Modal";
 export { SegmentedControl } from "./SegmentedControl";
 export { Stat } from "./Stat";
+export { type StatItem, StatStrip } from "./StatStrip";
 export { BRAND_FADE_SURFACE } from "./surfaces";
 export { ThemedLogoMark } from "./ThemedLogoMark";
 export { ThemeToggle } from "./ThemeToggle";
