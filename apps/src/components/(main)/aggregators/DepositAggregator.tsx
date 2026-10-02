@@ -1,7 +1,7 @@
 "use client";
 
 import { useDepositRoutes } from "@/hooks/useDepositRoutes";
-import type { Aggregator, BasketQuote } from "@/types/market";
+import type { Aggregator, IndexQuote } from "@/types/market";
 import {
   type TokenCatalog,
   TokenSelectModal,
@@ -11,7 +11,7 @@ import { RouteList } from "./RouteList";
 
 interface DepositAggregatorProps {
   catalog: TokenCatalog;
-  quotes: BasketQuote[];
+  quotes: IndexQuote[];
   aggregators: Aggregator[];
   defaultTokenId: string;
 }
@@ -28,7 +28,7 @@ export function DepositAggregator({
     <div className="grid gap-6 lg:grid-cols-2">
       <DepositForm
         deposit={deposit}
-        quote={deposit.selected && quotesById.get(deposit.selected.basketId)}
+        quote={deposit.selected && quotesById.get(deposit.selected.indexId)}
       />
       <RouteList
         deposit={deposit}

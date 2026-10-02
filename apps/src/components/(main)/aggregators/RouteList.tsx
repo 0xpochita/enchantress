@@ -1,13 +1,12 @@
-import { Fuel, Zap } from "lucide-react";
 import { Card, SegmentedControl, TokenStack } from "@/components/ui";
 import { ALL_AGGREGATORS, type DepositRoutes } from "@/hooks/useDepositRoutes";
-import type { Aggregator, BasketQuote } from "@/types/market";
+import type { Aggregator, IndexQuote } from "@/types/market";
 import { formatPercent, formatSignedPercent, formatUsd } from "@/utils/format";
 import type { RankedRoute } from "@/utils/routes";
 
 interface RouteListProps {
   deposit: DepositRoutes;
-  quotesById: Map<string, BasketQuote>;
+  quotesById: Map<string, IndexQuote>;
   aggregators: Aggregator[];
 }
 
@@ -21,7 +20,7 @@ export function RouteList({
     aggregators.find((a) => a.id === id)?.name ?? "All";
   return (
     <Card className="flex min-h-0 flex-col gap-4 p-6 lg:max-h-[38rem]">
-      <h2 className="text-lg font-medium">Routes</h2>
+      <h2 className="text-sm text-ink-muted">Routes</h2>
       <SegmentedControl
         label="Aggregator"
         options={filterIds}
@@ -29,18 +28,17 @@ export function RouteList({
         onChange={deposit.setAggregatorId}
         getLabel={filterLabel}
       />
-      <ul className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
+      <ul className="flex min-h-0 flex-col divide-y divide-line overflow-y-auto">
         {deposit.routes.map((route) => {
-          const quote = quotesById.get(route.basketId);
+          const quote = quotesById.get(route.indexId);
           if (!quote) return null;
           return (
-            <li key={route.basketId}>
-              <RouteCard
+            <li key={route.indexId} className="py-1">
+              <RouteRow
                 route={route}
                 quote={quote}
-                isSelected={route.basketId === deposit.selected?.basketId}
-                isCrossChain={deposit.isCrossChain}
-                onSelect={() => deposit.selectBasket(route.basketId)}
+                isSelected={route.indexId === deposit.selected?.indexId}
+                onSelect={() => deposit.selectIndex(route.indexId)}
               />
             </li>
           );
@@ -50,62 +48,44 @@ export function RouteList({
   );
 }
 
-interface RouteCardProps {
+interface RouteRowProps {
   route: RankedRoute;
-  quote: BasketQuote;
+  quote: IndexQuote;
   isSelected: boolean;
-  isCrossChain: boolean;
   onSelect: () => void;
 }
 
-function RouteCard({
-  route,
-  quote,
-  isSelected,
-  isCrossChain,
-  onSelect,
-}: RouteCardProps) {
+function RouteRow({ route, quote, isSelected, onSelect }: RouteRowProps) {
   return (
     <button
       type="button"
       aria-pressed={isSelected}
       onClick={onSelect}
-      className="flex w-full flex-col gap-2 rounded-lg border border-transparent bg-surface-raised p-4 text-left transition-colors duration-200 ease-out hover:bg-surface-hover aria-pressed:border-accent"
+      className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left transition-colors duration-200 ease-out hover:bg-surface-raised aria-pressed:bg-surface-raised"
     >
-      <span className="flex items-center gap-3">
-        <TokenStack
-          items={quote.assets.map((a) => ({
-            iconKey: a.iconKey,
-            label: a.symbol,
-          }))}
-          size={28}
-        />
-        <span className="text-xl font-semibold">
-          {formatPercent(route.apy)} APY
+      <TokenStack
+        items={quote.venues.map((v) => ({ iconKey: v.iconKey, label: v.name }))}
+        size={28}
+      />
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="flex items-center gap-2 font-medium">
+          <span className="truncate">{quote.name}</span>
+          {route.isBest && (
+            <span className="text-xs font-normal text-brand">Best</span>
+          )}
         </span>
-        {route.isBest && (
-          <span className="ml-auto rounded-full bg-surface-hover px-3 py-1 text-sm text-positive">
-            Best
-          </span>
-        )}
+        <span className="truncate text-xs text-ink-muted">
+          {quote.venues.map((v) => v.name).join(" · ")}
+        </span>
       </span>
-      <span className="flex flex-wrap items-center justify-between gap-2 text-sm text-ink-muted">
-        <span>
-          via <span className="text-ink">{quote.name}</span> ·{" "}
-          {quote.aggregatorName}
-        </span>
-        <span className="flex items-center gap-2">
-          {isCrossChain && (
-            <Zap aria-label="Aurora Intents" className="size-4 text-accent" />
-          )}
-          <Fuel aria-hidden className="size-4" />
-          {formatUsd(route.feeUsd)}
-          <span>{formatUsd(route.yearlyUsd)}/yr</span>
-          {!route.isBest && (
-            <span className="text-negative">
-              {formatSignedPercent(route.deltaPct)}
-            </span>
-          )}
+      <span className="flex shrink-0 flex-col items-end">
+        <span className="font-medium">{formatPercent(route.apy)}</span>
+        <span
+          className={`text-xs ${route.isBest ? "text-ink-muted" : "text-negative"}`}
+        >
+          {route.isBest
+            ? `${formatUsd(route.yearlyUsd)}/yr`
+            : formatSignedPercent(route.deltaPct)}
         </span>
       </span>
     </button>

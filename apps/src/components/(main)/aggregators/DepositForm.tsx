@@ -2,19 +2,19 @@ import { ArrowDown, ChevronRight, Wallet } from "lucide-react";
 import Link from "next/link";
 import { buttonClassName, Card, CryptoIcon, TokenStack } from "@/components/ui";
 import type { DepositRoutes } from "@/hooks/useDepositRoutes";
-import type { BasketQuote } from "@/types/market";
+import type { IndexQuote } from "@/types/market";
 import { formatAmount, formatPercent, formatUsd } from "@/utils/format";
 
 interface DepositFormProps {
   deposit: DepositRoutes;
-  quote?: BasketQuote;
+  quote?: IndexQuote;
 }
 
-const BOX = "flex flex-col gap-4 rounded-lg bg-surface-raised p-5";
+const BOX = "flex flex-col gap-3 rounded-md bg-surface-raised p-5";
 
 export function DepositForm({ deposit, quote }: DepositFormProps) {
   return (
-    <Card className="flex flex-col gap-2 p-4">
+    <Card className="flex flex-col gap-2 self-start p-4">
       <SellBox deposit={deposit} />
       <span className="relative z-1 mx-auto -my-5 rounded-full border-4 border-surface bg-surface-raised p-2">
         <ArrowDown aria-hidden className="size-4 text-ink-muted" />
@@ -28,9 +28,11 @@ export function DepositForm({ deposit, quote }: DepositFormProps) {
 function SellBox({ deposit }: { deposit: DepositRoutes }) {
   const { token, chain } = deposit;
   return (
-    <div className={`${BOX} border border-line focus-within:border-accent`}>
-      <label htmlFor="aggregator-amount" className="font-medium">
-        Deposit
+    <div
+      className={`${BOX} border border-transparent focus-within:border-line`}
+    >
+      <label htmlFor="aggregator-amount" className="text-sm text-ink-muted">
+        You deposit
       </label>
       <div className="flex items-center gap-4">
         <button
@@ -62,7 +64,7 @@ function SellBox({ deposit }: { deposit: DepositRoutes }) {
           onChange={(e) =>
             deposit.setAmount(e.target.value.replace(/[^0-9.]/g, ""))
           }
-          className="w-full min-w-0 bg-transparent text-right text-4xl font-medium outline-none placeholder:text-ink-subtle"
+          className="w-full min-w-0 bg-transparent text-right text-3xl font-light outline-none placeholder:text-ink-subtle"
         />
       </div>
       <div className="flex justify-between text-sm">
@@ -81,17 +83,17 @@ function SellBox({ deposit }: { deposit: DepositRoutes }) {
 function EarnBox({ deposit, quote }: DepositFormProps) {
   return (
     <div className={BOX}>
-      <span className="font-medium">Earn</span>
+      <span className="text-sm text-ink-muted">You earn</span>
       <div className="flex items-center gap-4">
         {quote ? (
           <Link
-            href={`/baskets/${quote.id}`}
+            href={`/indexes/${quote.id}`}
             className="flex shrink-0 items-center gap-2 rounded-full border border-line py-2 pr-3 pl-2 hover:bg-surface-hover"
           >
             <TokenStack
-              items={quote.assets.map((a) => ({
-                iconKey: a.iconKey,
-                label: a.symbol,
+              items={quote.venues.map((v) => ({
+                iconKey: v.iconKey,
+                label: v.name,
               }))}
               size={24}
             />
@@ -99,14 +101,14 @@ function EarnBox({ deposit, quote }: DepositFormProps) {
             <ChevronRight aria-hidden className="size-4 text-ink-muted" />
           </Link>
         ) : (
-          <span className="text-ink-subtle">No basket available</span>
+          <span className="text-ink-subtle">No index available</span>
         )}
-        <span className="ml-auto text-right text-4xl font-medium">
+        <span className="ml-auto text-right text-3xl font-light">
           {formatUsd(deposit.selected?.yearlyUsd ?? 0)}
         </span>
       </div>
       <div className="flex justify-between text-sm text-ink-muted">
-        <span>{quote?.aggregatorName}</span>
+        <span>{quote?.venues.map((v) => v.name).join(" · ")}</span>
         <span>per year at {formatPercent(deposit.selected?.apy ?? 0)}</span>
       </div>
     </div>

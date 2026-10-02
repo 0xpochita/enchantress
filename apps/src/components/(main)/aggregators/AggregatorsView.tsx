@@ -1,28 +1,32 @@
 import {
   getAggregator,
   getAggregators,
-  getBasketApy,
-  getBaskets,
   getChains,
+  getIndexApy,
+  getIndexes,
   getTokens,
   getVaultAsset,
+  getVenue,
   POPULAR_TOKEN_IDS,
   WALLET_BALANCES,
 } from "@/lib/market";
-import type { BasketQuote } from "@/types/market";
+import type { IndexQuote } from "@/types/market";
 import { DepositAggregator } from "./DepositAggregator";
 
 const DEFAULT_DEPOSIT_TOKEN_ID = "eth-base";
 
-function buildQuotes(): BasketQuote[] {
-  return getBaskets().map((basket) => ({
-    id: basket.id,
-    name: basket.name,
-    aggregatorId: basket.aggregatorId,
-    aggregatorName: getAggregator(basket.aggregatorId)?.name ?? "",
-    apy: getBasketApy(basket),
-    assets: basket.allocations.flatMap(
+function buildQuotes(): IndexQuote[] {
+  return getIndexes().map((index) => ({
+    id: index.id,
+    name: index.name,
+    aggregatorId: index.aggregatorId,
+    aggregatorName: getAggregator(index.aggregatorId)?.name ?? "",
+    apy: getIndexApy(index),
+    assets: index.allocations.flatMap(
       (a) => getVaultAsset(a.assetSymbol) ?? [],
+    ),
+    venues: [...new Set(index.allocations.map((a) => a.venueId))].flatMap(
+      (venueId) => getVenue(venueId) ?? [],
     ),
   }));
 }
@@ -37,12 +41,12 @@ export function AggregatorsView() {
   return (
     <>
       <div className="flex max-w-2xl flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-3xl font-light tracking-tight">
           Deposit aggregator
         </h1>
         <p className="text-ink-muted">
-          Pick any token on any chain. We compare every basket across
-          aggregators and route your deposit to Monad through Aurora Intents.
+          Pick any token on any chain. We compare every index across aggregators
+          and route your deposit to Monad through Aurora Intents.
         </p>
       </div>
       <DepositAggregator

@@ -22,7 +22,7 @@ export function SegmentedControl<T extends string>({
           type="button"
           aria-pressed={value === option}
           onClick={() => onChange(option)}
-          className="flex-1 rounded-full px-4 py-2 text-sm text-ink-muted transition-colors duration-200 ease-out hover:text-ink aria-pressed:bg-surface-raised aria-pressed:text-ink"
+          className="flex-1 whitespace-nowrap rounded-full px-4 py-2 text-sm text-ink-muted transition-colors duration-200 ease-out hover:text-ink aria-pressed:bg-surface-raised aria-pressed:text-ink"
         >
           {getLabel(option)}
         </button>
