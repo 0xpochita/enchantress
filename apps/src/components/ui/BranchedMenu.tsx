@@ -194,9 +194,7 @@ export function BranchedMenu({
   sections,
   defaultActive,
 }: BranchedMenuProps) {
-  const [open, setOpen] = useState(
-    () => new Set(sections.map((_, position) => position)),
-  );
+  const [closed, setClosed] = useState(() => new Set<string>());
   const [active, setActive] = useState(
     defaultActive ?? sections[0]?.children[0]?.value ?? "",
   );
@@ -205,13 +203,13 @@ export function BranchedMenu({
   );
   const { markerRef, headsRef } = useSectionMarker(
     activeSection,
-    open.has(activeSection),
+    activeSection >= 0 && !closed.has(sections[activeSection].label),
   );
-  const toggle = (position: number) =>
-    setOpen((current) => {
+  const toggle = (label: string) =>
+    setClosed((current) => {
       const next = new Set(current);
-      if (next.has(position)) next.delete(position);
-      else next.add(position);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
       return next;
     });
 
@@ -229,9 +227,9 @@ export function BranchedMenu({
         <Section
           key={section.label}
           section={section}
-          isOpen={open.has(position)}
+          isOpen={!closed.has(section.label)}
           active={active}
-          onToggle={() => toggle(position)}
+          onToggle={() => toggle(section.label)}
           onSelect={setActive}
           headRef={(element) => {
             headsRef.current[position] = element;
