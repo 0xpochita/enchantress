@@ -5,7 +5,7 @@ import { ThemedLogoMark, ThemeToggle } from "@/components/ui";
 import { useMobileMenu } from "@/hooks/useMobileMenu";
 
 const NAV_LINKS = [
-  { href: "/aggregators", label: "Aggregators" },
+  { href: "/aggregators", label: "Deposit" },
   { href: "/invest", label: "Indexes" },
   { href: "#chains", label: "Chains" },
 ];
