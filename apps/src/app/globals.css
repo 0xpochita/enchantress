@@ -1,26 +1,44 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --color-canvas: #0c0b10;
+  --color-surface: #15141b;
+  --color-surface-raised: #1d1c25;
+  --color-surface-hover: #25242f;
+  --color-line: #2a2935;
+  --color-ink: #f4f3f8;
+  --color-ink-muted: #a3a1b2;
+  --color-ink-subtle: #6f6d7e;
+  --color-accent: #c4b5fd;
+  --color-accent-strong: #a78bfa;
+  --color-accent-ink: #160f2b;
+  --color-positive: #5eead4;
+  --color-negative: #fca5a5;
+  --color-overlay: rgb(5 4 9 / 0.72);
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+dialog::backdrop {
+  background: var(--color-overlay);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms;
+    animation-duration: 0ms;
+  }
 }
