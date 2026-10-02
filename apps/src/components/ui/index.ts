@@ -1,7 +1,12 @@
 export { buttonClassName } from "./button-styles";
 export { Card } from "./Card";
 export { CryptoIcon } from "./CryptoIcon";
+export { HalftoneArt } from "./HalftoneArt";
+export { LogoMark } from "./LogoMark";
 export { Modal } from "./Modal";
 export { SegmentedControl } from "./SegmentedControl";
 export { Stat } from "./Stat";
+export { BRAND_FADE_SURFACE } from "./surfaces";
+export { ThemedLogoMark } from "./ThemedLogoMark";
+export { ThemeToggle } from "./ThemeToggle";
 export { TokenStack } from "./TokenStack";

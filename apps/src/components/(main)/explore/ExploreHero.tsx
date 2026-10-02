@@ -1,42 +1,46 @@
-import { Card } from "@/components/ui";
+import { BRAND_FADE_SURFACE, Card, HalftoneArt } from "@/components/ui";
 import { formatPercent } from "@/utils/format";
 
 interface ExploreHeroProps {
-  basketCount: number;
+  indexCount: number;
   vaultCount: number;
   bestApy: number;
   chainCount: number;
 }
 
 export function ExploreHero({
-  basketCount,
+  indexCount,
   vaultCount,
   bestApy,
   chainCount,
 }: ExploreHeroProps) {
   const stats = [
-    { label: "Public baskets", value: String(basketCount) },
-    { label: "Vaults indexed on Monad", value: String(vaultCount) },
-    { label: "Best vault APY", value: formatPercent(bestApy) },
-    { label: "Chains you can deposit from", value: String(chainCount) },
+    { label: "Indexes", value: String(indexCount) },
+    { label: "Vaults on Monad", value: String(vaultCount) },
+    { label: "Best APY", value: formatPercent(bestApy) },
+    { label: "Source chains", value: String(chainCount) },
   ];
   return (
-    <Card className="flex flex-col gap-8 p-6 md:p-10">
-      <div className="flex max-w-2xl flex-col gap-3">
-        <h1 className="text-3xl font-bold tracking-tight md:text-5xl">
-          Yield baskets on Monad
+    <Card
+      className={`group relative flex flex-col gap-10 overflow-hidden p-6 md:p-10 ${BRAND_FADE_SURFACE}`}
+    >
+      <HalftoneArt
+        iconKey="monad"
+        className="-right-12 -bottom-20 hidden size-80 md:block"
+      />
+      <div className="relative flex max-w-xl flex-col gap-3">
+        <h1 className="text-4xl font-light tracking-tight md:text-5xl">
+          Yield indexes on Monad
         </h1>
-        <p className="text-ink-muted md:text-lg">
-          Each basket is a set of weighted assets. Deposit any token from any
-          chain and every slice is routed to the highest APY vault in its
-          aggregator.
+        <p className="text-ink-muted">
+          One deposit from any chain, split across the best DeFi vaults.
         </p>
       </div>
-      <dl className="grid grid-cols-2 gap-6 md:grid-cols-4">
+      <dl className="relative flex w-fit flex-wrap divide-x divide-line">
         {stats.map((stat) => (
-          <div key={stat.label} className="flex flex-col gap-1">
-            <dt className="order-last text-sm text-ink-muted">{stat.label}</dt>
-            <dd className="text-2xl font-semibold">{stat.value}</dd>
+          <div key={stat.label} className="flex flex-col gap-1 px-5 first:pl-0">
+            <dt className="order-last text-xs text-ink-muted">{stat.label}</dt>
+            <dd className="text-2xl font-light">{stat.value}</dd>
           </div>
         ))}
       </dl>

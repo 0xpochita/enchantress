@@ -1,35 +1,35 @@
 import {
   getAggregators,
-  getBaskets,
   getBestVenueApy,
   getChains,
+  getIndexes,
   getVenues,
 } from "@/lib/market";
 import { AggregatorFilter } from "./AggregatorFilter";
-import { BasketGrid } from "./BasketGrid";
 import { ExploreHero } from "./ExploreHero";
+import { IndexGrid } from "./IndexGrid";
 
 export function ExploreView({ aggregatorId }: { aggregatorId?: string }) {
   return (
     <>
       <ExploreHero
-        basketCount={getBaskets().length}
+        indexCount={getIndexes().length}
         vaultCount={getVenues().length}
         bestApy={getBestVenueApy()}
         chainCount={getChains().length}
       />
       <section
-        aria-labelledby="baskets-heading"
+        aria-labelledby="indexes-heading"
         className="flex flex-col gap-4"
       >
-        <h2 id="baskets-heading" className="text-lg font-medium">
-          Featured baskets
+        <h2 id="indexes-heading" className="text-lg font-medium">
+          Featured indexes
         </h2>
         <AggregatorFilter
           aggregators={getAggregators()}
           activeId={aggregatorId}
         />
-        <BasketGrid baskets={getBaskets(aggregatorId)} />
+        <IndexGrid indexes={getIndexes(aggregatorId)} />
       </section>
     </>
   );
