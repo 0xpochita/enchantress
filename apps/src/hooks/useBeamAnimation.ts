@@ -100,7 +100,7 @@ export function useBeamAnimation() {
   });
 
   useEffect(() => {
-    const current = refs.current;
+    const current = { ...refs.current };
     if (!isReady(current)) return;
     const redraw = () => drawBeamPath(current);
     redraw();
