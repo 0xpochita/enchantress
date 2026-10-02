@@ -1,6 +1,6 @@
 import { useState } from "react";
+import { useSubmitFlow } from "@/hooks/useSubmitFlow";
 import type { Chain, Token } from "@/types/market";
-import { formatUsd } from "@/utils/format";
 
 export const DEPOSIT_ACTIONS = ["Deposit", "Withdraw"] as const;
 export type DepositAction = (typeof DEPOSIT_ACTIONS)[number];
@@ -20,14 +20,10 @@ export function useDepositAction({
   const [amount, setAmount] = useState("");
   const [tokenId, setTokenId] = useState(defaultTokenId);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const token = tokens.find((t) => t.id === tokenId);
   const chain = chains.find((c) => c.id === token?.chainId);
   const valueUsd = (Number(amount) || 0) * (token?.priceUsd ?? 0);
-  const submit = () =>
-    setStatusMessage(
-      `${action} of ${formatUsd(valueUsd)} queued. Mock data, nothing was sent onchain.`,
-    );
+  const flow = useSubmitFlow(() => setAmount(""));
 
   return {
     action,
@@ -42,7 +38,6 @@ export function useDepositAction({
     isPickerOpen,
     openPicker: () => setIsPickerOpen(true),
     closePicker: () => setIsPickerOpen(false),
-    statusMessage,
-    submit,
+    ...flow,
   };
 }

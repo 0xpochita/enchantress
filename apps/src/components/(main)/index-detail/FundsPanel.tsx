@@ -12,6 +12,7 @@ import {
   TokenSelectModal,
 } from "../token-select/TokenSelectModal";
 import { DepositBar } from "./DepositBar";
+import { DepositFlowModal } from "./DepositFlowModal";
 import { FundsFolder } from "./FundsFolder";
 import { FundsTree } from "./FundsTree";
 
@@ -64,6 +65,7 @@ const HINTS: Record<View, string> = {
 };
 
 interface FundsPanelProps {
+  indexName: string;
   title: string;
   allocations: RoutedAllocation[];
   summary: ReactNode;
@@ -73,6 +75,7 @@ interface FundsPanelProps {
 }
 
 export function FundsPanel({
+  indexName,
   title,
   allocations,
   summary,
@@ -94,11 +97,6 @@ export function FundsPanel({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,20rem)_1fr]">
         <div className="flex flex-col gap-3 lg:sticky lg:top-24 lg:self-start">
           <DepositBar panel={panel} apy={apy} sliceCount={allocations.length} />
-          {panel.statusMessage && (
-            <output className="px-1 text-sm text-positive">
-              {panel.statusMessage}
-            </output>
-          )}
         </div>
         <div className="flex min-w-0 flex-col gap-5 lg:border-l lg:border-line lg:pl-6">
           <div className="flex items-start justify-between gap-4">
@@ -128,6 +126,13 @@ export function FundsPanel({
           </AnimatePresence>
         </div>
       </div>
+      <DepositFlowModal
+        panel={panel}
+        indexName={indexName}
+        allocations={allocations}
+        apy={apy}
+        balances={catalog.balances}
+      />
       <TokenSelectModal
         isOpen={panel.isPickerOpen}
         onClose={panel.closePicker}

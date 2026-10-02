@@ -45,6 +45,7 @@ export function IndexDetailView({ indexId }: { indexId: string }) {
         <div className="min-w-0">
           <FundsPanel
             key={index.id}
+            indexName={index.name}
             title={
               index.positionUsd > 0
                 ? "Where your funds are"
@@ -60,8 +61,7 @@ export function IndexDetailView({ indexId }: { indexId: string }) {
         <div className="min-w-0">
           <TransactionHistory
             transactions={getIndexTransactions(index.id)}
-            indexName={index.name}
-            protocols={protocols}
+            indexes={{ [index.id]: { name: index.name, protocols } }}
           />
         </div>
       </div>

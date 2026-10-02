@@ -37,6 +37,7 @@ export function DepositBar({ panel, apy, sliceCount }: DepositBarProps) {
           <input
             id="index-amount"
             inputMode="decimal"
+            autoComplete="off"
             placeholder="0.00"
             value={panel.amount}
             onChange={(event) =>
@@ -60,10 +61,10 @@ export function DepositBar({ panel, apy, sliceCount }: DepositBarProps) {
         <button
           type="button"
           disabled={panel.valueUsd <= 0}
-          onClick={panel.submit}
+          onClick={panel.review}
           className={buttonClassName("primary", "w-full py-3 text-sm")}
         >
-          {panel.action} {formatUsd(panel.valueUsd)}
+          {panel.action}
         </button>
       </div>
     </div>

@@ -10,10 +10,14 @@ import {
   shortenAddress,
 } from "@/utils/format";
 
+export interface IndexLabel {
+  name: string;
+  protocols: Venue[];
+}
+
 interface TransactionHistoryProps {
   transactions: IndexTransaction[];
-  indexName: string;
-  protocols: Venue[];
+  indexes: Record<string, IndexLabel>;
 }
 
 const HEAD =
@@ -67,9 +71,11 @@ function IndexCell({
 
 function TransactionRow({
   tx,
-  indexName,
-  protocols,
-}: { tx: IndexTransaction } & Omit<TransactionHistoryProps, "transactions">) {
+  index,
+}: {
+  tx: IndexTransaction;
+  index?: IndexLabel;
+}) {
   return (
     <tr className="border-t border-line transition-colors duration-200 hover:bg-surface-raised">
       <td className={CELL}>
@@ -79,11 +85,13 @@ function TransactionRow({
         <ArrowRight aria-label="bought" className="size-4" />
       </td>
       <td className={CELL}>
-        <IndexCell
-          name={indexName}
-          protocols={protocols}
-          valueUsd={tx.valueUsd}
-        />
+        {index && (
+          <IndexCell
+            name={index.name}
+            protocols={index.protocols}
+            valueUsd={tx.valueUsd}
+          />
+        )}
       </td>
       <td className={`${CELL} font-mono text-xs text-ink-muted`}>
         {shortenAddress(tx.account)}
@@ -108,8 +116,7 @@ function TransactionRow({
 
 export function TransactionHistory({
   transactions,
-  indexName,
-  protocols,
+  indexes,
 }: TransactionHistoryProps) {
   return (
     <Card className="overflow-x-auto">
@@ -138,12 +145,7 @@ export function TransactionHistory({
         </thead>
         <tbody>
           {transactions.map((tx) => (
-            <TransactionRow
-              key={tx.hash}
-              tx={tx}
-              indexName={indexName}
-              protocols={protocols}
-            />
+            <TransactionRow key={tx.hash} tx={tx} index={indexes[tx.indexId]} />
           ))}
         </tbody>
       </table>
