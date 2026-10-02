@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowRight, Plus, X } from "lucide-react";
+import { ArrowRight, ChevronRight, Plus, X } from "lucide-react";
 import { useState } from "react";
-import { CryptoIcon } from "@/components/ui";
+import { CryptoIcon, TokenStack } from "@/components/ui";
 import type { VaultAsset, Venue } from "@/types/market";
 import { AssetSelectModal } from "./AssetSelectModal";
 
@@ -51,6 +51,43 @@ function SelectedChip({
   );
 }
 
+const TILE_PREVIEW_COUNT = 4;
+
+function SelectAssetsTile({
+  assets,
+  onOpen,
+}: {
+  assets: VaultAsset[];
+  onOpen: () => void;
+}) {
+  const preview = assets.slice(0, TILE_PREVIEW_COUNT).map((asset) => ({
+    iconKey: asset.iconKey,
+    label: asset.symbol,
+  }));
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group flex w-full items-center gap-3 rounded-md border border-dashed border-line bg-surface p-3 text-left transition-colors duration-200 hover:border-ink-subtle hover:bg-surface-hover"
+    >
+      <span className="flex size-9 flex-none items-center justify-center rounded-full bg-accent text-accent-ink">
+        <Plus aria-hidden className="size-4" />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="text-sm font-medium text-ink">Select assets</span>
+        <span className="text-xs text-ink-muted">
+          {assets.length} tokens on Monad
+        </span>
+      </span>
+      <TokenStack items={preview} size={22} />
+      <ChevronRight
+        aria-hidden
+        className="size-4 text-ink-subtle transition-transform duration-200 group-hover:translate-x-0.5"
+      />
+    </button>
+  );
+}
+
 export function AssetPicker({
   assets,
   venues,
@@ -64,6 +101,9 @@ export function AssetPicker({
   );
   return (
     <>
+      {selected.length === 0 && (
+        <SelectAssetsTile assets={assets} onOpen={() => setIsOpen(true)} />
+      )}
       <ul aria-label="Selected assets" className="flex flex-wrap gap-2">
         {selected.map((asset) => (
           <SelectedChip
@@ -73,16 +113,18 @@ export function AssetPicker({
             onRemove={() => onToggle(asset.symbol)}
           />
         ))}
-        <li>
-          <button
-            type="button"
-            onClick={() => setIsOpen(true)}
-            className="flex items-center gap-2 rounded-full border-2 border-dashed border-ink-subtle/50 px-3 py-2 text-base text-ink-muted transition-colors duration-200 hover:border-ink-subtle hover:bg-surface-hover hover:text-ink"
-          >
-            <Plus aria-hidden className="size-5" />
-            {selected.length === 0 ? "Select assets" : "Add"}
-          </button>
-        </li>
+        {selected.length > 0 && (
+          <li>
+            <button
+              type="button"
+              onClick={() => setIsOpen(true)}
+              className={`${CHIP} border-dashed px-3 text-ink-muted transition-colors duration-200 hover:border-ink-subtle hover:text-ink`}
+            >
+              <Plus aria-hidden className="size-4" />
+              Add
+            </button>
+          </li>
+        )}
       </ul>
       <AssetSelectModal
         isOpen={isOpen}
