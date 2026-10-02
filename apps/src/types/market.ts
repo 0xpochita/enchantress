@@ -51,7 +51,6 @@ export interface IndexAllocation {
   assetSymbol: string;
   weight: number;
   venueId: string;
-  priceChangePct: number;
 }
 
 export interface Index {
@@ -82,4 +81,17 @@ export interface IndexQuote {
   apy: number;
   assets: { symbol: string; iconKey: string }[];
   venues: { name: string; iconKey: string }[];
+}
+
+export type TransactionType = "deposit" | "withdraw";
+
+export interface IndexTransaction {
+  hash: string;
+  indexId: string;
+  type: TransactionType;
+  account: string;
+  tokenId: string;
+  amount: number;
+  valueUsd: number;
+  timestamp: string;
 }

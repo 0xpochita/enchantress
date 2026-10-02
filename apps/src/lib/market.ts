@@ -6,6 +6,7 @@ import {
   WALLET_ADDRESS,
   WALLET_BALANCES,
 } from "@/lib/mock/tokens";
+import { buildTransactions } from "@/lib/mock/transactions";
 import {
   AGGREGATORS,
   VAULT_ASSETS,
@@ -16,6 +17,7 @@ import type {
   Aggregator,
   Chain,
   Index,
+  IndexTransaction,
   RoutedAllocation,
   Token,
   VaultAsset,
@@ -107,4 +109,10 @@ export function getBestVenueApy(venues: Venue[] = VENUES): number {
     0,
     ...venues.flatMap((venue) => venue.markets.map((m) => m.apy)),
   );
+}
+
+const TRANSACTIONS = buildTransactions(INDEXES.map((index) => index.id));
+
+export function getIndexTransactions(indexId: string): IndexTransaction[] {
+  return TRANSACTIONS.filter((tx) => tx.indexId === indexId);
 }
