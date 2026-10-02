@@ -1,3 +1,4 @@
+import { MotionConfig } from "motion/react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
@@ -29,7 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           enableSystem={false}
           storageKey="enchantress-theme"
         >
-          {children}
+          <MotionConfig reducedMotion="user">{children}</MotionConfig>
         </ThemeProvider>
       </body>
     </html>
