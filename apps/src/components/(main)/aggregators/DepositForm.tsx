@@ -22,6 +22,7 @@ export function DepositForm({ deposit, quote }: DepositFormProps) {
         <ArrowDown aria-hidden className="size-4 text-ink-muted" />
       </span>
       <EarnBox deposit={deposit} quote={quote} />
+      <DetailsBox deposit={deposit} quote={quote} />
       <SubmitRow deposit={deposit} quote={quote} />
     </Card>
   );
@@ -41,6 +42,7 @@ function SellBox({ deposit }: { deposit: DepositRoutes }) {
         <input
           id="aggregator-amount"
           inputMode="decimal"
+          autoComplete="off"
           placeholder="0"
           value={deposit.amount}
           onChange={(e) =>
@@ -97,44 +99,63 @@ function EarnBox({ deposit, quote }: DepositFormProps) {
   );
 }
 
-function SubmitRow({ deposit, quote }: DepositFormProps) {
-  const isDisabled = !quote || deposit.amountUsd <= 0 || deposit.isInsufficient;
-  const label = deposit.isInsufficient
-    ? "Insufficient funds"
-    : `Deposit ${formatUsd(deposit.amountUsd)}`;
+const MONTHS_PER_YEAR = 12;
+
+function RouteLabel({ deposit }: { deposit: DepositRoutes }) {
+  if (!deposit.isCrossChain) return <span>Already on Monad</span>;
   return (
-    <div className="mt-auto flex flex-col gap-3 pt-2">
-      <p className="flex justify-between px-1 text-sm text-ink-muted">
-        {deposit.isCrossChain ? (
-          <span className="flex items-center gap-1.5">
-            {deposit.chain?.name} to Monad via
-            <Image
-              src="/logo/aurora-logo.avif"
-              alt=""
-              width={16}
-              height={17}
-              className="rounded-sm"
-            />
-            Aurora Intents
-          </span>
-        ) : (
-          <span>Already on Monad</span>
-        )}
-        <span>fee ~{formatUsd(deposit.selected?.feeUsd ?? 0)}</span>
-      </p>
-      <button
-        type="button"
-        disabled={isDisabled}
-        onClick={deposit.submit}
-        className={buttonClassName("primary", "w-full py-3")}
-      >
-        {label}
-      </button>
-      {deposit.isSubmitted && (
-        <output className="text-sm text-positive">
-          Deposit queued. Mock data, nothing was sent onchain.
-        </output>
-      )}
-    </div>
+    <span className="flex items-center gap-1.5">
+      {deposit.chain?.name} via
+      <Image
+        src="/logo/aurora-logo.avif"
+        alt=""
+        width={14}
+        height={15}
+        className="rounded-sm"
+      />
+      Aurora Intents
+    </span>
+  );
+}
+
+function DetailsBox({ deposit, quote }: DepositFormProps) {
+  const rows = [
+    { label: "Route", value: <RouteLabel deposit={deposit} /> },
+    { label: "Arrives", value: deposit.isCrossChain ? "~1 min" : "Instant" },
+    { label: "Protocols", value: quote?.venues.length ?? 0 },
+    {
+      label: "Rewards / month",
+      value: formatUsd((deposit.selected?.yearlyUsd ?? 0) / MONTHS_PER_YEAR),
+    },
+    {
+      label: "Est. fee",
+      value: `~${formatUsd(deposit.selected?.feeUsd ?? 0)}`,
+    },
+  ];
+  return (
+    <dl className="mt-2 flex flex-1 flex-col justify-center gap-3 rounded-md border border-line px-5 py-4 text-sm">
+      {rows.map((row) => (
+        <div
+          key={row.label}
+          className="flex items-center justify-between gap-3"
+        >
+          <dt className="text-ink-muted">{row.label}</dt>
+          <dd className="text-right tabular-nums">{row.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function SubmitRow({ deposit, quote }: DepositFormProps) {
+  return (
+    <button
+      type="button"
+      disabled={!quote || deposit.amountUsd <= 0}
+      onClick={deposit.review}
+      className={buttonClassName("primary", "mt-2 w-full py-3")}
+    >
+      Deposit
+    </button>
   );
 }

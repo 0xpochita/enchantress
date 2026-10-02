@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Chain, IndexQuote, Token, WalletBalance } from "@/types/market";
 import { rankRoutes } from "@/utils/routes";
+import { useSubmitFlow } from "./useSubmitFlow";
 
 export const ALL_AGGREGATORS = "all";
 
@@ -20,7 +21,7 @@ export function useDepositRoutes(source: DepositRoutesSource) {
   const [aggregatorId, setAggregatorId] = useState(ALL_AGGREGATORS);
   const [selectedIndexId, setSelectedIndexId] = useState<string | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const flow = useSubmitFlow(() => setAmount(""));
 
   const derived = useMemo(() => {
     const token = source.tokens.find((t) => t.id === tokenId);
@@ -64,8 +65,7 @@ export function useDepositRoutes(source: DepositRoutesSource) {
     setAggregatorId,
     selectIndex: setSelectedIndexId,
     isPickerOpen,
-    isSubmitted,
-    submit: () => setIsSubmitted(true),
+    ...flow,
     openPicker: () => setIsPickerOpen(true),
     closePicker: () => setIsPickerOpen(false),
   };

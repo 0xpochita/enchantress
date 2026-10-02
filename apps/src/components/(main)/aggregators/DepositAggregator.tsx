@@ -9,6 +9,7 @@ import {
 } from "../token-select/TokenSelectModal";
 import { DepositForm } from "./DepositForm";
 import { type HubProtocol, ProtocolHub } from "./ProtocolHub";
+import { RouteFlowModal } from "./RouteFlowModal";
 import { RouteList } from "./RouteList";
 
 interface DepositAggregatorProps {
@@ -61,6 +62,10 @@ export function DepositAggregator({
           )}
         </motion.div>
       </AnimatePresence>
+      <RouteFlowModal
+        deposit={deposit}
+        quote={deposit.selected && quotesById.get(deposit.selected.indexId)}
+      />
       <TokenSelectModal
         isOpen={deposit.isPickerOpen}
         onClose={deposit.closePicker}
