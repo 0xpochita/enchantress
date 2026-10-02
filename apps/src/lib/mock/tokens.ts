@@ -142,6 +142,8 @@ export const POPULAR_TOKEN_IDS = [
   "sol-sol",
 ];
 
+export const DEFAULT_DEPOSIT_TOKEN_ID = "usdc-monad";
+
 export const WALLET_BALANCES: WalletBalance[] = [
   { tokenId: "eth-base", amount: 0.84 },
   { tokenId: "usdc-base", amount: 1250.5 },

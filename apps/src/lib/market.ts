@@ -1,6 +1,7 @@
 import { CHAINS } from "@/lib/mock/chains";
 import { INDEXES } from "@/lib/mock/indexes";
 import {
+  DEFAULT_DEPOSIT_TOKEN_ID,
   POPULAR_TOKEN_IDS,
   TOKENS,
   WALLET_ADDRESS,
@@ -25,7 +26,13 @@ import type {
 } from "@/types/market";
 import { blendedApy } from "@/utils/yield-index";
 
-export { POPULAR_TOKEN_IDS, VAULT_CHAIN_ID, WALLET_ADDRESS, WALLET_BALANCES };
+export {
+  DEFAULT_DEPOSIT_TOKEN_ID,
+  POPULAR_TOKEN_IDS,
+  VAULT_CHAIN_ID,
+  WALLET_ADDRESS,
+  WALLET_BALANCES,
+};
 
 export function getChains(): Chain[] {
   return CHAINS;

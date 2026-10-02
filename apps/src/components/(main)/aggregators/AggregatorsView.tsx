@@ -1,4 +1,5 @@
 import {
+  DEFAULT_DEPOSIT_TOKEN_ID,
   getAggregator,
   getAggregators,
   getChains,
@@ -14,8 +15,6 @@ import {
 import type { IndexQuote } from "@/types/market";
 import { DepositAggregator } from "./DepositAggregator";
 import type { HubProtocol } from "./ProtocolHub";
-
-const DEFAULT_DEPOSIT_TOKEN_ID = "eth-base";
 
 function buildQuotes(): IndexQuote[] {
   return getIndexes().map((index) => ({

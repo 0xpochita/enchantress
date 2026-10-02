@@ -1,4 +1,5 @@
 import {
+  DEFAULT_DEPOSIT_TOKEN_ID,
   getChains,
   getTokens,
   getVaultAssets,
@@ -9,8 +10,6 @@ import {
 import type { DraftCatalog } from "@/utils/draft";
 import type { TokenCatalog } from "../token-select/TokenSelectModal";
 import { CreateIndexForm } from "./CreateIndexForm";
-
-const DEFAULT_DEPOSIT_TOKEN_ID = "eth-base";
 
 function buildCatalogs(): {
   catalog: DraftCatalog;

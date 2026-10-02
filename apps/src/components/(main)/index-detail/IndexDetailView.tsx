@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import {
+  DEFAULT_DEPOSIT_TOKEN_ID,
   getChains,
   getIndex,
   getIndexApy,
@@ -18,8 +19,6 @@ import { TransactionHistory } from "./TransactionHistory";
 function uniqueVenues(allocations: RoutedAllocation[]): Venue[] {
   return [...new Map(allocations.map((a) => [a.venue.id, a.venue])).values()];
 }
-
-const DEFAULT_DEPOSIT_TOKEN_ID = "eth-base";
 
 export function IndexDetailView({ indexId }: { indexId: string }) {
   const index = getIndex(indexId);
