@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import {
-  getAggregator,
   getChains,
   getIndex,
   getIndexApy,
@@ -28,6 +27,7 @@ export function IndexDetailView({ indexId }: { indexId: string }) {
   const fundsUsd = index.positionUsd > 0 ? index.positionUsd : index.tvlUsd;
   const allocations = routeIndex(index, fundsUsd);
   const apy = getIndexApy(index);
+  const protocols = uniqueVenues(allocations);
   const catalog = {
     chains: getChains(),
     tokens: getTokens(),
@@ -40,7 +40,7 @@ export function IndexDetailView({ indexId }: { indexId: string }) {
       <IndexHeader
         name={index.name}
         assets={allocations.map((a) => a.asset)}
-        aggregator={getAggregator(index.aggregatorId)}
+        protocols={protocols}
       />
       <div className="flex flex-col gap-6">
         <div className="min-w-0">
@@ -62,7 +62,7 @@ export function IndexDetailView({ indexId }: { indexId: string }) {
           <TransactionHistory
             transactions={getIndexTransactions(index.id)}
             indexName={index.name}
-            protocols={uniqueVenues(allocations)}
+            protocols={protocols}
           />
         </div>
       </div>
