@@ -40,7 +40,7 @@ function SourceNodes({ source }: { source?: RoutingSource }) {
         <>
           <span aria-hidden className={CONNECTOR} />
           <RouteNode
-            icon={<Zap aria-hidden className="size-5 text-accent" />}
+            icon={<Zap aria-hidden className="size-5 text-brand" />}
             title="Aurora Intents"
             detail="to Monad"
           />

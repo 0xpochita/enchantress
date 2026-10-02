@@ -11,7 +11,7 @@ const NAV_ITEMS = [
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/invest")
-    return pathname === "/invest" || pathname.startsWith("/baskets");
+    return pathname === "/invest" || pathname.startsWith("/indexes");
   return pathname.startsWith(href);
 }
 
@@ -20,14 +20,14 @@ export function NavLinks() {
   return (
     <nav
       aria-label="Main"
-      className="order-last flex w-full gap-1 md:order-none md:w-auto"
+      className="order-last col-span-2 flex gap-8 md:order-none md:col-span-1"
     >
       {NAV_ITEMS.map((item) => (
         <Link
           key={item.href}
           href={item.href}
           aria-current={isActive(pathname, item.href) ? "page" : undefined}
-          className="rounded-full px-4 py-2 text-sm text-ink-muted transition-colors duration-200 ease-out hover:text-ink aria-[current=page]:bg-surface-raised aria-[current=page]:text-ink"
+          className="text-[0.85rem] text-ink-muted transition-colors duration-200 ease-out hover:text-ink aria-[current=page]:font-medium aria-[current=page]:text-ink"
         >
           {item.label}
         </Link>

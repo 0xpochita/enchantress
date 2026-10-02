@@ -11,7 +11,7 @@ const BADGE_RATIO = 0.45;
 const DARK_MARK_ICONS = new Set(["near", "apt"]);
 
 function toneClass(iconKey: string): string {
-  return DARK_MARK_ICONS.has(iconKey) ? "invert" : "";
+  return DARK_MARK_ICONS.has(iconKey) ? "dark:invert" : "";
 }
 
 export function CryptoIcon({

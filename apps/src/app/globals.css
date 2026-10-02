@@ -1,23 +1,61 @@
 @import "tailwindcss";
 
-@theme {
-  --color-canvas: #0c0b10;
-  --color-surface: #15141b;
-  --color-surface-raised: #1d1c25;
-  --color-surface-hover: #25242f;
-  --color-line: #2a2935;
-  --color-ink: #f4f3f8;
-  --color-ink-muted: #a3a1b2;
-  --color-ink-subtle: #6f6d7e;
-  --color-accent: #c4b5fd;
-  --color-accent-strong: #a78bfa;
-  --color-accent-ink: #160f2b;
-  --color-positive: #5eead4;
-  --color-negative: #fca5a5;
-  --color-overlay: rgb(5 4 9 / 0.72);
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  --canvas: #fafaf7;
+  --surface: #ffffff;
+  --surface-raised: #f4f4f1;
+  --surface-hover: #ebebe6;
+  --line: #e6e5e0;
+  --ink: #18181b;
+  --ink-muted: #6b6b7b;
+  --ink-subtle: #9b9aa8;
+  --accent: #18181b;
+  --accent-strong: #3f3f46;
+  --accent-ink: #ffffff;
+  --brand: #a16207;
+  --positive: #0f766e;
+  --negative: #b91c1c;
+  --overlay: rgb(10 10 15 / 0.35);
+}
+
+:root[data-theme="dark"] {
+  --canvas: #0a0a0f;
+  --surface: #111118;
+  --surface-raised: #1a1a24;
+  --surface-hover: #22222e;
+  --line: #26252f;
+  --ink: #f0f0f5;
+  --ink-muted: #8888a8;
+  --ink-subtle: #6b6b80;
+  --accent: #ffffff;
+  --accent-strong: #e4e4e7;
+  --accent-ink: #0a0a0f;
+  --brand: #fde68a;
+  --positive: #5eead4;
+  --negative: #fca5a5;
+  --overlay: rgb(5 4 9 / 0.72);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-hover: var(--surface-hover);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-ink: var(--accent-ink);
+  --color-brand: var(--brand);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-overlay: var(--overlay);
+
+  --font-sans: var(--font-inter);
 
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
@@ -25,13 +63,22 @@
 }
 
 body {
-  background: var(--color-canvas);
-  color: var(--color-ink);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+button:not(:disabled),
+[role="button"],
+a[href],
+label[for],
+select,
+summary {
+  cursor: pointer;
 }
 
 dialog::backdrop {
-  background: var(--color-overlay);
+  background: var(--overlay);
 }
 
 @media (prefers-reduced-motion: reduce) {

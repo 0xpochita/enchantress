@@ -21,7 +21,7 @@ export function ChainList({ chains, activeId, onSelect }: ChainListProps) {
           onClick={() => onSelect(null)}
           className={ITEM}
         >
-          <Layers aria-hidden className="size-6 text-accent" />
+          <Layers aria-hidden className="size-6 text-brand" />
           All networks
         </button>
       </li>

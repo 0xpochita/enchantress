@@ -46,7 +46,7 @@ export function TokenRow({
         </span>
       )}
       {isSelected && (
-        <Check aria-label="Selected" className="size-4 text-accent" />
+        <Check aria-label="Selected" className="size-4 text-brand" />
       )}
     </button>
   );

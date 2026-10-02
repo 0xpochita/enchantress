@@ -6,7 +6,9 @@ export function ErrorView({ onRetry }: { onRetry: () => void }) {
       role="alert"
       className="flex flex-col items-center gap-4 py-24 text-center"
     >
-      <h1 className="text-2xl font-semibold">Something went wrong</h1>
+      <h1 className="text-3xl font-light tracking-tight">
+        Something went wrong
+      </h1>
       <p className="text-ink-muted">
         We could not load this page. Please try again.
       </p>

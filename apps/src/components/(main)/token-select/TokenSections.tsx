@@ -33,7 +33,7 @@ export function TokenSections({
     <div className="flex flex-col gap-4">
       {search.ownedTokens.length > 0 && (
         <section aria-label="Your tokens" className="flex flex-col gap-1">
-          <h3 className="flex items-center gap-2 px-3 text-sm font-medium text-accent">
+          <h3 className="flex items-center gap-2 px-3 text-sm font-medium text-brand">
             <Wallet aria-hidden className="size-4" />
             Your tokens
           </h3>

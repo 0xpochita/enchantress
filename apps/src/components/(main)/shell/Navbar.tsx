@@ -1,23 +1,24 @@
-import { Sparkles } from "lucide-react";
 import Link from "next/link";
+import { ThemedLogoMark, ThemeToggle } from "@/components/ui";
 import { NavLinks } from "./NavLinks";
 import { NetworkBadge } from "./NetworkBadge";
 import { WalletButton } from "./WalletButton";
 
 export function Navbar() {
   return (
-    <header className="sticky top-0 z-10 border-b border-line bg-canvas/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3 md:px-8">
+    <header className="sticky top-0 z-10 bg-canvas/90 backdrop-blur">
+      <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center gap-y-2 px-4 py-3 md:grid-cols-[1fr_auto_1fr] md:px-8">
         <Link
           href="/"
-          className="flex items-center gap-2 text-lg font-semibold"
+          className="flex w-fit items-center gap-2 text-[1.05rem] font-bold tracking-[-0.01em]"
         >
-          <Sparkles aria-hidden className="size-5 text-accent" />
+          <ThemedLogoMark />
           enchantress
         </Link>
         <NavLinks />
-        <div className="ml-auto flex items-center gap-3">
+        <div className="flex items-center justify-end gap-2">
           <NetworkBadge />
+          <ThemeToggle />
           <WalletButton />
         </div>
       </div>

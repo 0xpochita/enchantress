@@ -6,7 +6,10 @@ export function WalletButton() {
   return (
     <button
       type="button"
-      className={buttonClassName("primary", "px-4 py-2 text-sm")}
+      className={buttonClassName(
+        "primary",
+        "px-[18px] py-[7px] text-[0.82rem] font-semibold",
+      )}
     >
       {shortenAddress(WALLET_ADDRESS)}
     </button>
