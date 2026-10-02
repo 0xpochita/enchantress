@@ -14,6 +14,10 @@ function toneClass(iconKey: string): string {
   return DARK_MARK_ICONS.has(iconKey) ? "dark:invert" : "";
 }
 
+function iconSrc(iconKey: string): string {
+  return iconKey.startsWith("/") ? iconKey : `/crypto/${iconKey}.svg`;
+}
+
 export function CryptoIcon({
   iconKey,
   label,
@@ -27,15 +31,15 @@ export function CryptoIcon({
       style={{ width: size, height: size }}
     >
       <Image
-        src={`/crypto/${iconKey}.svg`}
+        src={iconSrc(iconKey)}
         alt={label}
         width={size}
         height={size}
-        className={`size-full object-contain ${toneClass(iconKey)}`}
+        className={`size-full rounded-full object-contain ${toneClass(iconKey)}`}
       />
       {badgeIconKey && (
         <Image
-          src={`/crypto/${badgeIconKey}.svg`}
+          src={iconSrc(badgeIconKey)}
           alt=""
           width={badgeSize}
           height={badgeSize}

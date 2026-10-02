@@ -20,7 +20,7 @@ export const VENUES: Venue[] = [
   {
     id: "neverland",
     name: "Neverland",
-    iconKey: "generic",
+    iconKey: "/logo/neverland-logo.jpg",
     chainId: VAULT_CHAIN_ID,
     markets: [
       { assetSymbol: "USDC", apy: 6.12 },
