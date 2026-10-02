@@ -18,13 +18,13 @@ export function SubmitBar({
 }: SubmitBarProps) {
   if (status === "submitted") {
     return (
-      <output className="flex flex-col gap-3 rounded-md bg-surface-raised p-4">
-        <p className="text-positive">
-          Index created. This is mock data, nothing was sent onchain.
-        </p>
+      <output className="flex flex-col gap-3 text-sm">
+        <span className="text-positive">
+          Index created. Mock data, nothing was sent onchain.
+        </span>
         <Link
           href="/invest"
-          className={buttonClassName("secondary", "px-4 py-2 text-sm")}
+          className={buttonClassName("secondary", "w-full py-3 text-sm")}
         >
           Back to indexes
         </Link>
@@ -32,17 +32,17 @@ export function SubmitBar({
     );
   }
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       <button
         type="button"
         disabled={errors.length > 0}
         onClick={onSubmit}
-        className={buttonClassName("primary", "w-full py-3")}
+        className={buttonClassName("primary", "w-full py-3 text-sm")}
       >
         Create & deposit {formatUsd(depositUsd)}
       </button>
       {errors.length > 0 && (
-        <p className="text-sm text-ink-subtle">{errors[0]}</p>
+        <p className="px-1 text-xs text-ink-subtle">{errors[0]}</p>
       )}
     </div>
   );

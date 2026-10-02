@@ -1,0 +1,124 @@
+import type { ReactNode } from "react";
+import type { IndexDraft } from "@/hooks/useIndexDraft";
+import type { Chain } from "@/types/market";
+import type { DraftCatalog } from "@/utils/draft";
+import { RouteDetails } from "../routing/RouteDetails";
+import { TokenButton } from "../token-select/TokenButton";
+import { AggregatorPicker } from "./AggregatorPicker";
+import { AssetPicker } from "./AssetPicker";
+import { SubmitBar } from "./SubmitBar";
+import { WeightControls } from "./WeightControls";
+
+interface BuilderPanelProps {
+  draft: IndexDraft;
+  catalog: DraftCatalog;
+  chain?: Chain;
+  onPickToken: () => void;
+}
+
+function Step({
+  number,
+  title,
+  children,
+}: {
+  number: number;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h3 className="flex items-center gap-2 text-xs text-ink-muted">
+        <span className="flex size-5 items-center justify-center rounded-full bg-surface text-[0.65rem] font-medium text-ink">
+          {number}
+        </span>
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+function AmountRow({
+  draft,
+  chain,
+  onPickToken,
+}: Omit<BuilderPanelProps, "catalog">) {
+  return (
+    <div className="flex min-w-0 items-center gap-3 px-1">
+      <label htmlFor="create-amount" className="sr-only">
+        Amount to deposit
+      </label>
+      <input
+        id="create-amount"
+        inputMode="decimal"
+        placeholder="0.00"
+        value={draft.amount}
+        onChange={(e) =>
+          draft.update({ amount: e.target.value.replace(/[^0-9.]/g, "") })
+        }
+        className="w-full min-w-0 bg-transparent text-3xl font-light outline-none placeholder:text-ink-subtle"
+      />
+      <TokenButton
+        token={draft.depositToken}
+        chain={chain}
+        onClick={onPickToken}
+      />
+    </div>
+  );
+}
+
+export function BuilderPanel({
+  draft,
+  catalog,
+  chain,
+  onPickToken,
+}: BuilderPanelProps) {
+  return (
+    <div className="flex flex-col gap-6 rounded-md bg-surface-raised p-5 lg:sticky lg:top-24 lg:self-start">
+      <Step number={1} title="Name your index">
+        <label htmlFor="index-name" className="sr-only">
+          Index name
+        </label>
+        <input
+          id="index-name"
+          value={draft.name}
+          onChange={(e) => draft.update({ name: e.target.value })}
+          placeholder="core-v1"
+          className="rounded-md border border-line bg-surface px-3 py-2 outline-none placeholder:text-ink-subtle focus:border-accent"
+        />
+      </Step>
+      <Step number={2} title="Choose an aggregator">
+        <AggregatorPicker
+          aggregators={catalog.aggregators}
+          venuesByAggregator={catalog.venuesByAggregator}
+          activeId={draft.aggregatorId}
+          onChange={(aggregatorId) => draft.update({ aggregatorId })}
+        />
+      </Step>
+      <Step number={3} title="Pick assets and weights">
+        <AssetPicker
+          assets={draft.availableAssets}
+          selectedSymbols={draft.assetSymbols}
+          onToggle={draft.toggleAsset}
+        />
+        <WeightControls
+          mode={draft.weightMode}
+          onModeChange={(weightMode) => draft.update({ weightMode })}
+          allocations={draft.allocations}
+          customPercents={draft.customPercents}
+          onPercentChange={draft.setCustomPercent}
+        />
+      </Step>
+      <Step number={4} title="Deposit from any chain">
+        <AmountRow draft={draft} chain={chain} onPickToken={onPickToken} />
+        <RouteDetails chain={chain} sliceCount={draft.allocations.length} />
+      </Step>
+      <SubmitBar
+        status={draft.status}
+        errors={draft.errors}
+        depositUsd={draft.depositUsd}
+        onSubmit={draft.submit}
+      />
+    </div>
+  );
+}
