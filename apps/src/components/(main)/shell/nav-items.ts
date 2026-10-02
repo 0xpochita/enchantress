@@ -4,7 +4,7 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/aggregators", label: "Deposit" },
+  { href: "/deposit", label: "Deposit" },
   { href: "/invest", label: "Invest" },
   { href: "/create", label: "Create" },
 ];

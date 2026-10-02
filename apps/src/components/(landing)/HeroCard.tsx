@@ -16,7 +16,7 @@ export function HeroCard() {
           <br />
           One intent routes every slice to the best vault.
         </p>
-        <Link href="/aggregators" className="btn-cta">
+        <Link href="/deposit" className="btn-cta">
           Start earning
         </Link>
       </div>

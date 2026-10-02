@@ -16,7 +16,7 @@ export function AggregatorDetailView({
   return (
     <>
       <Link
-        href="/aggregators"
+        href="/deposit"
         className="flex w-fit items-center gap-2 text-sm text-ink-muted hover:text-ink"
       >
         <ChevronLeft aria-hidden className="size-4" />

@@ -5,7 +5,7 @@ import { ThemedLogoMark, ThemeToggle } from "@/components/ui";
 import { useMobileMenu } from "@/hooks/useMobileMenu";
 
 const NAV_LINKS = [
-  { href: "/aggregators", label: "Deposit" },
+  { href: "/deposit", label: "Deposit" },
   { href: "/invest", label: "Indexes" },
   { href: "#chains", label: "Chains" },
 ];
@@ -45,7 +45,7 @@ export function LandingNav() {
           <Link href="/create" className="btn-login" onClick={menu.close}>
             Create index
           </Link>
-          <Link href="/aggregators" className="btn-signup" onClick={menu.close}>
+          <Link href="/deposit" className="btn-signup" onClick={menu.close}>
             Launch app
           </Link>
         </div>

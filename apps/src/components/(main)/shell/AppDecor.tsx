@@ -7,7 +7,7 @@ const BASE =
 const FADED =
   "h-[70vh] w-[30vw] opacity-20 mask-r-from-20% mask-r-to-80% dark:opacity-45";
 const FULL = "h-[52vh] w-[24vw] opacity-15 dark:opacity-35";
-const FULL_DECOR_ROUTES = ["/aggregators"];
+const FULL_DECOR_ROUTES = ["/deposit"];
 
 export function AppDecor() {
   const pathname = usePathname();
