@@ -14,7 +14,7 @@ export function TokenStack({ items, size = 32 }: TokenStackProps) {
   return (
     <span className="flex items-center -space-x-2">
       {items.map((item) => (
-        <span key={item.label} className="rounded-full ring-2 ring-surface">
+        <span key={item.label} className="flex rounded-full">
           <CryptoIcon iconKey={item.iconKey} label={item.label} size={size} />
         </span>
       ))}
