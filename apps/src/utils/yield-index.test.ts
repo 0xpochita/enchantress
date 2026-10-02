@@ -7,7 +7,7 @@ import {
   equalWeights,
   findBestMarket,
   yearlyRewardsUsd,
-} from "./basket.ts";
+} from "./yield-index.ts";
 
 const VENUES: Venue[] = [
   {

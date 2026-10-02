@@ -9,7 +9,7 @@ function toggle(list: string[], value: string): string[] {
     : [...list, value];
 }
 
-export function useBasketDraft(catalog: DraftCatalog) {
+export function useIndexDraft(catalog: DraftCatalog) {
   const [state, setState] = useState<DraftState>({
     name: "",
     aggregatorId: catalog.aggregators[0]?.id ?? "",
@@ -39,4 +39,4 @@ export function useBasketDraft(catalog: DraftCatalog) {
   };
 }
 
-export type BasketDraft = ReturnType<typeof useBasketDraft>;
+export type IndexDraft = ReturnType<typeof useIndexDraft>;

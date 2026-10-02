@@ -1,5 +1,5 @@
-import { BASKETS } from "@/lib/mock/baskets";
 import { CHAINS } from "@/lib/mock/chains";
+import { INDEXES } from "@/lib/mock/indexes";
 import {
   POPULAR_TOKEN_IDS,
   TOKENS,
@@ -14,14 +14,14 @@ import {
 } from "@/lib/mock/vaults";
 import type {
   Aggregator,
-  Basket,
   Chain,
+  Index,
   RoutedAllocation,
   Token,
   VaultAsset,
   Venue,
 } from "@/types/market";
-import { blendedApy } from "@/utils/basket";
+import { blendedApy } from "@/utils/yield-index";
 
 export { POPULAR_TOKEN_IDS, VAULT_CHAIN_ID, WALLET_ADDRESS, WALLET_BALANCES };
 
@@ -69,20 +69,17 @@ export function getAggregatorVenues(aggregator: Aggregator): Venue[] {
   return VENUES.filter((venue) => aggregator.venueIds.includes(venue.id));
 }
 
-export function getBaskets(aggregatorId?: string): Basket[] {
-  if (!aggregatorId) return BASKETS;
-  return BASKETS.filter((basket) => basket.aggregatorId === aggregatorId);
+export function getIndexes(aggregatorId?: string): Index[] {
+  if (!aggregatorId) return INDEXES;
+  return INDEXES.filter((index) => index.aggregatorId === aggregatorId);
 }
 
-export function getBasket(basketId: string): Basket | undefined {
-  return BASKETS.find((basket) => basket.id === basketId);
+export function getIndex(indexId: string): Index | undefined {
+  return INDEXES.find((index) => index.id === indexId);
 }
 
-export function routeBasket(
-  basket: Basket,
-  totalUsd: number,
-): RoutedAllocation[] {
-  return basket.allocations.flatMap((allocation) => {
+export function routeIndex(index: Index, totalUsd: number): RoutedAllocation[] {
+  return index.allocations.flatMap((allocation) => {
     const asset = getVaultAsset(allocation.assetSymbol);
     const venue = getVenue(allocation.venueId);
     const market = venue?.markets.find(
@@ -101,8 +98,8 @@ export function routeBasket(
   });
 }
 
-export function getBasketApy(basket: Basket): number {
-  return blendedApy(routeBasket(basket, 0));
+export function getIndexApy(index: Index): number {
+  return blendedApy(routeIndex(index, 0));
 }
 
 export function getBestVenueApy(venues: Venue[] = VENUES): number {

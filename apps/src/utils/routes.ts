@@ -1,13 +1,13 @@
-import { yearlyRewardsUsd } from "./basket.ts";
+import { yearlyRewardsUsd } from "./yield-index.ts";
 
 export interface RouteCandidate {
-  basketId: string;
+  indexId: string;
   apy: number;
   assetCount: number;
 }
 
 export interface RankedRoute {
-  basketId: string;
+  indexId: string;
   apy: number;
   yearlyUsd: number;
   feeUsd: number;
@@ -35,16 +35,16 @@ export function rankRoutes(
 ): RankedRoute[] {
   const quoted = candidates
     .map((c) => ({
-      basketId: c.basketId,
+      indexId: c.indexId,
       apy: c.apy,
       yearlyUsd: yearlyRewardsUsd(amountUsd, c.apy),
       feeUsd: estimateRouteFeeUsd(isCrossChain, c.assetCount),
     }))
     .sort((a, b) => b.apy - a.apy);
   const bestApy = quoted[0]?.apy ?? 0;
-  return quoted.map((route, index) => ({
+  return quoted.map((route, position) => ({
     ...route,
     deltaPct: bestApy === 0 ? 0 : ((route.apy - bestApy) / bestApy) * PERCENT,
-    isBest: index === 0,
+    isBest: position === 0,
   }));
 }

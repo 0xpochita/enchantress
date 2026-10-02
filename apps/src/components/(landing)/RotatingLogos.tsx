@@ -6,7 +6,7 @@ interface RotatingLogosProps {
 }
 
 export function RotatingLogos({ iconKeys, size }: RotatingLogosProps) {
-  return iconKeys.map((iconKey, index) => (
+  return iconKeys.map((iconKey, position) => (
     <Image
       key={iconKey}
       src={`/crypto/${iconKey}.svg`}
@@ -14,7 +14,7 @@ export function RotatingLogos({ iconKeys, size }: RotatingLogosProps) {
       loading="eager"
       width={size}
       height={size}
-      className={index === 0 ? "pipeline-logo is-active" : "pipeline-logo"}
+      className={position === 0 ? "pipeline-logo is-active" : "pipeline-logo"}
     />
   ));
 }

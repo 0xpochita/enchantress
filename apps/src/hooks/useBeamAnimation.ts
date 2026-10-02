@@ -60,8 +60,11 @@ function showNextLogo(container: Element): void {
   const current = logos.findIndex((logo) =>
     logo.classList.contains("is-active"),
   );
-  logos.forEach((logo, index) => {
-    logo.classList.toggle("is-active", index === (current + 1) % logos.length);
+  logos.forEach((logo, position) => {
+    logo.classList.toggle(
+      "is-active",
+      position === (current + 1) % logos.length,
+    );
   });
 }
 

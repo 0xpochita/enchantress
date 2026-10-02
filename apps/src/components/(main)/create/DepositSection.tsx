@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { BasketDraft } from "@/hooks/useBasketDraft";
+import type { IndexDraft } from "@/hooks/useIndexDraft";
 import {
   type TokenCatalog,
   TokenSelectModal,
@@ -12,7 +12,7 @@ export function DepositSection({
   draft,
   tokenCatalog,
 }: {
-  draft: BasketDraft;
+  draft: IndexDraft;
   tokenCatalog: TokenCatalog;
 }) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);

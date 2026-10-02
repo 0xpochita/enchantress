@@ -9,7 +9,7 @@ import {
 } from "@/lib/market";
 import type { DraftCatalog } from "@/utils/draft";
 import type { TokenCatalog } from "../token-select/TokenSelectModal";
-import { CreateBasketForm } from "./CreateBasketForm";
+import { CreateIndexForm } from "./CreateIndexForm";
 
 const DEFAULT_DEPOSIT_TOKEN_ID = "eth-base";
 
@@ -38,7 +38,7 @@ function buildCatalogs(): {
   };
 }
 
-export function CreateBasketView() {
+export function CreateIndexView() {
   const { catalog, tokenCatalog } = buildCatalogs();
-  return <CreateBasketForm catalog={catalog} tokenCatalog={tokenCatalog} />;
+  return <CreateIndexForm catalog={catalog} tokenCatalog={tokenCatalog} />;
 }

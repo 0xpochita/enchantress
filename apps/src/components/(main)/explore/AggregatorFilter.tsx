@@ -13,7 +13,7 @@ export function AggregatorFilter({
   aggregators,
   activeId,
 }: AggregatorFilterProps) {
-  const options = [{ id: undefined, name: "All baskets" }, ...aggregators];
+  const options = [{ id: undefined, name: "All indexes" }, ...aggregators];
   return (
     <nav aria-label="Filter by aggregator" className="flex flex-wrap gap-2">
       {options.map((option) => (

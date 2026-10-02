@@ -2,8 +2,8 @@
 
 import { buttonClassName, Card, SegmentedControl } from "@/components/ui";
 import { DEPOSIT_ACTIONS, useDepositAction } from "@/hooks/useDepositAction";
-import { yearlyRewardsUsd } from "@/utils/basket";
 import { formatPercent, formatUsd } from "@/utils/format";
+import { yearlyRewardsUsd } from "@/utils/yield-index";
 import { DepositField } from "../create/DepositField";
 import {
   type TokenCatalog,

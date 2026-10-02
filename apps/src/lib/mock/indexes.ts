@@ -1,6 +1,6 @@
-import type { Basket } from "@/types/market";
+import type { Index } from "@/types/market";
 
-export const BASKETS: Basket[] = [
+export const INDEXES: Index[] = [
   {
     id: "monad-stable",
     name: "Monad Stable",

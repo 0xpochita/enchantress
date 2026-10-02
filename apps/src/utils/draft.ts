@@ -11,7 +11,7 @@ import {
   equalWeights,
   findBestMarket,
   yearlyRewardsUsd,
-} from "./basket.ts";
+} from "./yield-index.ts";
 
 export type WeightMode = "equal" | "custom";
 
@@ -45,10 +45,10 @@ function routeAssets(
   weights: number[],
   context: { venues: Venue[]; depositUsd: number },
 ): RoutedAllocation[] {
-  return assets.flatMap((asset, index) => {
+  return assets.flatMap((asset, position) => {
     const best = findBestMarket(context.venues, asset.symbol);
     if (!best) return [];
-    const weight = weights[index] ?? 0;
+    const weight = weights[position] ?? 0;
     const valueUsd = context.depositUsd * weight;
     return [{ asset, venue: best.venue, apy: best.apy, weight, valueUsd }];
   });
@@ -60,7 +60,7 @@ function draftErrors(
   depositUsd: number,
 ): string[] {
   return [
-    state.name.trim() === "" ? "Give your basket a name." : "",
+    state.name.trim() === "" ? "Give your index a name." : "",
     weights.length === 0 ? "Pick at least one asset." : "",
     depositUsd <= 0 ? "Enter a deposit amount." : "",
     weights.length > 0 && !areWeightsComplete(weights)

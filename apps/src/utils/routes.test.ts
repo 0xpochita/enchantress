@@ -3,14 +3,14 @@ import { test } from "node:test";
 import { estimateRouteFeeUsd, rankRoutes } from "./routes.ts";
 
 const CANDIDATES = [
-  { basketId: "low", apy: 4, assetCount: 1 },
-  { basketId: "high", apy: 8, assetCount: 2 },
+  { indexId: "low", apy: 4, assetCount: 1 },
+  { indexId: "high", apy: 8, assetCount: 2 },
 ];
 
 test("rankRoutes orders by apy and marks the best route", () => {
   const routes = rankRoutes(CANDIDATES, 1000, true);
   assert.deepEqual(
-    routes.map((r) => r.basketId),
+    routes.map((r) => r.indexId),
     ["high", "low"],
   );
   assert.equal(routes[0]?.isBest, true);

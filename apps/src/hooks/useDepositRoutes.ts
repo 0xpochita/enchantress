@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { BasketQuote, Chain, Token, WalletBalance } from "@/types/market";
+import type { Chain, IndexQuote, Token, WalletBalance } from "@/types/market";
 import { rankRoutes } from "@/utils/routes";
 
 export const ALL_AGGREGATORS = "all";
@@ -8,7 +8,7 @@ interface DepositRoutesSource {
   chains: Chain[];
   tokens: Token[];
   balances: WalletBalance[];
-  quotes: BasketQuote[];
+  quotes: IndexQuote[];
   defaultTokenId: string;
 }
 
@@ -18,7 +18,7 @@ export function useDepositRoutes(source: DepositRoutesSource) {
   const [tokenId, setTokenId] = useState(source.defaultTokenId);
   const [amount, setAmount] = useState("");
   const [aggregatorId, setAggregatorId] = useState(ALL_AGGREGATORS);
-  const [selectedBasketId, setSelectedBasketId] = useState<string | null>(null);
+  const [selectedIndexId, setSelectedIndexId] = useState<string | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -35,13 +35,13 @@ export function useDepositRoutes(source: DepositRoutesSource) {
         aggregatorId === ALL_AGGREGATORS || q.aggregatorId === aggregatorId,
     );
     const candidates = quotes.map((q) => ({
-      basketId: q.id,
+      indexId: q.id,
       apy: q.apy,
       assetCount: q.assets.length,
     }));
     const routes = rankRoutes(candidates, amountUsd, isCrossChain);
     const selected =
-      routes.find((r) => r.basketId === selectedBasketId) ?? routes[0];
+      routes.find((r) => r.indexId === selectedIndexId) ?? routes[0];
     return {
       token,
       chain,
@@ -52,7 +52,7 @@ export function useDepositRoutes(source: DepositRoutesSource) {
       selected,
       isInsufficient: amountValue > balance,
     };
-  }, [source, tokenId, amount, aggregatorId, selectedBasketId]);
+  }, [source, tokenId, amount, aggregatorId, selectedIndexId]);
 
   return {
     ...derived,
@@ -62,7 +62,7 @@ export function useDepositRoutes(source: DepositRoutesSource) {
     setAmount,
     aggregatorId,
     setAggregatorId,
-    selectBasket: setSelectedBasketId,
+    selectIndex: setSelectedIndexId,
     isPickerOpen,
     isSubmitted,
     submit: () => setIsSubmitted(true),

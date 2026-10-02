@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { buttonClassName } from "@/components/ui";
-import type { DraftStatus } from "@/hooks/useBasketDraft";
+import type { DraftStatus } from "@/hooks/useIndexDraft";
 import { formatUsd } from "@/utils/format";
 
 interface SubmitBarProps {
@@ -20,13 +20,13 @@ export function SubmitBar({
     return (
       <output className="flex flex-col gap-3 rounded-md bg-surface-raised p-4">
         <p className="text-positive">
-          Basket created. This is mock data, nothing was sent onchain.
+          Index created. This is mock data, nothing was sent onchain.
         </p>
         <Link
           href="/invest"
           className={buttonClassName("secondary", "px-4 py-2 text-sm")}
         >
-          Back to baskets
+          Back to indexes
         </Link>
       </output>
     );

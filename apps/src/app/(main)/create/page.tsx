@@ -1,7 +1,7 @@
-import { CreateBasketView } from "@/components/(main)";
+import { CreateIndexView } from "@/components/(main)";
 
-export const metadata = { title: "Create a basket" };
+export const metadata = { title: "Create an index" };
 
 export default function CreatePage() {
-  return <CreateBasketView />;
+  return <CreateIndexView />;
 }

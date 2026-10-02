@@ -15,7 +15,7 @@ export function AssetPicker({
   return (
     <>
       <fieldset className="flex flex-wrap gap-2">
-        <legend className="sr-only">Basket assets</legend>
+        <legend className="sr-only">Index assets</legend>
         {assets.map((asset) => (
           <button
             key={asset.symbol}

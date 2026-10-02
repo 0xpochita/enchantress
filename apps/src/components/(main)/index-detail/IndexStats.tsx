@@ -1,5 +1,5 @@
 import { Card, Stat } from "@/components/ui";
-import type { Basket } from "@/types/market";
+import type { Index } from "@/types/market";
 import {
   formatCompactUsd,
   formatDate,
@@ -8,7 +8,7 @@ import {
   shortenAddress,
 } from "@/utils/format";
 
-export function BasketStats({ basket, apy }: { basket: Basket; apy: number }) {
+export function IndexStats({ index, apy }: { index: Index; apy: number }) {
   const stats = [
     {
       label: "Yield APY",
@@ -18,18 +18,18 @@ export function BasketStats({ basket, apy }: { basket: Basket; apy: number }) {
     },
     {
       label: "Your position",
-      value: formatUsd(basket.positionUsd),
-      hint: "this basket, your wallet",
+      value: formatUsd(index.positionUsd),
+      hint: "this index, your wallet",
     },
     {
       label: "Total value locked",
-      value: formatCompactUsd(basket.tvlUsd),
+      value: formatCompactUsd(index.tvlUsd),
       hint: "all depositors",
     },
     {
       label: "Creator",
-      value: basket.isCreatedByUser ? "You" : shortenAddress(basket.creator),
-      hint: formatDate(basket.createdAt),
+      value: index.isCreatedByUser ? "You" : shortenAddress(index.creator),
+      hint: formatDate(index.createdAt),
     },
   ];
   return (

@@ -47,14 +47,14 @@ export interface VaultAsset {
   priceUsd: number;
 }
 
-export interface BasketAllocation {
+export interface IndexAllocation {
   assetSymbol: string;
   weight: number;
   venueId: string;
   priceChangePct: number;
 }
 
-export interface Basket {
+export interface Index {
   id: string;
   name: string;
   aggregatorId: string;
@@ -64,7 +64,7 @@ export interface Basket {
   positionUsd: number;
   isCreatedByUser: boolean;
   isJoined: boolean;
-  allocations: BasketAllocation[];
+  allocations: IndexAllocation[];
 }
 
 export interface RoutedAllocation {
@@ -75,11 +75,12 @@ export interface RoutedAllocation {
   valueUsd: number;
 }
 
-export interface BasketQuote {
+export interface IndexQuote {
   id: string;
   name: string;
   aggregatorId: string;
   aggregatorName: string;
   apy: number;
   assets: { symbol: string; iconKey: string }[];
+  venues: { name: string; iconKey: string }[];
 }
