@@ -84,7 +84,7 @@ export function BuilderPanel({
           id="index-name"
           value={draft.name}
           onChange={(e) => draft.update({ name: e.target.value })}
-          placeholder="core-v1"
+          placeholder="My Monad Yield"
           className="rounded-md border border-line bg-surface px-3 py-2 outline-none placeholder:text-ink-subtle focus:border-accent"
         />
       </Step>
