@@ -63,7 +63,6 @@ export interface Index {
   tvlUsd: number;
   positionUsd: number;
   isCreatedByUser: boolean;
-  isJoined: boolean;
   allocations: IndexAllocation[];
 }
 

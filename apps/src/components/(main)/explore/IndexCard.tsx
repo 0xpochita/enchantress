@@ -4,19 +4,10 @@ import { getAggregator, getIndexApy, getVaultAsset } from "@/lib/market";
 import type { Index } from "@/types/market";
 import { formatCompactUsd, formatPercent } from "@/utils/format";
 
-function membershipLabel(index: Index): string | undefined {
-  const labels = [
-    index.isCreatedByUser ? "created" : undefined,
-    index.isJoined ? "joined" : undefined,
-  ].filter(Boolean);
-  return labels.length > 0 ? labels.join(" · ") : undefined;
-}
-
 export function IndexCard({ index }: { index: Index }) {
   const assets = index.allocations.flatMap(
     (a) => getVaultAsset(a.assetSymbol) ?? [],
   );
-  const membership = membershipLabel(index);
   const lead = [...index.allocations].sort((a, b) => b.weight - a.weight)[0];
   const leadAsset = lead && getVaultAsset(lead.assetSymbol);
   return (
@@ -40,11 +31,6 @@ export function IndexCard({ index }: { index: Index }) {
             {assets.map((a) => a.symbol).join(" · ")}
           </span>
         </div>
-        {membership && (
-          <span className="rounded-full bg-surface-raised px-2 py-1 text-xs text-positive">
-            {membership}
-          </span>
-        )}
       </div>
       <div className="relative flex flex-col gap-1">
         <span className="text-4xl font-light tracking-tight">

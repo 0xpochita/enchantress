@@ -10,7 +10,6 @@ export const INDEXES: Index[] = [
     tvlUsd: 182400,
     positionUsd: 6,
     isCreatedByUser: true,
-    isJoined: true,
     allocations: [
       {
         assetSymbol: "USDC",
@@ -35,7 +34,6 @@ export const INDEXES: Index[] = [
     tvlUsd: 96500,
     positionUsd: 0,
     isCreatedByUser: false,
-    isJoined: false,
     allocations: [
       {
         assetSymbol: "MON",
@@ -60,7 +58,6 @@ export const INDEXES: Index[] = [
     tvlUsd: 412800,
     positionUsd: 1250,
     isCreatedByUser: false,
-    isJoined: true,
     allocations: [
       {
         assetSymbol: "WETH",
@@ -85,7 +82,6 @@ export const INDEXES: Index[] = [
     tvlUsd: 238100,
     positionUsd: 0,
     isCreatedByUser: false,
-    isJoined: false,
     allocations: [
       {
         assetSymbol: "WBTC",
@@ -116,7 +112,6 @@ export const INDEXES: Index[] = [
     tvlUsd: 529300,
     positionUsd: 0,
     isCreatedByUser: false,
-    isJoined: false,
     allocations: [
       {
         assetSymbol: "USDT0",
