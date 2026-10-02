@@ -83,12 +83,9 @@ export interface IndexQuote {
   venues: { name: string; iconKey: string }[];
 }
 
-export type TransactionType = "deposit" | "withdraw";
-
 export interface IndexTransaction {
   hash: string;
   indexId: string;
-  type: TransactionType;
   account: string;
   tokenId: string;
   amount: number;

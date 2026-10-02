@@ -2,7 +2,7 @@ import { ArrowRight, ExternalLink } from "lucide-react";
 import { Card, CryptoIcon, TokenStack } from "@/components/ui";
 import { TX_EXPLORER_URL } from "@/config/explorer";
 import { getChain, getToken } from "@/lib/market";
-import type { IndexTransaction, VaultAsset } from "@/types/market";
+import type { IndexTransaction, Venue } from "@/types/market";
 import {
   formatAmount,
   formatShortDate,
@@ -13,14 +13,14 @@ import {
 interface TransactionHistoryProps {
   transactions: IndexTransaction[];
   indexName: string;
-  assets: VaultAsset[];
+  protocols: Venue[];
 }
 
 const HEAD =
   "px-3 py-3 text-left text-[0.7rem] font-medium tracking-wider text-ink-subtle uppercase first:pl-6 last:pr-6";
 const CELL = "px-3 py-4 first:pl-6 last:pr-6";
 
-function TokenCell({ tx }: { tx: IndexTransaction }) {
+function SentCell({ tx }: { tx: IndexTransaction }) {
   const token = getToken(tx.tokenId);
   if (!token) return null;
   return (
@@ -44,17 +44,17 @@ function TokenCell({ tx }: { tx: IndexTransaction }) {
 
 function IndexCell({
   name,
-  assets,
+  protocols,
   valueUsd,
 }: {
   name: string;
-  assets: VaultAsset[];
+  protocols: Venue[];
   valueUsd: number;
 }) {
   return (
     <span className="flex items-center gap-3">
       <TokenStack
-        items={assets.map((a) => ({ iconKey: a.iconKey, label: a.symbol }))}
+        items={protocols.map((p) => ({ iconKey: p.iconKey, label: p.name }))}
         size={24}
       />
       <span className="flex flex-col">
@@ -68,28 +68,25 @@ function IndexCell({
 function TransactionRow({
   tx,
   indexName,
-  assets,
+  protocols,
 }: { tx: IndexTransaction } & Omit<TransactionHistoryProps, "transactions">) {
-  const isDeposit = tx.type === "deposit";
-  const index = (
-    <IndexCell name={indexName} assets={assets} valueUsd={tx.valueUsd} />
-  );
   return (
     <tr className="border-t border-line transition-colors duration-200 hover:bg-surface-raised">
-      <td className={CELL}>{isDeposit ? <TokenCell tx={tx} /> : index}</td>
-      <td className="px-1 text-ink-subtle">
-        <ArrowRight aria-label="to" className="size-4" />
+      <td className={CELL}>
+        <SentCell tx={tx} />
       </td>
-      <td className={CELL}>{isDeposit ? index : <TokenCell tx={tx} />}</td>
-      <td className={`${CELL} font-mono text-xs text-ink-muted`}>
-        {shortenAddress(tx.account)}
+      <td className="px-1 text-ink-subtle">
+        <ArrowRight aria-label="bought" className="size-4" />
       </td>
       <td className={CELL}>
-        <span
-          className={`text-xs ${isDeposit ? "text-positive" : "text-ink-muted"}`}
-        >
-          {isDeposit ? "Deposit" : "Withdraw"}
-        </span>
+        <IndexCell
+          name={indexName}
+          protocols={protocols}
+          valueUsd={tx.valueUsd}
+        />
+      </td>
+      <td className={`${CELL} font-mono text-xs text-ink-muted`}>
+        {shortenAddress(tx.account)}
       </td>
       <td className={`${CELL} text-right`}>
         <a
@@ -112,30 +109,27 @@ function TransactionRow({
 export function TransactionHistory({
   transactions,
   indexName,
-  assets,
+  protocols,
 }: TransactionHistoryProps) {
   return (
     <Card className="overflow-x-auto">
       <table className="w-full text-sm">
         <caption className="px-6 pt-6 pb-2 text-left text-sm text-ink-muted">
-          Transaction history
+          Purchase history
         </caption>
         <thead>
           <tr>
             <th scope="col" className={HEAD}>
-              Sent
+              Paid with
             </th>
             <th scope="col" className="w-6">
               <span className="sr-only">Direction</span>
             </th>
             <th scope="col" className={HEAD}>
-              Received
+              Index bought
             </th>
             <th scope="col" className={HEAD}>
               Account
-            </th>
-            <th scope="col" className={HEAD}>
-              Type
             </th>
             <th scope="col" className={`${HEAD} text-right`}>
               Transaction
@@ -148,13 +142,13 @@ export function TransactionHistory({
               key={tx.hash}
               tx={tx}
               indexName={indexName}
-              assets={assets}
+              protocols={protocols}
             />
           ))}
         </tbody>
       </table>
       {transactions.length === 0 && (
-        <p className="px-6 pb-6 text-sm text-ink-muted">No transactions yet.</p>
+        <p className="px-6 pb-6 text-sm text-ink-muted">No purchases yet.</p>
       )}
     </Card>
   );
