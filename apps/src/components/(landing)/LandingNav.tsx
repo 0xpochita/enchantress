@@ -1,12 +1,12 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
 import Link from "next/link";
+import { ThemedLogoMark, ThemeToggle } from "@/components/ui";
 import { useMobileMenu } from "@/hooks/useMobileMenu";
 
 const NAV_LINKS = [
   { href: "/aggregators", label: "Aggregators" },
-  { href: "/invest", label: "Baskets" },
+  { href: "/invest", label: "Indexes" },
   { href: "#chains", label: "Chains" },
 ];
 
@@ -16,7 +16,7 @@ export function LandingNav() {
   return (
     <nav className="landing-nav" aria-label="Main">
       <Link href="/" className="nav-logo">
-        <Sparkles aria-hidden size={18} />
+        <ThemedLogoMark />
         enchantress
       </Link>
       <button
@@ -41,8 +41,9 @@ export function LandingNav() {
           ))}
         </ul>
         <div className="nav-actions">
+          <ThemeToggle />
           <Link href="/create" className="btn-login" onClick={menu.close}>
-            Create basket
+            Create index
           </Link>
           <Link href="/aggregators" className="btn-signup" onClick={menu.close}>
             Launch app
