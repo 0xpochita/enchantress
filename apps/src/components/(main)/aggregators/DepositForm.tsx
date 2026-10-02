@@ -1,9 +1,11 @@
 import { ArrowDown, ChevronRight, Wallet } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { buttonClassName, Card, CryptoIcon, TokenStack } from "@/components/ui";
+import { buttonClassName, Card, TokenStack } from "@/components/ui";
 import type { DepositRoutes } from "@/hooks/useDepositRoutes";
 import type { IndexQuote } from "@/types/market";
 import { formatAmount, formatPercent, formatUsd } from "@/utils/format";
+import { TokenButton } from "../token-select/TokenButton";
 
 interface DepositFormProps {
   deposit: DepositRoutes;
@@ -14,7 +16,7 @@ const BOX = "flex flex-col gap-3 rounded-md bg-surface-raised p-5";
 
 export function DepositForm({ deposit, quote }: DepositFormProps) {
   return (
-    <Card className="flex flex-col gap-2 self-start p-4">
+    <Card className="flex h-full flex-col gap-2 p-4">
       <SellBox deposit={deposit} />
       <span className="relative z-1 mx-auto -my-5 rounded-full border-4 border-surface bg-surface-raised p-2">
         <ArrowDown aria-hidden className="size-4 text-ink-muted" />
@@ -35,27 +37,7 @@ function SellBox({ deposit }: { deposit: DepositRoutes }) {
         You deposit
       </label>
       <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={deposit.openPicker}
-          className="flex shrink-0 items-center gap-2 rounded-full border border-line py-2 pr-3 pl-2 hover:bg-surface-hover"
-        >
-          {token && (
-            <CryptoIcon
-              iconKey={token.iconKey}
-              label=""
-              badgeIconKey={chain?.iconKey}
-              size={28}
-            />
-          )}
-          <span className="flex flex-col items-start leading-tight">
-            <span>{token?.symbol ?? "Select"}</span>
-            {chain && (
-              <span className="text-xs text-ink-muted">{chain.name}</span>
-            )}
-          </span>
-          <ChevronRight aria-hidden className="size-4 text-ink-muted" />
-        </button>
+        <TokenButton token={token} chain={chain} onClick={deposit.openPicker} />
         <input
           id="aggregator-amount"
           inputMode="decimal"
@@ -101,7 +83,7 @@ function EarnBox({ deposit, quote }: DepositFormProps) {
             <ChevronRight aria-hidden className="size-4 text-ink-muted" />
           </Link>
         ) : (
-          <span className="text-ink-subtle">No index available</span>
+          <span className="text-ink-subtle">Enter an amount to see routes</span>
         )}
         <span className="ml-auto text-right text-3xl font-light">
           {formatUsd(deposit.selected?.yearlyUsd ?? 0)}
@@ -121,13 +103,23 @@ function SubmitRow({ deposit, quote }: DepositFormProps) {
     ? "Insufficient funds"
     : `Deposit ${formatUsd(deposit.amountUsd)}`;
   return (
-    <div className="flex flex-col gap-3 pt-2">
+    <div className="mt-auto flex flex-col gap-3 pt-2">
       <p className="flex justify-between px-1 text-sm text-ink-muted">
-        <span>
-          {deposit.isCrossChain
-            ? `${deposit.chain?.name} to Monad via Aurora Intents`
-            : "Already on Monad"}
-        </span>
+        {deposit.isCrossChain ? (
+          <span className="flex items-center gap-1.5">
+            {deposit.chain?.name} to Monad via
+            <Image
+              src="/logo/aurora-logo.avif"
+              alt=""
+              width={16}
+              height={17}
+              className="rounded-sm"
+            />
+            Aurora Intents
+          </span>
+        ) : (
+          <span>Already on Monad</span>
+        )}
         <span>fee ~{formatUsd(deposit.selected?.feeUsd ?? 0)}</span>
       </p>
       <button

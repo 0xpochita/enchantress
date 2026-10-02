@@ -1,6 +1,5 @@
-import { ChevronDown } from "lucide-react";
-import { CryptoIcon } from "@/components/ui";
 import type { Chain, Token } from "@/types/market";
+import { TokenButton } from "../token-select/TokenButton";
 
 interface DepositFieldProps {
   id: string;
@@ -31,27 +30,7 @@ export function DepositField({
         }
         className="w-full min-w-0 bg-transparent text-4xl font-medium outline-none placeholder:text-ink-subtle"
       />
-      <button
-        type="button"
-        onClick={onPickToken}
-        className="flex shrink-0 items-center gap-2 rounded-full bg-surface-raised py-2 pr-3 pl-2 text-sm hover:bg-surface-hover"
-      >
-        {token && (
-          <CryptoIcon
-            iconKey={token.iconKey}
-            label=""
-            badgeIconKey={chain?.iconKey}
-            size={24}
-          />
-        )}
-        <span className="flex flex-col items-start leading-tight">
-          <span>{token?.symbol ?? "Select"}</span>
-          {chain && (
-            <span className="text-xs text-ink-muted">{chain.name}</span>
-          )}
-        </span>
-        <ChevronDown aria-hidden className="size-4 text-ink-muted" />
-      </button>
+      <TokenButton token={token} chain={chain} onClick={onPickToken} />
     </div>
   );
 }
