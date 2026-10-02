@@ -85,3 +85,12 @@ summary {
     animation-duration: 0ms;
   }
 }
+
+@keyframes orbit {
+  from {
+    rotate: var(--orbit-from);
+  }
+  to {
+    rotate: calc(var(--orbit-from) + var(--orbit-turn));
+  }
+}

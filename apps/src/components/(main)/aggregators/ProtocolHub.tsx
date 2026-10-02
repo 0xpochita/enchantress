@@ -1,9 +1,9 @@
 "use client";
 
 import { motion } from "motion/react";
+import type { CSSProperties } from "react";
 import { BRAND_FADE_SURFACE, CryptoIcon, LogoMark } from "@/components/ui";
 import { formatPercent } from "@/utils/format";
-import { arcPosition } from "@/utils/orbit";
 
 export interface HubProtocol {
   name: string;
@@ -11,18 +11,13 @@ export interface HubProtocol {
   apy: number;
 }
 
-const HEIGHT_TO_WIDTH = 0.5;
 const ARC_DIAMETERS = ["100%", "72%", "44%"];
-const SLOTS = [
-  { radius: 0.43, angle: 160, size: 36 },
-  { radius: 0.3, angle: 122, size: 44 },
-  { radius: 0.44, angle: 76, size: 40 },
-  { radius: 0.3, angle: 52, size: 36 },
-  { radius: 0.45, angle: 24, size: 44 },
+const ORBITS = [
+  { diameter: "100%", durationS: 36, direction: 1, size: 44 },
+  { diameter: "72%", durationS: 26, direction: -1, size: 36 },
 ];
 const POP_DELAY_S = 0.25;
 const POP_STAGGER_S = 0.09;
-const FLOAT_BASE_S = 3.2;
 
 function HubArcs() {
   return ARC_DIAMETERS.map((diameter, position) => (
@@ -42,42 +37,76 @@ function HubArcs() {
   ));
 }
 
-function HubNodes({ protocols }: { protocols: HubProtocol[] }) {
-  return protocols.slice(0, SLOTS.length).map((protocol, position) => {
-    const slot = SLOTS[position];
-    const point = arcPosition(slot.radius, slot.angle, HEIGHT_TO_WIDTH);
-    return (
-      <motion.span
-        key={protocol.name}
-        title={`${protocol.name} · up to ${formatPercent(protocol.apy)} APY`}
-        className="-translate-x-1/2 -translate-y-1/2 absolute flex drop-shadow-md"
-        style={{ left: `${point.leftPct}%`, top: `${point.topPct}%` }}
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{ opacity: 1, scale: 1, y: [0, -5, 0] }}
-        transition={{
-          opacity: { delay: POP_DELAY_S + position * POP_STAGGER_S },
-          scale: {
-            delay: POP_DELAY_S + position * POP_STAGGER_S,
+const SPIN =
+  "animate-[orbit_var(--orbit-duration)_linear_infinite] motion-reduce:animate-none";
+
+function spinStyle(fromDeg: number, turnDeg: number, durationS: number) {
+  return {
+    "--orbit-from": `${fromDeg}deg`,
+    "--orbit-turn": `${turnDeg}deg`,
+    "--orbit-duration": `${durationS}s`,
+  } as CSSProperties;
+}
+
+interface OrbitNodeProps {
+  protocol: HubProtocol;
+  orbit: (typeof ORBITS)[number];
+  startDeg: number;
+  delayS: number;
+}
+
+function OrbitNode({ protocol, orbit, startDeg, delayS }: OrbitNodeProps) {
+  const turn = 360 * orbit.direction;
+  return (
+    <div
+      className="-translate-x-1/2 pointer-events-none absolute bottom-0 left-1/2 aspect-square translate-y-1/2"
+      style={{ width: orbit.diameter }}
+    >
+      <div
+        className={`absolute inset-0 ${SPIN}`}
+        style={spinStyle(startDeg, turn, orbit.durationS)}
+      >
+        <motion.span
+          title={`${protocol.name} · up to ${formatPercent(protocol.apy)} APY`}
+          className="-translate-x-1/2 -translate-y-1/2 pointer-events-auto absolute top-0 left-1/2 flex drop-shadow-md"
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            delay: delayS,
             type: "spring",
             stiffness: 260,
             damping: 16,
-          },
-          y: {
-            delay: 1,
-            duration: FLOAT_BASE_S + position * 0.4,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "easeInOut",
-          },
-        }}
-      >
-        <CryptoIcon
-          iconKey={protocol.iconKey}
-          label={protocol.name}
-          size={slot.size}
-        />
-      </motion.span>
-    );
-  });
+          }}
+        >
+          <span
+            className={`flex ${SPIN}`}
+            style={spinStyle(-startDeg, -turn, orbit.durationS)}
+          >
+            <CryptoIcon
+              iconKey={protocol.iconKey}
+              label={protocol.name}
+              size={orbit.size}
+            />
+          </span>
+        </motion.span>
+      </div>
+    </div>
+  );
+}
+
+function HubNodes({ protocols }: { protocols: HubProtocol[] }) {
+  const step = 360 / Math.max(1, protocols.length);
+  return ORBITS.flatMap((orbit, ring) =>
+    protocols.map((protocol, slot) => (
+      <OrbitNode
+        key={`${orbit.diameter}-${protocol.name}`}
+        protocol={protocol}
+        orbit={orbit}
+        startDeg={slot * step + ring * (step / 2)}
+        delayS={POP_DELAY_S + slot * POP_STAGGER_S}
+      />
+    )),
+  );
 }
 
 export function ProtocolHub({ protocols }: { protocols: HubProtocol[] }) {
