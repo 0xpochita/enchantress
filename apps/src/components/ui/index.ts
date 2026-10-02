@@ -10,6 +10,7 @@ export { SegmentedControl } from "./SegmentedControl";
 export { Stat } from "./Stat";
 export { type StatItem, StatStrip } from "./StatStrip";
 export { BRAND_FADE_SURFACE } from "./surfaces";
+export { TagBar, type TagItem } from "./TagBar";
 export { ThemedLogoMark } from "./ThemedLogoMark";
 export { ThemeToggle } from "./ThemeToggle";
 export { TokenStack } from "./TokenStack";

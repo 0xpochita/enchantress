@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { Card, SegmentedControl, TokenStack } from "@/components/ui";
+import { Card, TagBar, type TagItem, TokenStack } from "@/components/ui";
 import { ALL_AGGREGATORS, type DepositRoutes } from "@/hooks/useDepositRoutes";
 import type { Aggregator, IndexQuote } from "@/types/market";
 import { formatPercent, formatSignedPercent, formatUsd } from "@/utils/format";
@@ -13,23 +13,46 @@ interface RouteListProps {
   aggregators: Aggregator[];
 }
 
+function venueIcons(quotes: IndexQuote[]) {
+  const venues = new Map(
+    quotes.flatMap((q) => q.venues).map((v) => [v.name, v]),
+  );
+  return [...venues.values()].map((v) => ({
+    iconKey: v.iconKey,
+    label: v.name,
+  }));
+}
+
+function routeTags(quotes: IndexQuote[], aggregators: Aggregator[]): TagItem[] {
+  return [
+    { id: ALL_AGGREGATORS, label: "All", count: quotes.length, icons: [] },
+    ...aggregators.map((aggregator) => {
+      const matching = quotes.filter((q) => q.aggregatorId === aggregator.id);
+      return {
+        id: aggregator.id,
+        label: aggregator.name,
+        count: matching.length,
+        icons: venueIcons(matching),
+      };
+    }),
+  ];
+}
+
 export function RouteList({
   deposit,
   quotesById,
   aggregators,
 }: RouteListProps) {
-  const filterIds = [ALL_AGGREGATORS, ...aggregators.map((a) => a.id)];
-  const filterLabel = (id: string) =>
-    aggregators.find((a) => a.id === id)?.name ?? "All";
   return (
     <Card className="flex h-full min-h-0 flex-col gap-4 p-6 lg:max-h-[38rem]">
       <h2 className="text-sm text-ink-muted">Routes</h2>
-      <SegmentedControl
-        label="Aggregator"
-        options={filterIds}
-        value={deposit.aggregatorId}
-        onChange={deposit.setAggregatorId}
-        getLabel={filterLabel}
+      <TagBar
+        label="Filter routes by aggregator"
+        items={routeTags([...quotesById.values()], aggregators)}
+        activeId={deposit.aggregatorId}
+        layoutId="route-filter"
+        wrap
+        onSelect={deposit.setAggregatorId}
       />
       <ul className="flex min-h-0 flex-col divide-y divide-line overflow-y-auto">
         {deposit.routes.map((route, position) => {
