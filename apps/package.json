@@ -10,7 +10,9 @@
     "format": "biome format --write",
     "prepare": "cd .. && husky apps/.husky",
     "type-check": "next typegen && tsc --noEmit",
-    "test": "node --experimental-strip-types --test 'src/**/*.test.ts'"
+    "test": "node --experimental-strip-types --test 'src/**/*.test.ts'",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@privy-io/node": "^0.35.0",
