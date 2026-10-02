@@ -12,7 +12,7 @@ export function HeroCard() {
           <strong>to earn on Monad</strong>
         </h1>
         <p className="hero-sub">
-          Build a yield basket and deposit any token from any chain.
+          Build a yield index and deposit any token from any chain.
           <br />
           One intent routes every slice to the best vault.
         </p>

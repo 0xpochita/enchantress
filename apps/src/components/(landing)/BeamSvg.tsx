@@ -1,8 +1,8 @@
 import type { BeamRefs } from "@/hooks/useBeamAnimation";
 
 const STOPS = [
-  { offset: "0%", color: "var(--accent-pink)", opacity: 0 },
-  { offset: "20%", color: "var(--accent-pink)", opacity: 0.8 },
+  { offset: "0%", color: "var(--accent-deep)", opacity: 0 },
+  { offset: "20%", color: "var(--accent-deep)", opacity: 0.8 },
   { offset: "50%", color: "var(--beam-core)", opacity: 1 },
   { offset: "80%", color: "var(--accent)", opacity: 0.8 },
   { offset: "100%", color: "var(--accent)", opacity: 0 },
