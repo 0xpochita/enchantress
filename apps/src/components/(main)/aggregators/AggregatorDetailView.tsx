@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { buttonClassName } from "@/components/ui";
@@ -19,7 +19,7 @@ export function AggregatorDetailView({
         href="/aggregators"
         className="flex w-fit items-center gap-2 text-sm text-ink-muted hover:text-ink"
       >
-        <ArrowLeft aria-hidden className="size-4" />
+        <ChevronLeft aria-hidden className="size-4" />
         All aggregators
       </Link>
       <div className="flex flex-wrap items-end justify-between gap-4">

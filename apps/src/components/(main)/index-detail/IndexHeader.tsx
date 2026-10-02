@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { buttonClassName, TokenStack } from "@/components/ui";
 import type { Aggregator, VaultAsset } from "@/types/market";
@@ -16,7 +16,7 @@ export function IndexHeader({ name, assets, aggregator }: IndexHeaderProps) {
         href="/invest"
         className="flex w-fit items-center gap-2 text-sm text-ink-muted hover:text-ink"
       >
-        <ArrowLeft aria-hidden className="size-4" />
+        <ChevronLeft aria-hidden className="size-4" />
         All indexes
       </Link>
       <div className="flex flex-wrap items-center gap-4">
