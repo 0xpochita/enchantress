@@ -27,6 +27,12 @@ const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
+const DAY_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
 const SMALLEST_DISPLAYED_AMOUNT = 0.0001;
 const ADDRESS_EDGE_LENGTH = 6;
 
@@ -62,4 +68,8 @@ export function shortenAddress(address: string): string {
 
 export function formatShortDate(isoDate: string): string {
   return SHORT_DATE_FORMATTER.format(new Date(isoDate)).replace(",", "");
+}
+
+export function formatDay(time: number | string): string {
+  return DAY_FORMATTER.format(new Date(time));
 }

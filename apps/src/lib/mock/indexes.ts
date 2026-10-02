@@ -30,7 +30,7 @@ export const INDEXES: Index[] = [
     creator: "0x8a3F1c90bB24e6D7A5f01C3e9D42b7aE11f09C2d",
     createdAt: "2026-09-20T08:10:00Z",
     tvlUsd: 96500,
-    positionUsd: 0,
+    positionUsd: 840,
     isCreatedByUser: false,
     allocations: [
       {
@@ -101,7 +101,7 @@ export const INDEXES: Index[] = [
     creator: "0x2F9b6C1e4A07d3B85E2c9A1f6D0b4E7C3a5F8d12",
     createdAt: "2026-09-25T17:55:09Z",
     tvlUsd: 529300,
-    positionUsd: 0,
+    positionUsd: 2150,
     isCreatedByUser: false,
     allocations: [
       {

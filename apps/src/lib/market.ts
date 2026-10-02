@@ -1,5 +1,6 @@
 import { CHAINS } from "@/lib/mock/chains";
 import { INDEXES } from "@/lib/mock/indexes";
+import { PORTFOLIO_AS_OF, USER_PURCHASES } from "@/lib/mock/portfolio";
 import {
   DEFAULT_DEPOSIT_TOKEN_ID,
   POPULAR_TOKEN_IDS,
@@ -28,6 +29,7 @@ import { blendedApy } from "@/utils/yield-index";
 
 export {
   DEFAULT_DEPOSIT_TOKEN_ID,
+  PORTFOLIO_AS_OF,
   POPULAR_TOKEN_IDS,
   VAULT_CHAIN_ID,
   WALLET_ADDRESS,
@@ -122,4 +124,26 @@ const TRANSACTIONS = buildTransactions(INDEXES.map((index) => index.id));
 
 export function getIndexTransactions(indexId: string): IndexTransaction[] {
   return TRANSACTIONS.filter((tx) => tx.indexId === indexId);
+}
+
+export interface PortfolioPosition {
+  index: Index;
+  apy: number;
+  allocations: RoutedAllocation[];
+}
+
+export function getPositions(): PortfolioPosition[] {
+  return INDEXES.filter((index) => index.positionUsd > 0)
+    .map((index) => ({
+      index,
+      apy: getIndexApy(index),
+      allocations: routeIndex(index, index.positionUsd),
+    }))
+    .sort((a, b) => b.index.positionUsd - a.index.positionUsd);
+}
+
+export function getUserPurchases(): IndexTransaction[] {
+  return [...USER_PURCHASES].sort(
+    (a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp),
+  );
 }
