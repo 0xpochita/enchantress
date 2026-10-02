@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { iconSrc } from "@/utils/icon-src";
 
 const ART_SIZE = 320;
 
@@ -11,7 +12,7 @@ export function HalftoneArt({ iconKey, className }: HalftoneArtProps) {
   return (
     <div aria-hidden className={`pointer-events-none absolute ${className}`}>
       <Image
-        src={`/crypto/${iconKey}.svg`}
+        src={iconSrc(iconKey)}
         alt=""
         width={ART_SIZE}
         height={ART_SIZE}

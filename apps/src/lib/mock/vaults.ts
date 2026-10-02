@@ -32,7 +32,7 @@ export const VENUES: Venue[] = [
   {
     id: "aave-v3",
     name: "Aave v3",
-    iconKey: "aave",
+    iconKey: "/crypto/aave.png",
     chainId: VAULT_CHAIN_ID,
     markets: [
       { assetSymbol: "USDC", apy: 5.63 },
@@ -45,7 +45,7 @@ export const VENUES: Venue[] = [
   {
     id: "compound-v3",
     name: "Compound v3",
-    iconKey: "comp",
+    iconKey: "/crypto/comp.png",
     chainId: VAULT_CHAIN_ID,
     markets: [
       { assetSymbol: "USDC", apy: 4.91 },
@@ -56,7 +56,7 @@ export const VENUES: Venue[] = [
   {
     id: "curve",
     name: "Curve",
-    iconKey: "crv",
+    iconKey: "/crypto/crv.png",
     chainId: VAULT_CHAIN_ID,
     markets: [
       { assetSymbol: "USDT0", apy: 6.4 },
@@ -67,7 +67,7 @@ export const VENUES: Venue[] = [
   {
     id: "spark",
     name: "Spark",
-    iconKey: "mkr",
+    iconKey: "/crypto/spark.png",
     chainId: VAULT_CHAIN_ID,
     markets: [
       { assetSymbol: "DAI", apy: 5.75 },

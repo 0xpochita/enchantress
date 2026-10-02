@@ -117,7 +117,7 @@ const TOKEN_SEEDS: TokenSeed[] = [
   {
     symbol: "AAVE",
     name: "Aave",
-    iconKey: "aave",
+    iconKey: "/crypto/aave.png",
     priceUsd: 268.2,
     chainIds: ["eth", "pol"],
   },

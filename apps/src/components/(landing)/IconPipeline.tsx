@@ -6,7 +6,12 @@ import { RotatingLogos } from "./RotatingLogos";
 
 const SOURCE_TOKENS = ["usdc"];
 const NETWORKS = ["monad", "eth", "sol", "btc", "avax", "bnb", "matic"];
-const PROTOCOLS = ["aave", "comp", "crv", "mkr"];
+const PROTOCOLS = [
+  "/crypto/aave.png",
+  "/crypto/comp.png",
+  "/crypto/crv.png",
+  "/crypto/spark.png",
+];
 
 export function IconPipeline() {
   const nodes = useBeamAnimation().current;

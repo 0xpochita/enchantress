@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { iconSrc } from "@/utils/icon-src";
 
 interface CryptoIconProps {
   iconKey: string;
@@ -12,10 +13,6 @@ const DARK_MARK_ICONS = new Set(["near", "apt"]);
 
 function toneClass(iconKey: string): string {
   return DARK_MARK_ICONS.has(iconKey) ? "dark:invert" : "";
-}
-
-function iconSrc(iconKey: string): string {
-  return iconKey.startsWith("/") ? iconKey : `/crypto/${iconKey}.svg`;
 }
 
 export function CryptoIcon({
