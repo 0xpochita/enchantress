@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { BRAND_FADE_SURFACE, HalftoneArt, TokenStack } from "@/components/ui";
-import { getAggregator, getIndexApy, getVaultAsset } from "@/lib/market";
+import {
+  getAggregator,
+  getIndexApy,
+  getVaultAsset,
+  getVenue,
+} from "@/lib/market";
 import type { Index } from "@/types/market";
 import { formatCompactUsd, formatPercent } from "@/utils/format";
 
@@ -8,6 +13,9 @@ export function IndexCard({ index }: { index: Index }) {
   const assets = index.allocations.flatMap(
     (a) => getVaultAsset(a.assetSymbol) ?? [],
   );
+  const protocols = [
+    ...new Set(index.allocations.map((a) => a.venueId)),
+  ].flatMap((venueId) => getVenue(venueId) ?? []);
   const lead = [...index.allocations].sort((a, b) => b.weight - a.weight)[0];
   const leadAsset = lead && getVaultAsset(lead.assetSymbol);
   return (
@@ -23,7 +31,7 @@ export function IndexCard({ index }: { index: Index }) {
       )}
       <div className="relative flex items-start gap-3">
         <TokenStack
-          items={assets.map((a) => ({ iconKey: a.iconKey, label: a.symbol }))}
+          items={protocols.map((p) => ({ iconKey: p.iconKey, label: p.name }))}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="truncate font-medium">{index.name}</span>
