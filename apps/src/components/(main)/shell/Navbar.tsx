@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ThemedLogoMark } from "@/components/ui";
 import { AccountButton } from "@/features/wallet";
 import { NavLinks } from "./NavLinks";
-import { NetworkBadge } from "./NetworkBadge";
 import { ThemeIconButton } from "./ThemeIconButton";
 
 export function Navbar() {
@@ -18,7 +17,6 @@ export function Navbar() {
         </Link>
         <NavLinks />
         <div className="ml-auto flex items-center gap-2">
-          <NetworkBadge />
           <AccountButton />
           <ThemeIconButton />
         </div>
