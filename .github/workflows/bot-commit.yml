@@ -9,7 +9,7 @@ permissions:
   actions: write
 
 jobs:
-  squash-to-main:
+  replay-to-main:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -17,15 +17,17 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Squash branch onto main as github-actions[bot]
+      - name: Replay branch commits onto main as github-actions[bot]
         env:
           BRANCH: ${{ github.ref_name }}
           GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git merge --squash "origin/$BRANCH"
-          git commit -m "$(git log -1 --format=%B "origin/$BRANCH")"
+          for commit in $(git rev-list --reverse "origin/main..origin/$BRANCH"); do
+            git cherry-pick --no-commit "$commit"
+            git commit -C "$commit" --reset-author
+          done
           git push origin main
           git push origin --delete "$BRANCH"
           gh workflow run ci.yml --ref main
