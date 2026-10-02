@@ -1,5 +1,4 @@
 import type {
-  Aggregator,
   RoutedAllocation,
   Token,
   VaultAsset,
@@ -16,8 +15,7 @@ import {
 export type WeightMode = "equal" | "custom";
 
 export interface DraftCatalog {
-  aggregators: Aggregator[];
-  venuesByAggregator: Record<string, Venue[]>;
+  venues: Venue[];
   vaultAssets: VaultAsset[];
   tokens: Token[];
   defaultDepositTokenId: string;
@@ -25,7 +23,6 @@ export interface DraftCatalog {
 
 export interface DraftState {
   name: string;
-  aggregatorId: string;
   assetSymbols: string[];
   weightMode: WeightMode;
   customPercents: Record<string, number>;
@@ -70,7 +67,7 @@ function draftErrors(
 }
 
 export function deriveDraft(catalog: DraftCatalog, state: DraftState) {
-  const venues = catalog.venuesByAggregator[state.aggregatorId] ?? [];
+  const venues = catalog.venues;
   const availableAssets = catalog.vaultAssets.filter((a) =>
     findBestMarket(venues, a.symbol),
   );

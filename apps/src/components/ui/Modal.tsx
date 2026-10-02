@@ -7,12 +7,21 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   label: string;
+  size?: keyof typeof PANEL_WIDTHS;
   children: ReactNode;
 }
 
+const PANEL_WIDTHS = { md: "max-w-md", lg: "max-w-3xl" };
+
 const PANEL_SPRING = { type: "spring", stiffness: 380, damping: 32 } as const;
 
-export function Modal({ isOpen, onClose, label, children }: ModalProps) {
+export function Modal({
+  isOpen,
+  onClose,
+  label,
+  size = "lg",
+  children,
+}: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -52,7 +61,7 @@ export function Modal({ isOpen, onClose, label, children }: ModalProps) {
             />
             <motion.div
               key="panel"
-              className="relative w-full max-w-3xl overflow-hidden rounded-lg border border-line bg-surface shadow-2xl"
+              className={`relative w-full ${PANEL_WIDTHS[size]} overflow-hidden rounded-lg border border-line bg-surface shadow-2xl`}
               initial={{ opacity: 0, y: 24, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 16, scale: 0.97 }}

@@ -1,9 +1,8 @@
 import {
-  getAggregators,
-  getAggregatorVenues,
   getChains,
   getTokens,
   getVaultAssets,
+  getVenues,
   POPULAR_TOKEN_IDS,
   WALLET_BALANCES,
 } from "@/lib/market";
@@ -17,14 +16,10 @@ function buildCatalogs(): {
   catalog: DraftCatalog;
   tokenCatalog: TokenCatalog;
 } {
-  const aggregators = getAggregators();
   const tokens = getTokens();
   return {
     catalog: {
-      aggregators,
-      venuesByAggregator: Object.fromEntries(
-        aggregators.map((a) => [a.id, getAggregatorVenues(a)]),
-      ),
+      venues: getVenues(),
       vaultAssets: getVaultAssets(),
       tokens,
       defaultDepositTokenId: DEFAULT_DEPOSIT_TOKEN_ID,

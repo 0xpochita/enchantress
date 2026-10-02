@@ -12,7 +12,6 @@ function toggle(list: string[], value: string): string[] {
 export function useIndexDraft(catalog: DraftCatalog) {
   const [state, setState] = useState<DraftState>({
     name: "",
-    aggregatorId: catalog.aggregators[0]?.id ?? "",
     assetSymbols: [],
     weightMode: "equal",
     customPercents: {},

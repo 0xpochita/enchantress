@@ -3,18 +3,15 @@ import { test } from "node:test";
 import { type DraftCatalog, type DraftState, deriveDraft } from "./draft.ts";
 
 const CATALOG: DraftCatalog = {
-  aggregators: [{ id: "agg", name: "Agg", description: "", venueIds: ["v"] }],
-  venuesByAggregator: {
-    agg: [
-      {
-        id: "v",
-        name: "V",
-        iconKey: "generic",
-        chainId: "monad",
-        markets: [{ assetSymbol: "USDC", apy: 5 }],
-      },
-    ],
-  },
+  venues: [
+    {
+      id: "v",
+      name: "V",
+      iconKey: "generic",
+      chainId: "monad",
+      markets: [{ assetSymbol: "USDC", apy: 5 }],
+    },
+  ],
   vaultAssets: [
     { symbol: "USDC", name: "USD Coin", iconKey: "usdc", priceUsd: 1 },
     {
@@ -39,7 +36,6 @@ const CATALOG: DraftCatalog = {
 
 const STATE: DraftState = {
   name: "core",
-  aggregatorId: "agg",
   assetSymbols: ["USDC"],
   weightMode: "equal",
   customPercents: {},
@@ -47,7 +43,7 @@ const STATE: DraftState = {
   depositTokenId: "eth-base",
 };
 
-test("deriveDraft only offers assets the aggregator can route", () => {
+test("deriveDraft only offers assets some protocol can route", () => {
   const draft = deriveDraft(CATALOG, STATE);
   assert.deepEqual(
     draft.availableAssets.map((a) => a.symbol),

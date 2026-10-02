@@ -26,9 +26,7 @@ export function CreateIndexForm({
   const chain = tokenCatalog.chains.find(
     (c) => c.id === draft.depositToken?.chainId,
   );
-  const aggregator = catalog.aggregators.find(
-    (a) => a.id === draft.aggregatorId,
-  );
+  const protocolCount = new Set(draft.allocations.map((a) => a.venue.id)).size;
   const stats: StatItem[] = [
     {
       label: "Blended APY",
@@ -47,22 +45,27 @@ export function CreateIndexForm({
       hint: "slices in this index",
     },
     {
-      label: "Aggregator",
-      value: aggregator?.name ?? "None",
-      hint: "where slices are routed",
+      label: "Protocols",
+      value: String(protocolCount),
+      hint: "matched automatically",
     },
   ];
   return (
     <>
-      <h1 className="sr-only">Create an index</h1>
-      <Card className="flex flex-col gap-5 p-6">
-        <div className="border-b border-line pb-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <h1 className="text-2xl font-light tracking-tight">Create an index</h1>
+        <p className="text-sm text-ink-muted">
+          Pick assets on Monad. We match each one to its best paying protocol.
+        </p>
+      </div>
+      <Card className="-mt-4 flex flex-col gap-4 p-5">
+        <div className="border-b border-line pb-4">
           <StatStrip items={stats} />
         </div>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr]">
           <BuilderPanel
             draft={draft}
-            catalog={catalog}
+            venues={catalog.venues}
             chain={chain}
             onPickToken={() => setIsPickerOpen(true)}
           />

@@ -1,17 +1,15 @@
 import type { ReactNode } from "react";
 import type { IndexDraft } from "@/hooks/useIndexDraft";
-import type { Chain } from "@/types/market";
-import type { DraftCatalog } from "@/utils/draft";
+import type { Chain, Venue } from "@/types/market";
 import { RouteDetails } from "../routing/RouteDetails";
 import { TokenButton } from "../token-select/TokenButton";
-import { AggregatorPicker } from "./AggregatorPicker";
 import { AssetPicker } from "./AssetPicker";
 import { SubmitBar } from "./SubmitBar";
 import { WeightControls } from "./WeightControls";
 
 interface BuilderPanelProps {
   draft: IndexDraft;
-  catalog: DraftCatalog;
+  venues: Venue[];
   chain?: Chain;
   onPickToken: () => void;
 }
@@ -26,7 +24,7 @@ function Step({
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex flex-col gap-2.5">
       <h3 className="flex items-center gap-2 text-xs text-ink-muted">
         <span className="flex size-5 items-center justify-center rounded-full bg-surface text-[0.65rem] font-medium text-ink">
           {number}
@@ -42,7 +40,7 @@ function AmountRow({
   draft,
   chain,
   onPickToken,
-}: Omit<BuilderPanelProps, "catalog">) {
+}: Omit<BuilderPanelProps, "venues">) {
   return (
     <div className="flex min-w-0 items-center gap-3 px-1">
       <label htmlFor="create-amount" className="sr-only">
@@ -56,7 +54,7 @@ function AmountRow({
         onChange={(e) =>
           draft.update({ amount: e.target.value.replace(/[^0-9.]/g, "") })
         }
-        className="w-full min-w-0 bg-transparent text-3xl font-light outline-none placeholder:text-ink-subtle"
+        className="w-full min-w-0 bg-transparent text-2xl font-light outline-none placeholder:text-ink-subtle"
       />
       <TokenButton
         token={draft.depositToken}
@@ -69,12 +67,15 @@ function AmountRow({
 
 export function BuilderPanel({
   draft,
-  catalog,
+  venues,
   chain,
   onPickToken,
 }: BuilderPanelProps) {
+  const matches = Object.fromEntries(
+    draft.allocations.map((a) => [a.asset.symbol, a.venue]),
+  );
   return (
-    <div className="flex flex-col gap-6 rounded-md bg-surface-raised p-5 lg:sticky lg:top-24 lg:self-start">
+    <div className="flex flex-col gap-5 rounded-md bg-surface-raised p-4 lg:sticky lg:top-24 lg:self-start">
       <Step number={1} title="Name your index">
         <label htmlFor="index-name" className="sr-only">
           Index name
@@ -87,18 +88,12 @@ export function BuilderPanel({
           className="rounded-md border border-line bg-surface px-3 py-2 outline-none placeholder:text-ink-subtle focus:border-accent"
         />
       </Step>
-      <Step number={2} title="Choose an aggregator">
-        <AggregatorPicker
-          aggregators={catalog.aggregators}
-          venuesByAggregator={catalog.venuesByAggregator}
-          activeId={draft.aggregatorId}
-          onChange={(aggregatorId) => draft.update({ aggregatorId })}
-        />
-      </Step>
-      <Step number={3} title="Pick assets and weights">
+      <Step number={2} title="Pick assets on Monad">
         <AssetPicker
           assets={draft.availableAssets}
+          venues={venues}
           selectedSymbols={draft.assetSymbols}
+          matches={matches}
           onToggle={draft.toggleAsset}
         />
         <WeightControls
@@ -109,7 +104,7 @@ export function BuilderPanel({
           onPercentChange={draft.setCustomPercent}
         />
       </Step>
-      <Step number={4} title="Deposit from any chain">
+      <Step number={3} title="Deposit from any chain">
         <AmountRow draft={draft} chain={chain} onPickToken={onPickToken} />
         <RouteDetails chain={chain} sliceCount={draft.allocations.length} />
       </Step>

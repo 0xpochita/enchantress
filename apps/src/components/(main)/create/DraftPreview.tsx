@@ -11,14 +11,13 @@ interface DraftPreviewProps {
 
 function EmptyPreview() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-md border border-dashed border-line px-6 py-16 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-md border border-dashed border-line px-6 py-10 text-center">
       <Layers aria-hidden className="size-6 text-ink-subtle" />
       <p className="text-sm text-ink-muted">
         Pick assets to preview your index.
       </p>
       <p className="max-w-xs text-xs text-ink-subtle">
-        Each asset is routed to the vault paying the most for it in the
-        aggregator you chose.
+        Each asset is matched to the protocol on Monad paying the most for it.
       </p>
     </div>
   );
