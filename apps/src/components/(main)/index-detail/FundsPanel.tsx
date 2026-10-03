@@ -3,14 +3,38 @@
 import { FolderOpen, ListTree } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { type ReactNode, useState } from "react";
-import { Card } from "@/components/ui";
-import { useIndexDeposit } from "@/features/executions";
+import { Card, SegmentedControl } from "@/components/ui";
+import { useIndexDeposit, useIndexWithdraw } from "@/features/executions";
 import type { Chain, RoutedAllocation } from "@/types/market";
 import { formatUsd } from "@/utils/format";
 import { DepositBar } from "./DepositBar";
 import { DepositFlowModal } from "./DepositFlowModal";
 import { FundsFolder } from "./FundsFolder";
 import { FundsTree } from "./FundsTree";
+import { WithdrawBar } from "./WithdrawBar";
+import { WithdrawFlowModal } from "./WithdrawFlowModal";
+
+const ACTIONS = ["Deposit", "Withdraw"] as const;
+type Action = (typeof ACTIONS)[number];
+
+function ActionToggle({
+  action,
+  onChange,
+}: {
+  action: Action;
+  onChange: (action: Action) => void;
+}) {
+  return (
+    <div className="rounded-full bg-surface p-0.5">
+      <SegmentedControl
+        label="Action"
+        options={ACTIONS}
+        value={action}
+        onChange={onChange}
+      />
+    </div>
+  );
+}
 
 const VIEWS = ["Tree", "Folder"] as const;
 type View = (typeof VIEWS)[number];
@@ -80,8 +104,11 @@ export function FundsPanel({
   chain,
 }: FundsPanelProps) {
   const [view, setView] = useState<View>("Tree");
+  const [action, setAction] = useState<Action>("Deposit");
   const deposit = useIndexDeposit(indexId);
-  const hasAmount = deposit.valueUsd > 0;
+  const withdraw = useIndexWithdraw(indexId);
+  const hasAmount = action === "Deposit" && deposit.valueUsd > 0;
+  const toggle = <ActionToggle action={action} onChange={setAction} />;
   const heading = hasAmount
     ? `How your ${formatUsd(deposit.valueUsd)} deposit is split`
     : title;
@@ -89,13 +116,21 @@ export function FundsPanel({
     <Card className="flex flex-col gap-5 p-6">
       <div className="border-b border-line pb-6">{summary}</div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,20rem)_1fr]">
-        <div className="flex flex-col gap-3 lg:sticky lg:top-24 lg:self-start">
-          <DepositBar
-            deposit={deposit}
-            apy={apy}
-            sliceCount={allocations.length}
-            chain={chain}
-          />
+        <div
+          id="deposit-panel"
+          className="flex scroll-mt-28 flex-col gap-3 lg:sticky lg:top-24 lg:self-start"
+        >
+          {action === "Deposit" ? (
+            <DepositBar
+              deposit={deposit}
+              apy={apy}
+              sliceCount={allocations.length}
+              chain={chain}
+              header={toggle}
+            />
+          ) : (
+            <WithdrawBar withdraw={withdraw} header={toggle} />
+          )}
         </div>
         <div className="flex min-w-0 flex-col gap-5 lg:border-l lg:border-line lg:pl-6">
           <div className="flex items-start justify-between gap-4">
@@ -132,6 +167,7 @@ export function FundsPanel({
         apy={apy}
         chain={chain}
       />
+      <WithdrawFlowModal withdraw={withdraw} indexName={indexName} />
     </Card>
   );
 }

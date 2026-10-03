@@ -1,15 +1,10 @@
 import { notFound } from "next/navigation";
-import {
-  getChain,
-  getIndexSummary,
-  getIndexTransactions,
-  VAULT_CHAIN_ID,
-} from "@/lib/market";
+import { getChain, getIndexSummary, VAULT_CHAIN_ID } from "@/lib/market";
 import type { RoutedAllocation, Venue } from "@/types/market";
 import { FundsPanel } from "./FundsPanel";
+import { IndexActivity } from "./IndexActivity";
 import { IndexHeader } from "./IndexHeader";
 import { IndexStats } from "./IndexStats";
-import { TransactionHistory } from "./TransactionHistory";
 
 function uniqueVenues(allocations: RoutedAllocation[]): Venue[] {
   return [...new Map(allocations.map((a) => [a.venue.id, a.venue])).values()];
@@ -20,7 +15,6 @@ export async function IndexDetailView({ indexId }: { indexId: string }) {
   if (!summary) notFound();
   const { index, allocations, apy } = summary;
   const protocols = uniqueVenues(allocations);
-  const transactions = await getIndexTransactions(index.id);
   const chain = getChain(VAULT_CHAIN_ID);
 
   return (
@@ -48,10 +42,7 @@ export async function IndexDetailView({ indexId }: { indexId: string }) {
           />
         </div>
         <div className="min-w-0">
-          <TransactionHistory
-            transactions={transactions}
-            indexes={{ [index.id]: { name: index.name, protocols } }}
-          />
+          <IndexActivity indexId={index.id} venues={protocols} />
         </div>
       </div>
     </>

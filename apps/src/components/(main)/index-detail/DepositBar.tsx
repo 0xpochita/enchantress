@@ -1,6 +1,7 @@
 "use client";
 
 import { Wallet } from "lucide-react";
+import type { ReactNode } from "react";
 import { buttonClassName, CryptoIcon } from "@/components/ui";
 import type { IndexDepositController } from "@/features/executions";
 import type { Chain } from "@/types/market";
@@ -13,6 +14,7 @@ interface DepositBarProps {
   apy: number;
   sliceCount: number;
   chain?: Chain;
+  header: ReactNode;
 }
 
 function BalanceLine({ deposit }: { deposit: IndexDepositController }) {
@@ -49,16 +51,15 @@ export function DepositBar({
   apy,
   sliceCount,
   chain,
+  header,
 }: DepositBarProps) {
   const overBalance =
     deposit.balance !== undefined && deposit.valueUsd > deposit.balance;
   const isDisabled =
     deposit.isAuthenticated && (deposit.valueUsd <= 0 || overBalance);
   return (
-    <div
-      id="deposit-panel"
-      className="flex min-h-[22rem] scroll-mt-28 flex-col gap-5 rounded-md bg-surface-raised p-5"
-    >
+    <div className="flex min-h-[22rem] flex-col gap-5 rounded-md bg-surface-raised p-5">
+      {header}
       <div className="flex flex-col gap-2 px-1">
         <label htmlFor="index-amount" className="text-xs text-ink-muted">
           You deposit

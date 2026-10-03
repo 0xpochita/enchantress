@@ -1,10 +1,6 @@
 "use client";
 
-import { Check, CircleDashed, Loader2, X } from "lucide-react";
-import type {
-  ExecutionView,
-  IndexDepositController,
-} from "@/features/executions";
+import type { IndexDepositController } from "@/features/executions";
 import type { Chain, RoutedAllocation } from "@/types/market";
 import { formatAmount, formatPercent, formatUsd } from "@/utils/format";
 import { yearlyRewardsUsd } from "@/utils/yield-index";
@@ -17,6 +13,7 @@ import {
   SliceList,
 } from "../flow/ReviewParts";
 import { RouteDetails } from "../routing/RouteDetails";
+import { ExecutionSteps } from "./ExecutionSteps";
 
 interface DepositFlowModalProps {
   deposit: IndexDepositController;
@@ -24,25 +21,6 @@ interface DepositFlowModalProps {
   allocations: RoutedAllocation[];
   apy: number;
   chain?: Chain;
-}
-
-type StepView = ExecutionView["steps"][number];
-
-function stepLabel(step: StepView, depositAsset: string): string {
-  if (step.kind === "swap")
-    return `Swap ${depositAsset} to ${step.assetSymbol}`;
-  if (step.kind === "approve") return `Approve ${step.assetSymbol}`;
-  return `Supply ${step.assetSymbol} to ${step.venueId}`;
-}
-
-function StepIcon({ status }: { status: StepView["status"] }) {
-  if (status === "confirmed")
-    return <Check aria-hidden className="size-4 text-positive" />;
-  if (status === "failed")
-    return <X aria-hidden className="size-4 text-negative" />;
-  if (status === "sent")
-    return <Loader2 aria-hidden className="size-4 animate-spin text-brand" />;
-  return <CircleDashed aria-hidden className="size-4 text-ink-subtle" />;
 }
 
 function ProgressStep({ deposit }: { deposit: IndexDepositController }) {
@@ -57,16 +35,10 @@ function ProgressStep({ deposit }: { deposit: IndexDepositController }) {
             : "Starting"
         }
       />
-      <ol className="flex flex-col gap-3 text-sm">
-        {(execution?.steps ?? []).map((step) => (
-          <li key={step.position} className="flex items-center gap-3">
-            <StepIcon status={step.status} />
-            <span className={step.status === "pending" ? "text-ink-muted" : ""}>
-              {stepLabel(step, execution?.depositAsset ?? deposit.token.symbol)}
-            </span>
-          </li>
-        ))}
-      </ol>
+      <ExecutionSteps
+        execution={execution}
+        fallbackAsset={deposit.token.symbol}
+      />
       <p className="text-xs text-ink-subtle">
         Gas on Monad is paid by Enchantress. Keep this page open; you can also
         come back later.

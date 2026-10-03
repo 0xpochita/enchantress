@@ -18,7 +18,6 @@ import {
   TOKENS,
   WALLET_BALANCES,
 } from "@/lib/mock/tokens";
-import { buildTransactions } from "@/lib/mock/transactions";
 import type {
   Chain,
   Index,
@@ -108,15 +107,6 @@ export async function getPositions(): Promise<PortfolioPosition[]> {
   return summaries
     .filter(({ index }) => index.positionUsd > 0)
     .sort((a, b) => b.index.positionUsd - a.index.positionUsd);
-}
-
-export async function getIndexTransactions(
-  indexId: string,
-): Promise<IndexTransaction[]> {
-  const indexes = await listIndexes();
-  return buildTransactions(indexes.map((index) => index.id)).filter(
-    (tx) => tx.indexId === indexId,
-  );
 }
 
 export function getUserPurchases(): IndexTransaction[] {
