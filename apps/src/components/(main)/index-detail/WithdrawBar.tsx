@@ -14,10 +14,20 @@ interface WithdrawBarProps {
   header: ReactNode;
 }
 
-function positionText(withdraw: IndexWithdrawController): string {
-  if (!withdraw.isAuthenticated) return "Log in to see your position";
-  if (withdraw.isPositionLoading) return "Loading position";
-  return formatUsd(withdraw.positionUsd);
+function PositionValue({ withdraw }: { withdraw: IndexWithdrawController }) {
+  if (!withdraw.isAuthenticated || withdraw.isPositionLoading)
+    return (
+      <span className="text-sm text-ink-muted">
+        {withdraw.isAuthenticated
+          ? "Loading position"
+          : "Log in to see your position"}
+      </span>
+    );
+  return (
+    <span className="text-3xl font-light">
+      {formatUsd(withdraw.positionUsd)}
+    </span>
+  );
 }
 
 function submitLabel(withdraw: IndexWithdrawController): string {
@@ -62,7 +72,7 @@ export function WithdrawBar({ withdraw, header }: WithdrawBarProps) {
       {header}
       <div className="flex flex-col gap-1 px-1">
         <span className="text-xs text-ink-muted">Your position</span>
-        <span className="text-3xl font-light">{positionText(withdraw)}</span>
+        <PositionValue withdraw={withdraw} />
       </div>
       <div className="rounded-full bg-surface p-0.5">
         <SegmentedControl
