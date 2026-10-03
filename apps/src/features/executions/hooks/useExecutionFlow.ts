@@ -4,8 +4,8 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useDelegation, useSession } from "@/features/wallet";
-import type { FlowStatus } from "@/types/flow";
 import { ApiError, apiGet } from "@/lib/api-client";
+import type { FlowStatus } from "@/types/flow";
 import { type ExecutionView, executionViewSchema } from "../types";
 
 const POLL_MS = 4000;

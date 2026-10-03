@@ -17,12 +17,7 @@ import {
   TOKENS,
   WALLET_BALANCES,
 } from "@/lib/mock/tokens";
-import type {
-  Chain,
-  Token,
-  VaultAsset,
-  Venue,
-} from "@/types/market";
+import type { Chain, Token, VaultAsset, Venue } from "@/types/market";
 
 export {
   DEFAULT_DEPOSIT_TOKEN_ID,
