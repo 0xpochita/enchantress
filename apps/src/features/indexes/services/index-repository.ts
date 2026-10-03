@@ -9,17 +9,22 @@ import {
   indexes,
 } from "@/lib/db/schema";
 import type { Index } from "@/types/market";
+import { getIndexTvls } from "./index-tvl";
 
 const BPS = 10_000;
 const INDEXES_REVALIDATE_SECONDS = 60;
 
-function toIndex(row: IndexRow, allocations: IndexAllocationRow[]): Index {
+function toIndex(
+  row: IndexRow,
+  allocations: IndexAllocationRow[],
+  tvlUsd: number,
+): Index {
   return {
     id: row.id,
     name: row.name,
     creator: row.creatorAddress,
     createdAt: row.createdAt.toISOString(),
-    tvlUsd: 0,
+    tvlUsd,
     positionUsd: 0,
     isCreatedByUser: false,
     allocations: allocations
@@ -31,11 +36,12 @@ function toIndex(row: IndexRow, allocations: IndexAllocationRow[]): Index {
 }
 
 async function readIndexes(): Promise<Index[]> {
-  const [rows, allocations] = await Promise.all([
+  const [rows, allocations, tvls] = await Promise.all([
     db().select().from(indexes).orderBy(asc(indexes.createdAt)),
     db().select().from(indexAllocations),
+    getIndexTvls(),
   ]);
-  return rows.map((row) => toIndex(row, allocations));
+  return rows.map((row) => toIndex(row, allocations, tvls[row.id] ?? 0));
 }
 
 export const listIndexes = unstable_cache(readIndexes, ["indexes"], {
