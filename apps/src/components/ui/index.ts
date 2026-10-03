@@ -1,12 +1,17 @@
+export { AuroraBackdrop } from "./AuroraBackdrop";
 export { BranchedMenu, type BranchSection } from "./BranchedMenu";
 export { buttonClassName } from "./button-styles";
 export { Card } from "./Card";
 export { CryptoIcon } from "./CryptoIcon";
 export { Folder } from "./Folder";
+export { GlowCard } from "./GlowCard";
 export { HalftoneArt } from "./HalftoneArt";
+export { LightRays } from "./LightRays";
 export { LogoMark } from "./LogoMark";
 export { Modal } from "./Modal";
+export { RollingNumber } from "./RollingNumber";
 export { SegmentedControl } from "./SegmentedControl";
+export { SpotlightCard } from "./SpotlightCard";
 export { Stat } from "./Stat";
 export { type StatItem, StatStrip } from "./StatStrip";
 export { BRAND_FADE_SURFACE } from "./surfaces";
