@@ -56,7 +56,7 @@ export async function AggregatorsView() {
       </div>
       <DepositAggregator
         catalog={source.catalog}
-        quotes={summaries.map(toQuote)}
+        quotes={summaries.filter((s) => s.index.isFeatured).map(toQuote)}
         protocols={venues.map(toHubProtocol)}
         venues={venues}
         defaultTokenId={MONAD_USDC_ASSET_ID}

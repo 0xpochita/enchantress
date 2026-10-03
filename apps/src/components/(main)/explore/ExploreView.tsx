@@ -10,6 +10,7 @@ import type { Venue } from "@/types/market";
 import { ExploreHero } from "./ExploreHero";
 import { IndexGrid } from "./IndexGrid";
 import { ProtocolFilter } from "./ProtocolFilter";
+import { YourIndexes } from "./YourIndexes";
 
 function filterOptions(venues: Venue[], summaries: IndexSummary[]): TagItem[] {
   const all = {
@@ -32,10 +33,11 @@ function filterOptions(venues: Venue[], summaries: IndexSummary[]): TagItem[] {
 }
 
 export async function ExploreView({ venueId }: { venueId?: string }) {
-  const [venues, summaries] = await Promise.all([
+  const [venues, allSummaries] = await Promise.all([
     getAllVenues(),
     getIndexSummaries(),
   ]);
+  const summaries = allSummaries.filter((summary) => summary.index.isFeatured);
   const shown = venueId
     ? summaries.filter((summary) => usesVenue(summary, venueId))
     : summaries;
@@ -59,6 +61,9 @@ export async function ExploreView({ venueId }: { venueId?: string }) {
         />
         <IndexGrid summaries={shown} />
       </section>
+      <YourIndexes
+        summaries={allSummaries.filter((summary) => !summary.index.isFeatured)}
+      />
     </>
   );
 }

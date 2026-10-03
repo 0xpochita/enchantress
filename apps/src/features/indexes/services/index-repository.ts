@@ -26,6 +26,7 @@ function toIndex(row: IndexRow, allocations: IndexAllocationRow[]): Index {
       .filter((a) => a.indexId === row.id)
       .sort((a, b) => a.position - b.position)
       .map((a) => ({ assetSymbol: a.assetSymbol, weight: a.weightBps / BPS })),
+    isFeatured: row.isFeatured,
   };
 }
 

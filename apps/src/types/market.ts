@@ -56,6 +56,7 @@ export interface Index {
   positionUsd: number;
   isCreatedByUser: boolean;
   allocations: IndexAllocation[];
+  isFeatured: boolean;
 }
 
 export interface RoutedAllocation {

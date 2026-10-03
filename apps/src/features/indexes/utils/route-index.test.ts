@@ -42,6 +42,7 @@ const index: Index = {
     { assetSymbol: "USDC", weight: 0.4 },
     { assetSymbol: "DAI", weight: 0 },
   ],
+  isFeatured: true,
 };
 
 test("routeIndex sends each slice to the best paying venue and skips unknown assets", () => {
