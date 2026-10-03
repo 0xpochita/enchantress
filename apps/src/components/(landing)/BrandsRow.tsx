@@ -1,11 +1,10 @@
 import { CryptoIcon } from "@/components/ui";
 
 const BRANDS = [
-  { name: "Monad", iconKey: "monad" },
   { name: "Ethereum", iconKey: "eth" },
-  { name: "Solana", iconKey: "sol" },
   { name: "Base", iconKey: "base" },
-  { name: "Polygon", iconKey: "matic" },
+  { name: "Arbitrum", iconKey: "arb" },
+  { name: "Monad", iconKey: "monad" },
 ];
 
 export function BrandsRow() {
