@@ -1,3 +1,4 @@
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { LightRays, ThemedLogoMark } from "@/components/ui";
 
@@ -31,6 +32,9 @@ export function ClosingCta() {
         <div className="closing-actions">
           <Link href="/deposit" className="btn-cta">
             Start earning
+            <span className="btn-arrow" aria-hidden>
+              <ArrowRight />
+            </span>
           </Link>
           <Link href="/create" className="btn-login">
             Create an index

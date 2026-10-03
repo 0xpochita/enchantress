@@ -124,35 +124,72 @@
 
 .btn-login,
 .btn-signup {
-  padding: 7px 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 18px;
   border-radius: 999px;
   font-size: 0.82rem;
   text-align: center;
   transition:
     background 0.2s,
-    opacity 0.2s;
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
 }
 
 .btn-login {
-  background: rgb(var(--ink-rgb) / 0.06);
-  border: 1px solid var(--border);
+  background: rgb(var(--ink-rgb) / 0.05);
+  border: 1px solid rgb(var(--ink-rgb) / 0.12);
   color: var(--text);
   font-weight: 500;
+  backdrop-filter: blur(12px);
 }
 
 .btn-login:hover {
-  background: rgb(var(--ink-rgb) / 0.12);
+  background: rgb(var(--ink-rgb) / 0.1);
+  border-color: rgb(var(--ink-rgb) / 0.24);
 }
 
 .btn-signup {
+  padding: 6px 6px 6px 18px;
   background: var(--solid-bg);
   border: 1px solid var(--solid-bg);
   color: var(--solid-text);
   font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 rgb(var(--ink-rgb) / 0.4),
+    0 8px 24px -12px rgb(var(--ink-rgb) / 0.5);
 }
 
 .btn-signup:hover {
-  opacity: 0.88;
+  box-shadow:
+    inset 0 1px 0 rgb(var(--ink-rgb) / 0.4),
+    0 10px 30px -10px rgb(var(--ink-rgb) / 0.6);
+}
+
+.btn-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9em;
+  height: 1.9em;
+  border-radius: 999px;
+  background: var(--solid-text);
+  color: var(--solid-bg);
+  overflow: hidden;
+}
+
+.btn-arrow svg {
+  width: 55%;
+  height: 55%;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-cta:hover .btn-arrow svg,
+.btn-signup:hover .btn-arrow svg {
+  transform: translateX(2px) rotate(-45deg);
 }
 
 .menu-toggle {
@@ -439,20 +476,32 @@
 }
 
 .btn-cta {
-  display: inline-block;
-  padding: 12px 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 28px;
   border-radius: 999px;
   background: var(--solid-bg);
   color: var(--solid-text);
   font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 rgb(var(--ink-rgb) / 0.4),
+    0 12px 40px -12px rgb(var(--ink-rgb) / 0.55);
   transition:
-    opacity 0.2s,
-    transform 0.2s;
+    box-shadow 0.25s,
+    transform 0.25s;
+}
+
+.btn-cta .btn-arrow {
+  width: 2.3em;
+  height: 2.3em;
 }
 
 .btn-cta:hover {
-  opacity: 0.9;
   transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgb(var(--ink-rgb) / 0.4),
+    0 16px 48px -12px rgb(var(--ink-rgb) / 0.7);
 }
 
 .brands-marquee {
@@ -496,6 +545,10 @@
 @media (prefers-reduced-motion: reduce) {
   .brands-track {
     animation: none;
+  }
+
+  .btn-arrow svg {
+    transition: none;
   }
 }
 
@@ -720,7 +773,7 @@
 
 .closing-actions .btn-login {
   width: auto;
-  padding: 12px 28px;
+  padding: 14px 28px;
   font-size: 1rem;
 }
 

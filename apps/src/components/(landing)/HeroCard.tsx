@@ -1,3 +1,4 @@
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { IconPipeline } from "./IconPipeline";
 
@@ -18,6 +19,9 @@ export function HeroCard() {
         </p>
         <Link href="/deposit" className="btn-cta">
           Start earning
+          <span className="btn-arrow" aria-hidden>
+            <ArrowRight />
+          </span>
         </Link>
       </div>
     </section>

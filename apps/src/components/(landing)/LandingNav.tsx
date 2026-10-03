@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { ThemedLogoMark, ThemeToggle } from "@/components/ui";
 import { useMobileMenu } from "@/hooks/useMobileMenu";
@@ -32,6 +33,9 @@ export function LandingNav() {
           </Link>
           <Link href="/deposit" className="btn-signup" onClick={menu.close}>
             Launch app
+            <span className="btn-arrow" aria-hidden>
+              <ArrowRight />
+            </span>
           </Link>
         </div>
       </div>
