@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "executions_one_active_per_user" ON "executions" USING btree ("user_id") WHERE "executions"."status" in ('bridging', 'executing');

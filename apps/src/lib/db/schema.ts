@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   date,
@@ -8,6 +9,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -56,37 +58,47 @@ export const indexAllocations = pgTable(
 export type IndexRow = typeof indexes.$inferSelect;
 export type IndexAllocationRow = typeof indexAllocations.$inferSelect;
 
-export const executions = pgTable("executions", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id),
-  indexId: text("index_id")
-    .notNull()
-    .references(() => indexes.id),
-  kind: text("kind").notNull(),
-  status: text("status").notNull(),
-  depositAsset: text("deposit_asset").notNull(),
-  depositAmountBase: text("deposit_amount_base").notNull(),
-  valueUsd: numeric("value_usd", { precision: 18, scale: 2 }).notNull(),
-  originChain: text("origin_chain"),
-  originAssetId: text("origin_asset_id"),
-  originAmountBase: text("origin_amount_base"),
-  originTxHash: text("origin_tx_hash"),
-  auroraDepositAddress: text("aurora_deposit_address"),
-  auroraDepositMemo: text("aurora_deposit_memo"),
-  auroraDeadline: timestamp("aurora_deadline", { withTimezone: true }),
-  auroraStatus: text("aurora_status"),
-  errorCode: text("error_code"),
-  errorMessage: text("error_message"),
-  leaseUntil: timestamp("lease_until", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const ONE_ACTIVE_EXECUTION_INDEX = "executions_one_active_per_user";
+
+export const executions = pgTable(
+  "executions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    indexId: text("index_id")
+      .notNull()
+      .references(() => indexes.id),
+    kind: text("kind").notNull(),
+    status: text("status").notNull(),
+    depositAsset: text("deposit_asset").notNull(),
+    depositAmountBase: text("deposit_amount_base").notNull(),
+    valueUsd: numeric("value_usd", { precision: 18, scale: 2 }).notNull(),
+    originChain: text("origin_chain"),
+    originAssetId: text("origin_asset_id"),
+    originAmountBase: text("origin_amount_base"),
+    originTxHash: text("origin_tx_hash"),
+    auroraDepositAddress: text("aurora_deposit_address"),
+    auroraDepositMemo: text("aurora_deposit_memo"),
+    auroraDeadline: timestamp("aurora_deadline", { withTimezone: true }),
+    auroraStatus: text("aurora_status"),
+    errorCode: text("error_code"),
+    errorMessage: text("error_message"),
+    leaseUntil: timestamp("lease_until", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex(ONE_ACTIVE_EXECUTION_INDEX)
+      .on(table.userId)
+      .where(sql`${table.status} in ('bridging', 'executing')`),
+  ],
+);
 
 export const executionSteps = pgTable(
   "execution_steps",
