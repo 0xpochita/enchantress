@@ -1,4 +1,5 @@
 import "server-only";
+import { getBridgeSource } from "@/features/bridge/services/bridge-catalog";
 import { monadToken } from "@/features/chain/config/tokens";
 import { listIndexes } from "@/features/indexes/services/index-repository";
 import { VENUE_CONFIGS } from "@/features/vaults/config/venues";
@@ -16,8 +17,14 @@ import {
   type IndexPosition,
   netInvestedByIndex,
 } from "../utils/positions";
+import { type PurchaseLookups, toPurchase } from "../utils/purchases";
 import { historySeries } from "../utils/snapshots";
-import { userLedger, userLots, userSnapshots } from "./portfolio-repository";
+import {
+  userExecutions,
+  userLedger,
+  userLots,
+  userSnapshots,
+} from "./portfolio-repository";
 import { valueLots } from "./valuation";
 
 type LedgerRow = Awaited<ReturnType<typeof userLedger>>[number];
@@ -61,7 +68,41 @@ function toActivity(row: LedgerRow, names: IndexNames): PortfolioActivity {
     amount: toAmount(BigInt(row.amountBase), token?.decimals ?? 0),
     valueUsd: Number(row.valueUsd),
     txHash: row.txHash,
+    viaAurora: row.originChain !== null,
     at: row.at.toISOString(),
+  };
+}
+
+type Indexes = Awaited<ReturnType<typeof listIndexes>>;
+
+function indexIcons(indexes: Indexes): Portfolio["indexIcons"] {
+  return Object.fromEntries(
+    indexes.map((index) => [
+      index.id,
+      index.allocations.map(({ assetSymbol }) => ({
+        iconKey: monadToken(assetSymbol)?.iconKey ?? assetSymbol.toLowerCase(),
+        label: assetSymbol,
+      })),
+    ]),
+  );
+}
+
+type BridgeSource = Awaited<ReturnType<typeof getBridgeSource>>;
+
+function purchaseLookups(
+  names: IndexNames,
+  source: BridgeSource,
+): PurchaseLookups {
+  const iconFor = (symbol: string) =>
+    source.catalog.tokens.find((t) => t.symbol === symbol)?.iconKey ??
+    symbol.toLowerCase();
+  return {
+    indexName: (id) => names.get(id) ?? id,
+    monadToken: (symbol) => monadToken(symbol),
+    originToken: (assetId) => {
+      const detail = source.details[assetId];
+      return detail && { ...detail, iconKey: iconFor(detail.symbol) };
+    },
   };
 }
 
@@ -78,13 +119,16 @@ function buildTotals(positions: IndexPosition[]): Portfolio["totals"] {
 }
 
 export async function getPortfolio(userId: string): Promise<Portfolio> {
-  const [lots, ledgerRows, snapshots, indexes, venues] = await Promise.all([
-    userLots(userId),
-    userLedger(userId),
-    userSnapshots(userId),
-    listIndexes(),
-    getVenueSnapshot(),
-  ]);
+  const [lots, ledgerRows, snapshots, indexes, venues, runs, source] =
+    await Promise.all([
+      userLots(userId),
+      userLedger(userId),
+      userSnapshots(userId),
+      listIndexes(),
+      getVenueSnapshot(),
+      userExecutions(userId),
+      getBridgeSource(),
+    ]);
   const names: IndexNames = new Map(indexes.map((i) => [i.id, i.name]));
   const flows = ledgerRows.map((row) => toActivity(row, names));
   const positions = buildPositions(
@@ -100,6 +144,10 @@ export async function getPortfolio(userId: string): Promise<Portfolio> {
       valueUsd: totals.valueUsd,
     }),
     activity: flows,
+    purchases: runs.map((run) =>
+      toPurchase(run, purchaseLookups(names, source)),
+    ),
+    indexIcons: indexIcons(indexes),
     prices: Object.fromEntries(
       venues.assets.map((a) => [a.symbol, a.priceUsd]),
     ),

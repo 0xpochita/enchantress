@@ -11,6 +11,7 @@ import {
 } from "@/features/portfolio/utils/wallet-rows";
 import { formatAmount, formatUsd } from "@/utils/format";
 import { EmptyCard, ErrorCard, LoadingCard } from "./PortfolioStates";
+import { WalletActions } from "./WalletActions";
 
 interface WalletBalancesProps {
   prices: Record<string, number>;
@@ -129,7 +130,14 @@ function useWalletGroups({ prices, catalog }: WalletBalancesProps) {
     chains: catalog.chains,
     tokens: catalog.tokens,
     prices,
-    iconFor: (symbol) => monadToken(symbol)?.iconKey ?? symbol.toLowerCase(),
+    monadMeta: (symbol) => {
+      const token = monadToken(symbol);
+      return {
+        iconKey: token?.iconKey ?? symbol.toLowerCase(),
+        address: token?.address ?? null,
+        decimals: token?.decimals ?? 18,
+      };
+    },
   });
   const retry = () => Promise.all([monad.refetch(), origin.refetch()]);
   return {
@@ -151,20 +159,33 @@ export function WalletBalances(props: WalletBalancesProps) {
         onRetry={wallet.retry}
       />
     );
+  const actions = (
+    <WalletActions groups={wallet.groups} chains={props.catalog.chains} />
+  );
   if (wallet.groups.length === 0)
     return (
-      <EmptyCard title="Your wallet is empty" href="/deposit" action="Deposit">
-        Add funds from Monad, Base, Ethereum or Arbitrum to start earning.
-      </EmptyCard>
+      <div className="flex flex-col gap-4">
+        {actions}
+        <EmptyCard
+          title="Your wallet is empty"
+          href="/deposit"
+          action="Deposit"
+        >
+          Add funds from Monad, Base, Ethereum or Arbitrum to start earning.
+        </EmptyCard>
+      </div>
     );
   return (
     <div className="flex flex-col gap-4">
-      <ChainFilter
-        groups={wallet.groups}
-        chains={props.catalog.chains}
-        value={chainId}
-        onChange={setChainId}
-      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <ChainFilter
+          groups={wallet.groups}
+          chains={props.catalog.chains}
+          value={chainId}
+          onChange={setChainId}
+        />
+        {actions}
+      </div>
       <ChainList groups={wallet.groups} chainId={chainId} />
     </div>
   );

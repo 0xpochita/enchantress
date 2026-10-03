@@ -8,6 +8,7 @@ import { DepositsSummary } from "./DepositsSummary";
 import { EmptyCard, ErrorCard, LoadingCard } from "./PortfolioStates";
 import { PortfolioTabs } from "./PortfolioTabs";
 import { PositionsTable } from "./PositionsTable";
+import { PurchaseHistory } from "./PurchaseHistory";
 import { WalletBalances } from "./WalletBalances";
 import { WalletHeader } from "./WalletHeader";
 
@@ -66,7 +67,18 @@ function PortfolioBody({ catalog }: { catalog: BridgeCatalog }) {
         Positions: (
           <PositionsPanel portfolio={portfolio.data} catalog={catalog} />
         ),
-        Activity: <ActivityTable rows={portfolio.data.activity} />,
+        Activity: (
+          <div className="flex flex-col gap-6">
+            <PurchaseHistory
+              rows={portfolio.data.purchases}
+              indexIcons={portfolio.data.indexIcons}
+            />
+            <ActivityTable
+              rows={portfolio.data.activity}
+              indexIcons={portfolio.data.indexIcons}
+            />
+          </div>
+        ),
       }}
     />
   );

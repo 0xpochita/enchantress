@@ -58,7 +58,11 @@ function sources(overrides: Partial<WalletSources> = {}): WalletSources {
     chains,
     tokens,
     prices: { USDC: 1 },
-    iconFor: (symbol) => symbol.toLowerCase(),
+    monadMeta: (symbol) => ({
+      iconKey: symbol.toLowerCase(),
+      address: "0xusdc",
+      decimals: 6,
+    }),
     ...overrides,
   };
 }
@@ -83,6 +87,14 @@ test("chains are sorted by value and empty chains are dropped", () => {
     groups.map((g) => g.chain.id),
     ["base", "monad"],
   );
+});
+
+test("rows carry what a transfer needs", () => {
+  const [base, monad] = groupWalletRows(sources());
+  const usdc = monad.rows.find((r) => r.symbol === "USDC");
+  assert.deepEqual([usdc?.address, usdc?.decimals], ["0xusdc", 6]);
+  const eth = base.rows.find((r) => r.symbol === "ETH");
+  assert.equal(eth?.decimals, 18);
 });
 
 test("an empty wallet yields no groups", () => {

@@ -5,10 +5,18 @@ export interface MonadBalance {
   amount: number;
 }
 
+export interface TokenMeta {
+  iconKey: string;
+  address: string | null;
+  decimals: number;
+}
+
 export interface WalletRow {
   key: string;
   symbol: string;
   iconKey: string;
+  address: string | null;
+  decimals: number;
   amount: number;
   valueUsd: number;
 }
@@ -25,7 +33,7 @@ export interface WalletSources {
   chains: Chain[];
   tokens: Token[];
   prices: Record<string, number>;
-  iconFor: (symbol: string) => string;
+  monadMeta: (symbol: string) => TokenMeta;
 }
 
 function monadRows(sources: WalletSources): WalletRow[] {
@@ -34,7 +42,7 @@ function monadRows(sources: WalletSources): WalletRow[] {
     .map((b) => ({
       key: `monad-${b.symbol}`,
       symbol: b.symbol,
-      iconKey: sources.iconFor(b.symbol),
+      ...sources.monadMeta(b.symbol),
       amount: b.amount,
       valueUsd: b.amount * (sources.prices[b.symbol] ?? 0),
     }));
@@ -50,6 +58,8 @@ function originRows(sources: WalletSources): [string, WalletRow][] {
       key: token.id,
       symbol: token.symbol,
       iconKey: token.iconKey,
+      address: token.address ?? null,
+      decimals: token.decimals ?? 18,
       amount: balance.amount,
       valueUsd: balance.amount * token.priceUsd,
     };

@@ -1,6 +1,6 @@
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { Card, CryptoIcon, TokenStack } from "@/components/ui";
+import { buttonClassName, Card, CryptoIcon, TokenStack } from "@/components/ui";
 import type { PortfolioHolding, PortfolioPosition } from "@/features/portfolio";
 import { formatSignedUsd } from "@/features/portfolio/utils/signed-usd";
 import { formatPercent, formatUsd } from "@/utils/format";
@@ -38,6 +38,35 @@ function IndexCell({ position }: { position: PortfolioPosition }) {
       />
       <span className="whitespace-nowrap">{position.indexName}</span>
     </Link>
+  );
+}
+
+function RowActions({
+  indexId,
+  indexName,
+}: {
+  indexId: string;
+  indexName: string;
+}) {
+  const href = (action: string) =>
+    `/indexes/${indexId}?action=${action}#deposit-panel`;
+  return (
+    <span className="flex gap-2">
+      <Link
+        href={href("deposit")}
+        aria-label={`Deposit into ${indexName}`}
+        className={buttonClassName("primary", "px-3 py-1.5 text-xs")}
+      >
+        Deposit
+      </Link>
+      <Link
+        href={href("withdraw")}
+        aria-label={`Withdraw from ${indexName}`}
+        className={buttonClassName("secondary", "px-3 py-1.5 text-xs")}
+      >
+        Withdraw
+      </Link>
+    </span>
   );
 }
 
@@ -81,6 +110,9 @@ function PositionRow({
           {formatSignedUsd(row.earnedUsd)}
         </span>
       </td>
+      <td className={CELL}>
+        <RowActions indexId={row.indexId} indexName={row.indexName} />
+      </td>
       <td className={`${CELL} w-8`}>
         <Link
           href={`/indexes/${row.indexId}`}
@@ -101,6 +133,7 @@ const COLUMNS = [
   "Exposure",
   "APY",
   "Earned interest",
+  "Actions",
 ];
 
 export function PositionsTable({

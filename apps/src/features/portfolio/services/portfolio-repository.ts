@@ -1,7 +1,12 @@
 import "server-only";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, ne, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { ledger, positionLots, positionSnapshots } from "@/lib/db/schema";
+import {
+  executions,
+  ledger,
+  positionLots,
+  positionSnapshots,
+} from "@/lib/db/schema";
 import type { SnapshotRow, StoredSnapshot } from "../utils/snapshots";
 
 const HISTORY_DAYS = 365;
@@ -27,10 +32,45 @@ export async function userLots(userId: string) {
 
 export async function userLedger(userId: string) {
   return db()
-    .select()
+    .select({ ...getTableColumns(ledger), originChain: executions.originChain })
     .from(ledger)
+    .leftJoin(executions, eq(ledger.executionId, executions.id))
     .where(eq(ledger.userId, userId))
     .orderBy(desc(ledger.at));
+}
+
+const PURCHASE_LIMIT = 50;
+
+const firstTxHash = sql<string | null>`(
+  select s.tx_hash from execution_steps s
+  where s.execution_id = "executions"."id" and s.tx_hash is not null
+  order by s.position
+  limit 1
+)`;
+
+export async function userExecutions(userId: string) {
+  return db()
+    .select({
+      id: executions.id,
+      indexId: executions.indexId,
+      kind: executions.kind,
+      status: executions.status,
+      depositAsset: executions.depositAsset,
+      depositAmountBase: executions.depositAmountBase,
+      valueUsd: executions.valueUsd,
+      originChain: executions.originChain,
+      originAssetId: executions.originAssetId,
+      originAmountBase: executions.originAmountBase,
+      originTxHash: executions.originTxHash,
+      firstTxHash,
+      createdAt: executions.createdAt,
+    })
+    .from(executions)
+    .where(
+      and(eq(executions.userId, userId), ne(executions.status, "cancelled")),
+    )
+    .orderBy(desc(executions.createdAt))
+    .limit(PURCHASE_LIMIT);
 }
 
 export async function userSnapshots(userId: string): Promise<StoredSnapshot[]> {
