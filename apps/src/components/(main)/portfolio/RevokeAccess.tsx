@@ -21,9 +21,9 @@ function RevokeWarning({ onCancel }: { onCancel: () => void }) {
           type="button"
           onClick={() => revoke.mutate()}
           disabled={revoke.isPending}
-          className={buttonClassName("primary", "px-4 py-2 text-sm")}
+          className={buttonClassName("danger", "px-4 py-2 text-sm")}
         >
-          {revoke.isPending ? "Revoking..." : "Revoke access"}
+          {revoke.isPending ? "Disconnecting..." : "Disconnect"}
         </button>
         <button
           type="button"
@@ -47,9 +47,9 @@ export function RevokeAccess() {
     <button
       type="button"
       onClick={() => setIsConfirming(true)}
-      className={buttonClassName("ghost", "px-4 py-2 text-sm")}
+      className={buttonClassName("danger", "px-4 py-2 text-sm")}
     >
-      Revoke app access
+      Disconnect
     </button>
   );
 }

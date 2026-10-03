@@ -1,20 +1,43 @@
-import { ArrowDownLeft, ArrowUpRight, ExternalLink } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Check,
+  ExternalLink,
+  Loader2,
+  type LucideIcon,
+  X,
+} from "lucide-react";
 import { Card, CryptoIcon } from "@/components/ui";
 import { originChainById } from "@/config/chains";
 import type { IndexIcon, PortfolioPurchase } from "@/features/portfolio";
 import { formatAmount, formatShortDate, formatUsd } from "@/utils/format";
-import { AuroraBadge, IndexLink } from "./IndexLink";
+import { IndexLink, RouteCell } from "./IndexLink";
 
 const HEAD =
   "px-3 py-3 text-left text-[0.7rem] font-medium tracking-wider text-ink-subtle uppercase first:pl-6 last:pr-6";
 const CELL = "px-3 py-4 first:pl-6 last:pr-6";
-const COLUMNS = ["Index", "Paid with", "Value", "Status"];
+const COLUMNS = ["Index", "Paid with", "Route", "Value", "Status"];
 
-const STATUS_TONE: Record<string, string> = {
-  succeeded: "text-positive",
-  failed: "text-negative",
-  refunded: "text-negative",
+const STATUS_STYLE: Record<string, { icon: LucideIcon; tone: string }> = {
+  succeeded: { icon: Check, tone: "text-positive" },
+  failed: { icon: X, tone: "text-negative" },
+  refunded: { icon: X, tone: "text-negative" },
+  cancelled: { icon: X, tone: "text-ink-subtle" },
 };
+const RUNNING = { icon: Loader2, tone: "text-brand" };
+
+function StatusCell({ status }: { status: string }) {
+  const { icon: Icon, tone } = STATUS_STYLE[status] ?? RUNNING;
+  return (
+    <span className="flex items-center gap-2 capitalize">
+      <Icon
+        aria-hidden
+        className={`size-4 ${tone} ${Icon === Loader2 ? "animate-spin" : ""}`}
+      />
+      {status}
+    </span>
+  );
+}
 
 function explorerUrl(chainId: string, txHash: string): string {
   const base = originChainById(chainId)?.chain.blockExplorers?.default.url;
@@ -28,16 +51,13 @@ function PaidCell({ row }: { row: PortfolioPurchase }) {
       ? row.paidSymbol.replaceAll(",", ", ")
       : `${formatAmount(row.paidAmount)} ${row.paidSymbol}`;
   return (
-    <span className="flex flex-col items-start gap-1">
-      <span className="flex items-center gap-2 whitespace-nowrap">
-        <CryptoIcon
-          iconKey={row.paidIconKey}
-          label={row.paidSymbol}
-          badgeIconKey={chain?.iconKey}
-        />
-        {label}
-      </span>
-      {row.chainId !== "monad" && <AuroraBadge />}
+    <span className="flex items-center gap-2 whitespace-nowrap">
+      <CryptoIcon
+        iconKey={row.paidIconKey}
+        label={row.paidSymbol}
+        badgeIconKey={chain?.iconKey}
+      />
+      {label}
     </span>
   );
 }
@@ -66,11 +86,12 @@ function PurchaseRow({
       <td className={CELL}>
         <PaidCell row={row} />
       </td>
+      <td className={CELL}>
+        <RouteCell viaAurora={row.chainId !== "monad"} />
+      </td>
       <td className={`${CELL} tabular-nums`}>{formatUsd(row.valueUsd)}</td>
-      <td
-        className={`${CELL} capitalize ${STATUS_TONE[row.status] ?? "text-ink-muted"}`}
-      >
-        {row.status}
+      <td className={CELL}>
+        <StatusCell status={row.status} />
       </td>
       <td className={`${CELL} text-right`}>
         {row.txHash && (

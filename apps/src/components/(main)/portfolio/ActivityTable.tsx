@@ -3,12 +3,12 @@ import { Card, CryptoIcon } from "@/components/ui";
 import { TX_EXPLORER_URL } from "@/config/explorer";
 import type { IndexIcon, PortfolioActivity } from "@/features/portfolio";
 import { formatAmount, formatShortDate, formatUsd } from "@/utils/format";
-import { AuroraBadge, IndexLink } from "./IndexLink";
+import { IndexLink, RouteCell } from "./IndexLink";
 
 const HEAD =
   "px-3 py-3 text-left text-[0.7rem] font-medium tracking-wider text-ink-subtle uppercase first:pl-6 last:pr-6";
 const CELL = "px-3 py-4 first:pl-6 last:pr-6";
-const COLUMNS = ["Type", "Asset", "Index", "Value"];
+const COLUMNS = ["Type", "Asset", "Index", "Route", "Value"];
 
 function TypeCell({
   direction,
@@ -34,10 +34,7 @@ function ActivityRow({
   return (
     <tr className="border-t border-line transition-colors duration-200 hover:bg-surface-raised">
       <td className={CELL}>
-        <span className="flex flex-col items-start gap-1">
-          <TypeCell direction={row.direction} />
-          {row.viaAurora && <AuroraBadge />}
-        </span>
+        <TypeCell direction={row.direction} />
       </td>
       <td className={CELL}>
         <span className="flex items-center gap-2 whitespace-nowrap">
@@ -52,6 +49,9 @@ function ActivityRow({
           indexName={row.indexName}
           icons={icons}
         />
+      </td>
+      <td className={CELL}>
+        <RouteCell viaAurora={row.viaAurora} />
       </td>
       <td className={`${CELL} tabular-nums`}>{formatUsd(row.valueUsd)}</td>
       <td className={`${CELL} text-right`}>

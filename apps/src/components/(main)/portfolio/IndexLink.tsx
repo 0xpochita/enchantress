@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CryptoIcon, TokenStack } from "@/components/ui";
 import type { IndexIcon } from "@/features/portfolio";
+import { AuroraIntents } from "../flow/AuroraIntents";
 
 export function IndexLink({
   indexId,
@@ -22,11 +23,17 @@ export function IndexLink({
   );
 }
 
-export function AuroraBadge() {
+export function RouteCell({ viaAurora }: { viaAurora: boolean }) {
+  if (!viaAurora)
+    return (
+      <span className="flex items-center gap-1.5 whitespace-nowrap">
+        <CryptoIcon iconKey="monad" label="" size={14} />
+        Monad
+      </span>
+    );
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-line px-2 py-0.5 text-xs whitespace-nowrap text-ink-muted">
-      <CryptoIcon iconKey="/crypto/aurora.png" label="Aurora" size={14} />
-      via Aurora Intents
+    <span className="whitespace-nowrap">
+      <AuroraIntents />
     </span>
   );
 }
