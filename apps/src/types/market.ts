@@ -23,6 +23,8 @@ export interface WalletBalance {
 export interface VenueMarket {
   assetSymbol: string;
   apy: number;
+  tvlUsd: number;
+  liquidityUsd: number;
 }
 
 export interface Venue {

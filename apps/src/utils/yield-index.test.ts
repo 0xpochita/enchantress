@@ -15,14 +15,14 @@ const VENUES: Venue[] = [
     name: "Low",
     iconKey: "generic",
     chainId: "monad",
-    markets: [{ assetSymbol: "USDC", apy: 3 }],
+    markets: [{ assetSymbol: "USDC", apy: 3, tvlUsd: 1, liquidityUsd: 1 }],
   },
   {
     id: "high",
     name: "High",
     iconKey: "generic",
     chainId: "monad",
-    markets: [{ assetSymbol: "USDC", apy: 6 }],
+    markets: [{ assetSymbol: "USDC", apy: 6, tvlUsd: 1, liquidityUsd: 1 }],
   },
 ];
 

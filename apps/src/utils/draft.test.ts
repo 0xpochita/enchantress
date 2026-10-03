@@ -9,7 +9,9 @@ const CATALOG: DraftCatalog = {
       name: "V",
       iconKey: "generic",
       chainId: "monad",
-      markets: [{ assetSymbol: "USDC", apy: 5 }],
+      markets: [
+        { assetSymbol: "USDC", apy: 5, tvlUsd: 1_000_000, liquidityUsd: 1 },
+      ],
     },
   ],
   vaultAssets: [
