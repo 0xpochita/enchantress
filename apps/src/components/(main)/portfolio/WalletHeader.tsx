@@ -6,6 +6,7 @@ import { useSession } from "@/features/wallet";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { shortenAddress } from "@/utils/format";
 import { identiconCells } from "@/utils/identicon";
+import { RevokeAccess } from "./RevokeAccess";
 
 function Identicon({ address }: { address: string }) {
   return (
@@ -68,6 +69,9 @@ export function WalletHeader() {
         {shortenAddress(session.address)}
       </h1>
       <CopyButton value={session.address} />
+      <div className="ml-auto">
+        <RevokeAccess />
+      </div>
     </header>
   );
 }

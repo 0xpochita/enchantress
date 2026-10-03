@@ -1,12 +1,9 @@
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { Card, CryptoIcon, TokenStack } from "@/components/ui";
-import type { PortfolioPosition } from "@/lib/market";
+import type { PortfolioHolding, PortfolioPosition } from "@/features/portfolio";
+import { formatSignedUsd } from "@/features/portfolio/utils/signed-usd";
 import { formatPercent, formatUsd } from "@/utils/format";
-
-export interface PositionRowData extends PortfolioPosition {
-  earnedUsd: number;
-}
 
 const PERCENT = 100;
 const HEAD =
@@ -19,37 +16,40 @@ function uniqueBy<T>(items: T[], key: (item: T) => string): T[] {
   return [...new Map(items.map((item) => [key(item), item])).values()];
 }
 
+function stackItems(
+  holdings: PortfolioHolding[],
+  pick: (h: PortfolioHolding) => { iconKey: string; label: string },
+) {
+  return uniqueBy(holdings.map(pick), (item) => item.label);
+}
+
 function IndexCell({ position }: { position: PortfolioPosition }) {
-  const assets = uniqueBy(
-    position.allocations.map((a) => a.asset),
-    (a) => a.symbol,
-  );
   return (
     <Link
-      href={`/indexes/${position.index.id}`}
+      href={`/indexes/${position.indexId}`}
       className="flex items-center gap-3 hover:underline"
     >
       <TokenStack
-        items={assets.map((a) => ({ iconKey: a.iconKey, label: a.symbol }))}
+        items={stackItems(position.holdings, (h) => ({
+          iconKey: h.assetIconKey,
+          label: h.assetSymbol,
+        }))}
         size={22}
       />
-      <span className="whitespace-nowrap">{position.index.name}</span>
+      <span className="whitespace-nowrap">{position.indexName}</span>
     </Link>
   );
 }
 
 function PositionRow({
   row,
-  investedUsd,
+  totalUsd,
 }: {
-  row: PositionRowData;
-  investedUsd: number;
+  row: PortfolioPosition;
+  totalUsd: number;
 }) {
-  const venues = uniqueBy(
-    row.allocations.map((a) => a.venue),
-    (v) => v.id,
-  );
-  const share = investedUsd > 0 ? row.index.positionUsd / investedUsd : 0;
+  const share = totalUsd > 0 ? row.valueUsd / totalUsd : 0;
+  const earnedTone = row.earnedUsd >= 0 ? "text-positive" : "";
   return (
     <tr className="border-t border-line transition-colors duration-200 hover:bg-surface-raised/60">
       <td className={CELL}>
@@ -60,13 +60,16 @@ function PositionRow({
       </td>
       <td className={CELL}>
         <span className="flex items-center gap-2 whitespace-nowrap tabular-nums">
-          {formatUsd(row.index.positionUsd)}
+          {formatUsd(row.valueUsd)}
           <span className={PILL}>{Math.round(share * PERCENT)}%</span>
         </span>
       </td>
       <td className={CELL}>
         <TokenStack
-          items={venues.map((v) => ({ iconKey: v.iconKey, label: v.name }))}
+          items={stackItems(row.holdings, (h) => ({
+            iconKey: h.venueIconKey,
+            label: h.venueName,
+          }))}
           size={20}
         />
       </td>
@@ -74,14 +77,14 @@ function PositionRow({
         {formatPercent(row.apy)}
       </td>
       <td className={CELL}>
-        <span className={`${PILL} text-positive`}>
-          +{formatUsd(row.earnedUsd)}
+        <span className={`${PILL} ${earnedTone}`}>
+          {formatSignedUsd(row.earnedUsd)}
         </span>
       </td>
       <td className={`${CELL} w-8`}>
         <Link
-          href={`/indexes/${row.index.id}`}
-          aria-label={`Open ${row.index.name}`}
+          href={`/indexes/${row.indexId}`}
+          aria-label={`Open ${row.indexName}`}
           className="flex text-ink-subtle hover:text-ink"
         >
           <ChevronRight aria-hidden className="size-4" />
@@ -102,10 +105,10 @@ const COLUMNS = [
 
 export function PositionsTable({
   rows,
-  investedUsd,
+  totalUsd,
 }: {
-  rows: PositionRowData[];
-  investedUsd: number;
+  rows: PortfolioPosition[];
+  totalUsd: number;
 }) {
   return (
     <Card className="overflow-x-auto">
@@ -124,11 +127,7 @@ export function PositionsTable({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <PositionRow
-              key={row.index.id}
-              row={row}
-              investedUsd={investedUsd}
-            />
+            <PositionRow key={row.indexId} row={row} totalUsd={totalUsd} />
           ))}
         </tbody>
       </table>
