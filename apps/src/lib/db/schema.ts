@@ -1,6 +1,8 @@
 import {
   boolean,
+  date,
   integer,
+  jsonb,
   numeric,
   pgTable,
   text,
@@ -151,3 +153,20 @@ export const ledger = pgTable("ledger", {
 
 export type ExecutionRow = typeof executions.$inferSelect;
 export type ExecutionStepRow = typeof executionSteps.$inferSelect;
+
+export const positionSnapshots = pgTable(
+  "position_snapshots",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    takenAt: date("taken_at").notNull(),
+    totalValueUsd: numeric("total_value_usd", {
+      precision: 18,
+      scale: 2,
+    }).notNull(),
+    byIndex: jsonb("by_index").$type<Record<string, number>>().notNull(),
+  },
+  (table) => [unique().on(table.userId, table.takenAt)],
+);
