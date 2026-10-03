@@ -17,8 +17,16 @@ export interface HoldingUnits {
 export interface MarketQuote {
   rateRay: bigint;
   decimals: number;
-  priceUsd: number;
+  priceUsd: number | undefined;
   apy: number;
+}
+
+export interface PositionValue {
+  assets: bigint;
+  amount: number;
+  valueUsd: number;
+  apy: number;
+  priced: boolean;
 }
 
 export interface ValuedHolding {
@@ -28,7 +36,16 @@ export interface ValuedHolding {
   amount: number;
   valueUsd: number;
   apy: number;
+  priced: boolean;
 }
+
+const UNVALUED: PositionValue = {
+  assets: 0n,
+  amount: 0,
+  valueUsd: 0,
+  apy: 0,
+  priced: false,
+};
 
 export function marketKey(venueId: string, assetSymbol: string): string {
   return `${venueId}:${assetSymbol}`;
@@ -50,18 +67,34 @@ export function unitsToAssets(units: bigint, rateRay: bigint): bigint {
   return (units * rateRay + RAY / 2n) / RAY;
 }
 
+export function toAmount(base: bigint, decimals: number): number {
+  return Number(base) / 10 ** decimals;
+}
+
+export function valueUnits(
+  units: bigint,
+  quote: MarketQuote | undefined,
+): PositionValue {
+  if (!quote) return UNVALUED;
+  const assets = unitsToAssets(units, quote.rateRay);
+  const amount = toAmount(assets, quote.decimals);
+  return {
+    assets,
+    amount,
+    valueUsd: amount * (quote.priceUsd ?? 0),
+    apy: quote.apy,
+    priced: quote.priceUsd !== undefined,
+  };
+}
+
 export function valueHoldings(
   holdings: HoldingUnits[],
   quotes: Map<string, MarketQuote>,
 ): ValuedHolding[] {
-  return holdings.flatMap(({ units, ...holding }) => {
+  return holdings.map(({ units, ...holding }) => {
     const quote = quotes.get(marketKey(holding.venueId, holding.assetSymbol));
-    if (!quote) return [];
-    const assets = unitsToAssets(units, quote.rateRay);
-    const amount = Number(assets) / 10 ** quote.decimals;
-    return [
-      { ...holding, amount, valueUsd: amount * quote.priceUsd, apy: quote.apy },
-    ];
+    const { amount, valueUsd, apy, priced } = valueUnits(units, quote);
+    return { ...holding, amount, valueUsd, apy, priced };
   });
 }
 

@@ -2,6 +2,7 @@ import "server-only";
 import { type Address, parseUnits } from "viem";
 import { MONAD_TOKENS } from "@/features/chain/config/tokens";
 import { readTokenBalance } from "@/features/chain/services/balances";
+import { assetValueUsd } from "@/features/portfolio/services/valuation";
 import { type CreateExecutionBody, ExecutionRequestError } from "../types";
 import type { NewExecution } from "./execution-repository";
 import { buildDepositPlan } from "./plan-deposit";
@@ -25,10 +26,7 @@ export async function prepareDeposit(
     body.depositAsset,
     amountBase,
   );
-  const price =
-    plan.summary.allocations.find((a) => a.asset.symbol === body.depositAsset)
-      ?.asset.priceUsd ?? 1;
-  const valueUsd = Number(body.amount) * price;
+  const { valueUsd } = await assetValueUsd(body.depositAsset, amountBase);
   return {
     kind: "deposit",
     userId,

@@ -10,7 +10,7 @@ import type {
   PortfolioHolding,
   PortfolioPosition,
 } from "../types";
-import type { ValuedHolding } from "../utils/lots";
+import { toAmount, type ValuedHolding } from "../utils/lots";
 import {
   buildPositions,
   type IndexPosition,
@@ -58,7 +58,7 @@ function toActivity(row: LedgerRow, names: IndexNames): PortfolioActivity {
     direction: row.direction === "out" ? "out" : "in",
     assetSymbol: row.assetSymbol,
     assetIconKey: token?.iconKey ?? row.assetSymbol,
-    amount: Number(row.amountBase) / 10 ** (token?.decimals ?? 0),
+    amount: toAmount(BigInt(row.amountBase), token?.decimals ?? 0),
     valueUsd: Number(row.valueUsd),
     txHash: row.txHash,
     at: row.at.toISOString(),

@@ -13,6 +13,34 @@ export interface WithdrawHolding {
   exit: Pick<VenueCalls, "exitStepKind" | "exitAmount">;
 }
 
+export interface MarketLot {
+  indexId: string;
+  venueId: string;
+  assetSymbol: string;
+  units: bigint;
+}
+
+export interface LotGroup<L extends MarketLot> {
+  lot: L;
+  otherUnits: bigint;
+}
+
+export function indexLotGroups<L extends MarketLot>(
+  totals: L[],
+  indexId: string,
+): LotGroup<L>[] {
+  const sameMarket = (a: L, b: L) =>
+    a.venueId === b.venueId && a.assetSymbol === b.assetSymbol;
+  return totals
+    .filter((lot) => lot.indexId === indexId && lot.units > 0n)
+    .map((lot) => ({
+      lot,
+      otherUnits: totals
+        .filter((other) => other.indexId !== indexId && sameMarket(other, lot))
+        .reduce((sum, other) => sum + other.units, 0n),
+    }));
+}
+
 export interface WithdrawLeg<H extends WithdrawHolding = WithdrawHolding> {
   holding: H;
   units: bigint;

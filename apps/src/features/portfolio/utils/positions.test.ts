@@ -9,6 +9,7 @@ const holding = (indexId: string, valueUsd: number, apy: number) => ({
   amount: valueUsd,
   valueUsd,
   apy,
+  priced: true,
 });
 
 test("netInvestedByIndex subtracts withdrawals from deposits", () => {

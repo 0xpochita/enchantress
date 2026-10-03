@@ -1,7 +1,12 @@
 import "server-only";
 import type { Address } from "viem";
+import { quoteAtRates } from "@/features/portfolio/services/valuation";
+import {
+  marketKey,
+  valueHoldings,
+  valueUnits,
+} from "@/features/portfolio/utils/lots";
 import { VENUE_CONFIGS } from "@/features/vaults/config/venues";
-import { getVenueSnapshot } from "@/features/vaults/services/venue-snapshot";
 import type { UserRow } from "@/lib/db/schema";
 import {
   type CreateWithdrawBody,
@@ -16,11 +21,6 @@ import {
 } from "../utils/withdraw";
 import type { NewExecution } from "./execution-repository";
 import { type HoldingRead, readIndexHoldings } from "./withdraw-holdings";
-
-async function priceLookup(): Promise<(symbol: string) => number> {
-  const { assets } = await getVenueSnapshot();
-  return (symbol) => assets.find((a) => a.symbol === symbol)?.priceUsd ?? 0;
-}
 
 function venueName(venueId: string): string {
   return VENUE_CONFIGS.find((v) => v.id === venueId)?.name ?? venueId;
@@ -44,11 +44,12 @@ function assertLiquidity(legs: HoldingLeg[]): void {
   }
 }
 
-function legValueUsd(leg: HoldingLeg, price: (s: string) => number): number {
-  const { holding } = leg;
-  if (holding.units === 0n) return 0;
-  const assets = (holding.assets * leg.units) / holding.units;
-  return baseToAmount(holding.assetSymbol, assets) * price(holding.assetSymbol);
+async function legsValueUsd(legs: HoldingLeg[]): Promise<number> {
+  const quotes = await quoteAtRates(legs.map((leg) => leg.holding));
+  return legs.reduce((sum, { holding, units }) => {
+    const quote = quotes.get(marketKey(holding.venueId, holding.assetSymbol));
+    return sum + valueUnits(units, quote).valueUsd;
+  }, 0);
 }
 
 export async function previewIndexPosition(
@@ -56,19 +57,21 @@ export async function previewIndexPosition(
   indexId: string,
 ): Promise<IndexPosition> {
   if (!user.walletAddress) return { valueUsd: 0, holdings: [] };
-  const [reads, price] = await Promise.all([
-    readIndexHoldings(user.id, user.walletAddress as Address, indexId),
-    priceLookup(),
-  ]);
-  const holdings = reads.map((read) => {
-    const amount = baseToAmount(read.assetSymbol, read.assets);
-    return {
-      venueId: read.venueId,
-      assetSymbol: read.assetSymbol,
+  const reads = await readIndexHoldings(
+    user.id,
+    user.walletAddress as Address,
+    indexId,
+  );
+  const quotes = await quoteAtRates(reads);
+  const lots = reads.map((read) => ({ ...read, indexId }));
+  const holdings = valueHoldings(lots, quotes).map(
+    ({ venueId, assetSymbol, amount, valueUsd }) => ({
+      venueId,
+      assetSymbol,
       amount,
-      valueUsd: amount * price(read.assetSymbol),
-    };
-  });
+      valueUsd,
+    }),
+  );
   const valueUsd = holdings.reduce((sum, h) => sum + h.valueUsd, 0);
   return { valueUsd, holdings };
 }
@@ -96,7 +99,6 @@ export async function prepareWithdraw(
   body: CreateWithdrawBody,
 ): Promise<NewExecution> {
   const legs = await plannedLegs(user, wallet, body);
-  const price = await priceLookup();
   const symbols = [...new Set(legs.map((leg) => leg.holding.assetSymbol))];
   return {
     kind: "withdraw",
@@ -104,7 +106,7 @@ export async function prepareWithdraw(
     indexId: body.indexId,
     depositAsset: symbols.join(","),
     depositAmountBase: 0n,
-    valueUsd: legs.reduce((sum, leg) => sum + legValueUsd(leg, price), 0),
+    valueUsd: await legsValueUsd(legs),
     steps: withdrawSteps(legs),
   };
 }

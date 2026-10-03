@@ -10,9 +10,10 @@ import {
 } from "@/features/chain/config/tokens";
 import { monadClient } from "@/features/chain/services/public-client";
 import {
-  createAdapter,
-  getVenueSnapshot,
-} from "@/features/vaults/services/venue-snapshot";
+  assetPriceUsd,
+  assetValueUsd,
+} from "@/features/portfolio/services/valuation";
+import { createAdapter } from "@/features/vaults/services/venue-snapshot";
 import type { UnitsChange, VaultAdapter } from "@/features/vaults/types";
 import { findUserById } from "@/features/wallet/server";
 import type { ExecutionRow, ExecutionStepRow } from "@/lib/db/schema";
@@ -89,12 +90,17 @@ function resolveAmount(
 }
 
 async function priceUsd(symbol: string): Promise<number> {
-  const asset = (await getVenueSnapshot()).assets.find(
-    (a) => a.symbol === symbol,
-  );
-  if (!asset)
+  const price = await assetPriceUsd(symbol);
+  if (price === undefined)
     throw new ExecutionStepError("NO_PRICE", `No price for ${symbol}`);
-  return asset.priceUsd;
+  return price;
+}
+
+async function ledgerValueUsd(symbol: string, amountBase: bigint) {
+  const value = await assetValueUsd(symbol, amountBase);
+  if (!value.priced)
+    throw new ExecutionStepError("NO_PRICE", `No price for ${symbol}`);
+  return value.valueUsd;
 }
 
 async function expectedSwapOutput(
@@ -264,10 +270,7 @@ async function settleSupply(
   hash: string,
 ) {
   const amountBase = resolveAmount(step, loaded.steps);
-  const asset = token(step.assetSymbol);
-  const valueUsd =
-    (Number(amountBase) / 10 ** asset.decimals) *
-    (await priceUsd(asset.symbol));
+  const valueUsd = await ledgerValueUsd(step.assetSymbol, amountBase);
   await recordDeposit({
     execution: loaded.execution,
     step,
@@ -285,10 +288,7 @@ async function settleWithdraw(
   hash: string,
 ) {
   const amountBase = outputs.amountOut ?? 0n;
-  const asset = token(step.assetSymbol);
-  const valueUsd =
-    (Number(amountBase) / 10 ** asset.decimals) *
-    (await priceUsd(asset.symbol));
+  const valueUsd = await ledgerValueUsd(step.assetSymbol, amountBase);
   await recordWithdraw({
     execution: loaded.execution,
     step,

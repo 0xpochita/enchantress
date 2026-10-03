@@ -7,6 +7,7 @@ import {
   sumByIndex,
   unitsToAssets,
   valueHoldings,
+  valueUnits,
 } from "./lots.ts";
 
 const lot = (indexId: string, venueId: string, units: string) => ({
@@ -47,7 +48,7 @@ test("unitsToAssets applies a ray rate with half up rounding", () => {
   assert.equal(unitsToAssets(1_000_000n, (RAY * 105n) / 100n), 1_050_000n);
 });
 
-test("valueHoldings prices assets and skips markets without a quote", () => {
+test("valueHoldings prices assets and flags markets it cannot price", () => {
   const quotes = new Map([
     [
       marketKey("aave-v3", "USDC"),
@@ -66,10 +67,24 @@ test("valueHoldings prices assets and skips markets without a quote", () => {
     ],
     quotes,
   );
-  assert.equal(valued.length, 1);
-  assert.equal(valued[0]?.amount, 11);
-  assert.equal(valued[0]?.valueUsd, 11);
-  assert.equal(valued[0]?.apy, 4);
+  assert.deepEqual(
+    valued.map((h) => [h.amount, h.valueUsd, h.apy, h.priced]),
+    [
+      [11, 11, 4, true],
+      [0, 0, 0, false],
+    ],
+  );
+});
+
+test("valueUnits counts an unpriced market at zero value but keeps the amount", () => {
+  const quote = { rateRay: RAY, decimals: 6, priceUsd: undefined, apy: 3 };
+  assert.deepEqual(valueUnits(2_500_000n, quote), {
+    assets: 2_500_000n,
+    amount: 2.5,
+    valueUsd: 0,
+    apy: 3,
+    priced: false,
+  });
 });
 
 test("sumByIndex totals value per index", () => {
@@ -80,6 +95,7 @@ test("sumByIndex totals value per index", () => {
     amount: valueUsd,
     valueUsd,
     apy: 0,
+    priced: true,
   });
   assert.deepEqual(
     sumByIndex([holding("a", 1), holding("a", 2), holding("b", 5)]),
