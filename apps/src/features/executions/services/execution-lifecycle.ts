@@ -22,6 +22,7 @@ import { prepareWithdraw } from "./create-withdraw";
 import {
   activeExecutionId,
   BUSY_MESSAGE,
+  cancelUnfundedBridging,
   cancelUnsentBridging,
   createBridgingExecution,
   createExecution,
@@ -51,6 +52,7 @@ function requireDelegatedWallet(user: UserRow): Address {
 }
 
 async function assertNoActiveExecution(userId: string): Promise<void> {
+  await cancelUnfundedBridging(userId);
   if (await activeExecutionId(userId))
     throw new ExecutionRequestError(409, "BUSY", BUSY_MESSAGE);
 }

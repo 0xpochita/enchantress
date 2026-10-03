@@ -1,7 +1,14 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { type ReactNode, type SyntheticEvent, useEffect, useRef } from "react";
+import {
+  type ReactNode,
+  type SyntheticEvent,
+  useEffect,
+  useRef,
+  useSyncExternalStore,
+} from "react";
+import { isWalletPromptOpen, subscribeWalletPrompt } from "@/lib/wallet-prompt";
 
 interface ModalProps {
   isOpen: boolean;
@@ -24,10 +31,21 @@ export function Modal({
 }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
+  const isPrompting = useSyncExternalStore(
+    subscribeWalletPrompt,
+    isWalletPromptOpen,
+    () => false,
+  );
+
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (isOpen && dialog && !dialog.open) dialog.showModal();
-  }, [isOpen]);
+    if (!isOpen || !dialog) return;
+    const wantsModal = !isPrompting;
+    if (dialog.open && dialog.matches(":modal") === wantsModal) return;
+    if (dialog.open) dialog.close();
+    if (wantsModal) dialog.showModal();
+    else dialog.show();
+  }, [isOpen, isPrompting]);
 
   const handleCancel = (event: SyntheticEvent) => {
     event.preventDefault();
@@ -40,7 +58,7 @@ export function Modal({
       aria-label={label}
       onCancel={handleCancel}
       onClose={() => {
-        if (isOpen) onClose();
+        if (isOpen && !dialogRef.current?.open) onClose();
       }}
       className="fixed inset-0 m-0 size-full max-h-none max-w-none items-center justify-center bg-transparent p-4 text-ink backdrop:bg-transparent open:flex"
     >

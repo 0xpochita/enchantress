@@ -11,6 +11,7 @@ import {
   useExecutionFlow,
 } from "@/features/executions";
 import { type Api, ApiError } from "@/lib/api-client";
+import { withWalletPrompt } from "@/lib/wallet-prompt";
 import {
   bridgeDepositResponseSchema,
   type TransferInstruction,
@@ -42,14 +43,16 @@ export function useSignTransfer() {
   const { sendTransaction } = useSendTransaction();
   return async (transfer: TransferInstruction): Promise<`0x${string}`> => {
     const request = buildTransferRequest(transfer);
-    const { hash } = await sendTransaction(
-      {
-        to: request.to,
-        data: request.data,
-        value: request.value === undefined ? undefined : toHex(request.value),
-        chainId: request.chainId,
-      },
-      { sponsor: sponsoredChainIds().includes(request.chainId) },
+    const { hash } = await withWalletPrompt(() =>
+      sendTransaction(
+        {
+          to: request.to,
+          data: request.data,
+          value: request.value === undefined ? undefined : toHex(request.value),
+          chainId: request.chainId,
+        },
+        { sponsor: sponsoredChainIds().includes(request.chainId) },
+      ),
     );
     return hash;
   };

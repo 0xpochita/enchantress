@@ -4,6 +4,7 @@ import { useSigners } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { readClientEnv } from "@/config/env.client";
 import { useApi } from "@/lib/api-client";
+import { withWalletPrompt } from "@/lib/wallet-prompt";
 import { accountSchema } from "../types/account";
 import { useSession } from "./useSession";
 
@@ -38,10 +39,10 @@ export function useDelegation() {
     if (!session.address)
       throw new Error("Your wallet is still being created.");
     const { signerId, policyId } = signerConfig();
-    await addSigners({
-      address: session.address,
-      signers: [{ signerId, policyIds: [policyId] }],
-    });
+    const address = session.address;
+    await withWalletPrompt(() =>
+      addSigners({ address, signers: [{ signerId, policyIds: [policyId] }] }),
+    );
     return refresh();
   };
   const revoke = async () => {

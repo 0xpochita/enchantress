@@ -54,6 +54,7 @@ export const executionViewSchema = z.object({
   originTxHash: z.string().nullable(),
   auroraStatus: z.string().nullable(),
   errorMessage: z.string().nullable(),
+  createdAt: z.string(),
   steps: z.array(executionStepViewSchema),
 });
 

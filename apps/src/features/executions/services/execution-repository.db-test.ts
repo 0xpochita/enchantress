@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, before, test } from "node:test";
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { executions, indexes, users } from "@/lib/db/schema";
 import { ExecutionRequestError } from "../types.ts";
@@ -144,4 +144,16 @@ test("illegal transitions are rejected and leave the status alone", async () => 
   await finishExecution(execution.id, "failed");
   await finishExecution(execution.id, "succeeded");
   assert.equal(await statusOf(execution.id), "failed");
+});
+
+test("a stale unfunded bridge no longer blocks the next deposit", async () => {
+  const userId = await newUser();
+  const stale = await bridgingFor(userId);
+  await db()
+    .update(executions)
+    .set({ createdAt: new Date(Date.now() - 10 * 60_000) })
+    .where(eq(executions.id, stale.id));
+  const next = await depositFor(userId);
+  assert.equal(await statusOf(stale.id), "cancelled");
+  assert.equal(await statusOf(next.id), "executing");
 });

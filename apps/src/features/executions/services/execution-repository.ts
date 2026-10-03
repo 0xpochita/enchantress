@@ -34,6 +34,7 @@ import { reduceLots } from "../utils/withdraw";
 
 const LEASE_SECONDS = 60;
 const UNIQUE_VIOLATION = "23505";
+const UNFUNDED_GRACE_SECONDS = 120;
 
 type Executor = Pick<ReturnType<typeof db>, "insert" | "update">;
 
@@ -55,11 +56,35 @@ function isActiveExecutionConflict(error: unknown): boolean {
   );
 }
 
-async function insertActiveExecution<T>(create: () => Promise<T>): Promise<T> {
+export async function cancelUnfundedBridging(userId: string): Promise<boolean> {
+  const rows = await db()
+    .update(executions)
+    .set({ status: "cancelled", leaseUntil: null, updatedAt: new Date() })
+    .where(
+      and(
+        eq(executions.userId, userId),
+        eq(executions.status, "bridging"),
+        isNull(executions.originTxHash),
+        lt(
+          executions.createdAt,
+          sql`now() - make_interval(secs => ${UNFUNDED_GRACE_SECONDS})`,
+        ),
+      ),
+    )
+    .returning({ id: executions.id });
+  return rows.length > 0;
+}
+
+async function insertActiveExecution<T>(
+  userId: string,
+  create: () => Promise<T>,
+): Promise<T> {
   try {
     return await create();
   } catch (error) {
     if (!isActiveExecutionConflict(error)) throw error;
+    if (await cancelUnfundedBridging(userId))
+      return insertActiveExecution(userId, create);
     throw new ExecutionRequestError(409, "BUSY", BUSY_MESSAGE);
   }
 }
@@ -86,7 +111,7 @@ export interface NewExecution {
 }
 
 export function createExecution(input: NewExecution): Promise<ExecutionRow> {
-  return insertActiveExecution(() =>
+  return insertActiveExecution(input.userId, () =>
     db().transaction(async (tx) => {
       const [execution] = await tx
         .insert(executions)
@@ -317,6 +342,7 @@ export function toExecutionView(loaded: LoadedExecution): ExecutionView {
     originTxHash: execution.originTxHash,
     auroraStatus: execution.auroraStatus,
     errorMessage: execution.errorMessage,
+    createdAt: execution.createdAt.toISOString(),
     steps: steps.map((step) => ({
       position: step.position,
       kind: step.kind as ExecutionView["steps"][number]["kind"],
@@ -344,7 +370,7 @@ export interface NewBridgingExecution {
 export async function createBridgingExecution(
   input: NewBridgingExecution,
 ): Promise<ExecutionRow> {
-  const [execution] = await insertActiveExecution(() =>
+  const [execution] = await insertActiveExecution(input.userId, () =>
     db()
       .insert(executions)
       .values({
