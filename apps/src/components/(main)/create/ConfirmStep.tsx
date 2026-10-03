@@ -12,16 +12,29 @@ import { RouteDetails } from "../routing/RouteDetails";
 interface ConfirmStepProps {
   draft: IndexDraft;
   chain?: Chain;
-  onConfirm: () => void;
 }
 
-export function ConfirmStep({ draft, chain, onConfirm }: ConfirmStepProps) {
+function depositItem(draft: IndexDraft) {
+  if (!draft.flow.hasDeposit)
+    return { label: "Deposit", value: "None", hint: "add funds later" };
+  return {
+    label: "Deposit",
+    value: `${formatAmount(Number(draft.amount))} ${draft.depositToken?.symbol ?? ""}`,
+    hint: formatUsd(draft.depositUsd),
+  };
+}
+
+function footnote(draft: IndexDraft): string {
+  if (!draft.flow.hasDeposit)
+    return "Your index is visible to you until it holds deposits.";
+  if (draft.flow.needsDelegation)
+    return "Enchantress needs one time permission to move your deposit into the vaults; it can only deposit or withdraw to your own wallet.";
+  return "Gas on Monad is paid by Enchantress.";
+}
+
+export function ConfirmStep({ draft, chain }: ConfirmStepProps) {
   const items = [
-    {
-      label: "Deposit",
-      value: `${formatAmount(Number(draft.amount))} ${draft.depositToken?.symbol ?? ""}`,
-      hint: formatUsd(draft.depositUsd),
-    },
+    depositItem(draft),
     {
       label: "Blended APY",
       value: formatPercent(draft.apy),
@@ -35,11 +48,20 @@ export function ConfirmStep({ draft, chain, onConfirm }: ConfirmStepProps) {
   ];
   return (
     <div className="flex flex-col gap-5 p-6">
-      <ReviewHeader eyebrow="Review your index" title={draft.name} />
+      <ReviewHeader eyebrow="Review your index" title={draft.recipe.name} />
       <ReviewSummary items={items} />
       <SliceList slices={draft.allocations} />
-      <RouteDetails chain={chain} sliceCount={draft.allocations.length} />
-      <ReviewActions onCancel={draft.dismiss} onConfirm={onConfirm} />
+      {draft.flow.hasDeposit && (
+        <RouteDetails chain={chain} sliceCount={draft.allocations.length} />
+      )}
+      <p className="text-xs text-ink-muted">{footnote(draft)}</p>
+      <ReviewActions
+        onCancel={draft.flow.dismiss}
+        onConfirm={draft.flow.confirm}
+        confirmLabel={
+          draft.flow.needsDelegation ? "Allow and create" : "Create"
+        }
+      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { WeightControls } from "./WeightControls";
 
 interface BuilderPanelProps {
   draft: IndexDraft;
+  errors: string[];
   venues: Venue[];
   chain?: Chain;
   onPickToken: () => void;
@@ -40,7 +41,7 @@ function AmountRow({
   draft,
   chain,
   onPickToken,
-}: Omit<BuilderPanelProps, "venues">) {
+}: Pick<BuilderPanelProps, "draft" | "chain" | "onPickToken">) {
   return (
     <div className="flex min-w-0 items-center gap-3 px-1">
       <label htmlFor="create-amount" className="sr-only">
@@ -66,8 +67,14 @@ function AmountRow({
   );
 }
 
+function submitLabel(draft: IndexDraft): string {
+  if (!draft.flow.isAuthenticated) return "Log in to create";
+  return Number(draft.amount) > 0 ? "Create and deposit" : "Create";
+}
+
 export function BuilderPanel({
   draft,
+  errors,
   venues,
   chain,
   onPickToken,
@@ -105,11 +112,16 @@ export function BuilderPanel({
           onPercentChange={draft.setCustomPercent}
         />
       </Step>
-      <Step number={3} title="Deposit from any chain">
+      <Step number={3} title="First deposit (optional)">
         <AmountRow draft={draft} chain={chain} onPickToken={onPickToken} />
         <RouteDetails chain={chain} sliceCount={draft.allocations.length} />
       </Step>
-      <SubmitBar errors={draft.errors} onSubmit={draft.review} />
+      <SubmitBar
+        errors={errors}
+        label={submitLabel(draft)}
+        isDisabled={draft.flow.isAuthenticated && errors.length > 0}
+        onSubmit={draft.flow.review}
+      />
     </div>
   );
 }

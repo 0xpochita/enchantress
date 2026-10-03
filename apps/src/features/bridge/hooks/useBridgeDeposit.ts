@@ -7,8 +7,8 @@ import { toHex } from "viem";
 import { readClientEnv } from "@/config/env.client";
 import { type ExecutionView, executionViewSchema } from "@/features/executions";
 import { useDelegation, useSession } from "@/features/wallet";
-import type { FlowStatus } from "@/hooks/useSubmitFlow";
 import { ApiError, apiDelete, apiGet, apiPost } from "@/lib/api-client";
+import type { FlowStatus } from "@/types/flow";
 import {
   bridgeDepositResponseSchema,
   type TransferInstruction,

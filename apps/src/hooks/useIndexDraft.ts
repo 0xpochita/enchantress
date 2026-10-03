@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useSubmitFlow } from "@/hooks/useSubmitFlow";
+import { useCreateIndex } from "@/features/indexes";
 import { type DraftCatalog, type DraftState, deriveDraft } from "@/utils/draft";
 
 function toggle(list: string[], value: string): string[] {
@@ -22,7 +22,12 @@ function initialState(catalog: DraftCatalog): DraftState {
 export function useIndexDraft(catalog: DraftCatalog) {
   const [state, setState] = useState<DraftState>(() => initialState(catalog));
   const derived = useMemo(() => deriveDraft(catalog, state), [catalog, state]);
-  const flow = useSubmitFlow(() => setState(initialState(catalog)));
+  const flow = useCreateIndex({
+    recipe: derived.recipe,
+    originTokenId: state.depositTokenId,
+    amount: state.amount,
+    onReset: () => setState(initialState(catalog)),
+  });
   const update = (patch: Partial<DraftState>) =>
     setState((current) => ({ ...current, ...patch }));
   const toggleAsset = (symbol: string) =>
@@ -33,7 +38,7 @@ export function useIndexDraft(catalog: DraftCatalog) {
   return {
     ...state,
     ...derived,
-    ...flow,
+    flow,
     update,
     toggleAsset,
     setCustomPercent,

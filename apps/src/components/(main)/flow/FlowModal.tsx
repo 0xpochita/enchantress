@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { type ReactNode, useRef } from "react";
 import { Modal } from "@/components/ui";
-import type { FlowStatus } from "@/hooks/useSubmitFlow";
+import type { FlowStatus } from "@/types/flow";
 
 type FlowStep = Exclude<FlowStatus, "idle">;
 

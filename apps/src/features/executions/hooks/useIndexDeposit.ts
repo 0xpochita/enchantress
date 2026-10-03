@@ -5,8 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";
 import { useDelegation, useSession } from "@/features/wallet";
-import type { FlowStatus } from "@/hooks/useSubmitFlow";
 import { ApiError, apiGet, apiPost } from "@/lib/api-client";
+import type { FlowStatus } from "@/types/flow";
 import { type ExecutionView, executionViewSchema } from "../types";
 
 const DEPOSIT_TOKEN = { symbol: "USDC", iconKey: "usdc", decimals: 6 } as const;

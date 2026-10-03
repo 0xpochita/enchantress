@@ -2,34 +2,42 @@
 
 import { useState } from "react";
 import { Card, type StatItem, StatStrip } from "@/components/ui";
+import { type BridgeCatalog, useOriginBalances } from "@/features/bridge";
 import { useIndexDraft } from "@/hooks/useIndexDraft";
 import type { DraftCatalog } from "@/utils/draft";
 import { formatPercent, formatUsd } from "@/utils/format";
-import {
-  type TokenCatalog,
-  TokenSelectModal,
-} from "../token-select/TokenSelectModal";
+import { TokenSelectModal } from "../token-select/TokenSelectModal";
 import { BuilderPanel } from "./BuilderPanel";
 import { CreateFlowModal } from "./CreateFlowModal";
 import { DraftPreview } from "./DraftPreview";
 
 interface CreateIndexFormProps {
   catalog: DraftCatalog;
-  tokenCatalog: TokenCatalog;
+  bridgeCatalog: BridgeCatalog;
+}
+
+function blockingErrors(errors: string[], isInsufficient: boolean): string[] {
+  return isInsufficient
+    ? [...errors, "Not enough balance for this deposit."]
+    : errors;
 }
 
 export function CreateIndexForm({
   catalog,
-  tokenCatalog,
+  bridgeCatalog,
 }: CreateIndexFormProps) {
   const draft = useIndexDraft(catalog);
+  const balances = useOriginBalances();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const chain = tokenCatalog.chains.find(
+  const chain = bridgeCatalog.chains.find(
     (c) => c.id === draft.depositToken?.chainId,
   );
   const balance =
-    tokenCatalog.balances.find((b) => b.tokenId === draft.depositTokenId)
-      ?.amount ?? 0;
+    balances.data?.find((b) => b.tokenId === draft.depositTokenId)?.amount ?? 0;
+  const errors = blockingErrors(
+    draft.errors,
+    draft.flow.isAuthenticated && Number(draft.amount) > balance,
+  );
   const protocolCount = new Set(draft.allocations.map((a) => a.venue.id)).size;
   const stats: StatItem[] = [
     {
@@ -69,6 +77,7 @@ export function CreateIndexForm({
         <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr]">
           <BuilderPanel
             draft={draft}
+            errors={errors}
             venues={catalog.venues}
             chain={chain}
             onPickToken={() => setIsPickerOpen(true)}
@@ -80,11 +89,11 @@ export function CreateIndexForm({
           />
         </div>
       </Card>
-      <CreateFlowModal draft={draft} chain={chain} balance={balance} />
+      <CreateFlowModal draft={draft} chain={chain} />
       <TokenSelectModal
         isOpen={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
-        catalog={tokenCatalog}
+        catalog={{ ...bridgeCatalog, balances: balances.data ?? [] }}
         selectedId={draft.depositTokenId}
         onSelect={(token) => draft.update({ depositTokenId: token.id })}
       />

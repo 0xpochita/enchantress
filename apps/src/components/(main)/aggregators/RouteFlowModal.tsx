@@ -134,7 +134,13 @@ function stageTone(
   return targetIndex === currentIndex ? "active" : "todo";
 }
 
-function ProgressStep({ bridge, deposit }: RouteFlowModalProps) {
+export function ProgressStep({
+  bridge,
+  deposit,
+}: {
+  bridge: BridgeDepositController;
+  deposit: Pick<DepositRoutes, "isCrossChain" | "amount" | "token">;
+}) {
   const order = [
     "permission",
     "quote",
