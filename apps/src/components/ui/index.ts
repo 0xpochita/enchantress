@@ -7,6 +7,7 @@ export { Folder } from "./Folder";
 export { GlowCard } from "./GlowCard";
 export { HalftoneArt } from "./HalftoneArt";
 export { LightRays } from "./LightRays";
+export { LocalDate } from "./LocalDate";
 export { LogoMark } from "./LogoMark";
 export { Modal } from "./Modal";
 export { RollingNumber } from "./RollingNumber";

@@ -1,17 +1,12 @@
 "use client";
 
 import { ArrowDownLeft, ArrowUpRight, ExternalLink } from "lucide-react";
-import { Card, CryptoIcon } from "@/components/ui";
+import { Card, CryptoIcon, LocalDate } from "@/components/ui";
 import { TX_EXPLORER_URL } from "@/config/explorer";
 import { monadToken } from "@/features/chain/config/tokens";
 import { type ActivityRow, useIndexActivity } from "@/features/executions";
 import type { Venue } from "@/types/market";
-import {
-  formatAmount,
-  formatShortDate,
-  formatUsd,
-  shortenAddress,
-} from "@/utils/format";
+import { formatAmount, formatUsd, shortenAddress } from "@/utils/format";
 
 const HEAD =
   "px-3 py-3 text-left text-[0.7rem] font-medium tracking-wider text-ink-subtle uppercase first:pl-6 last:pr-6";
@@ -67,7 +62,7 @@ function TxCell({ row }: { row: ActivityRow }) {
         <span className="sr-only">(opens in a new tab)</span>
       </a>
       <span className="block text-xs text-ink-subtle">
-        {formatShortDate(row.at)}
+        <LocalDate iso={row.at} />
       </span>
     </>
   );

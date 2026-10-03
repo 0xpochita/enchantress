@@ -1,8 +1,8 @@
 import { ArrowDownLeft, ArrowUpRight, ExternalLink } from "lucide-react";
-import { Card, CryptoIcon } from "@/components/ui";
+import { Card, CryptoIcon, LocalDate } from "@/components/ui";
 import { TX_EXPLORER_URL } from "@/config/explorer";
 import type { IndexIcon, PortfolioActivity } from "@/features/portfolio";
-import { formatAmount, formatShortDate, formatUsd } from "@/utils/format";
+import { formatAmount, formatUsd } from "@/utils/format";
 import { IndexLink, RouteCell } from "./IndexLink";
 
 const HEAD =
@@ -66,7 +66,7 @@ function ActivityRow({
           <span className="sr-only">(opens in a new tab)</span>
         </a>
         <span className="block text-xs text-ink-subtle">
-          {formatShortDate(row.at)}
+          <LocalDate iso={row.at} />
         </span>
       </td>
     </tr>

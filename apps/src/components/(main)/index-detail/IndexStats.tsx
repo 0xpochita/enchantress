@@ -1,9 +1,8 @@
-import { type StatItem, StatStrip } from "@/components/ui";
+import { LocalDate, type StatItem, StatStrip } from "@/components/ui";
 import { UserPositionValue } from "@/features/portfolio";
 import type { Index } from "@/types/market";
 import {
   formatCompactUsd,
-  formatDate,
   formatPercent,
   shortenAddress,
 } from "@/utils/format";
@@ -29,7 +28,7 @@ export function IndexStats({ index, apy }: { index: Index; apy: number }) {
     {
       label: "Creator",
       value: index.isCreatedByUser ? "You" : shortenAddress(index.creator),
-      hint: formatDate(index.createdAt),
+      hint: <LocalDate iso={index.createdAt} format="medium" />,
     },
   ];
   return <StatStrip items={stats} />;
