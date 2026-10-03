@@ -165,13 +165,23 @@ function stageTone(
   return targetIndex === currentIndex ? "active" : "todo";
 }
 
-export function MonadLabel() {
+export function ChainLabel({
+  iconKey,
+  name,
+}: {
+  iconKey: string;
+  name: string;
+}) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <CryptoIcon iconKey="monad" label="" size={14} />
-      Monad
+      <CryptoIcon iconKey={iconKey} label="" size={14} />
+      {name}
     </span>
   );
+}
+
+export function MonadLabel() {
+  return <ChainLabel iconKey="monad" name="Monad" />;
 }
 
 const SECONDS_PER_MINUTE = 60;
@@ -206,7 +216,22 @@ export function ProgressStep({
     ),
     bridging: (
       <>
-        Bridging to <MonadLabel />
+        {deposit.token && (
+          <>
+            <ChainLabel
+              iconKey={deposit.token.iconKey}
+              name={deposit.token.symbol}
+            />
+            on
+          </>
+        )}
+        {deposit.chain && (
+          <ChainLabel
+            iconKey={deposit.chain.iconKey}
+            name={deposit.chain.name}
+          />
+        )}
+        bridging to <MonadLabel />
       </>
     ),
     executing: (
@@ -250,7 +275,7 @@ export function ProgressStep({
             <span className="flex items-center gap-3">
               <StageIcon tone={stageTone(order, bridge.stage, stage)} />
               <span
-                className={`flex flex-1 items-center gap-1.5 ${
+                className={`flex flex-1 flex-wrap items-center gap-1.5 ${
                   stageTone(order, bridge.stage, stage) === "todo"
                     ? "text-ink-muted"
                     : ""

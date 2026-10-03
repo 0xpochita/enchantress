@@ -7,6 +7,7 @@ import { type ExecutionView, useExecution } from "@/features/executions";
 import type { PortfolioPurchase } from "@/features/portfolio";
 import { formatAmount } from "@/utils/format";
 import {
+  ChainLabel,
   MonadLabel,
   StageIcon,
   type Tone,
@@ -52,7 +53,7 @@ function Stage({
     <li className="flex items-center gap-3">
       <StageIcon tone={tone} />
       <span
-        className={`flex flex-1 items-center gap-1.5 ${tone === "todo" ? "text-ink-muted" : ""}`}
+        className={`flex flex-1 flex-wrap items-center gap-1.5 ${tone === "todo" ? "text-ink-muted" : ""}`}
       >
         {children}
       </span>
@@ -61,7 +62,33 @@ function Stage({
   );
 }
 
-function Stages({ execution }: { execution: ExecutionView }) {
+function OriginLabel({
+  chainId,
+  purchase,
+}: {
+  chainId: string;
+  purchase: PortfolioPurchase;
+}) {
+  const chain = originChainById(chainId);
+  return (
+    <>
+      <ChainLabel iconKey={purchase.paidIconKey} name={purchase.paidSymbol} />
+      {chain && (
+        <>
+          on <ChainLabel iconKey={chain.iconKey} name={chain.name} />
+        </>
+      )}
+    </>
+  );
+}
+
+function Stages({
+  execution,
+  purchase,
+}: {
+  execution: ExecutionView;
+  purchase: PortfolioPurchase;
+}) {
   return (
     <ol className="flex flex-col gap-3 text-sm">
       {execution.originChain && (
@@ -73,7 +100,8 @@ function Stages({ execution }: { execution: ExecutionView }) {
             tone={bridgeTone(execution)}
             hint={AURORA_HINTS[execution.auroraStatus ?? ""]}
           >
-            Bridging to <MonadLabel />
+            <OriginLabel chainId={execution.originChain} purchase={purchase} />
+            bridging to <MonadLabel />
           </Stage>
         </>
       )}
@@ -124,7 +152,9 @@ export function ExecutionStatusModal({
             Running for <ElapsedTime since={execution.createdAt} />
           </p>
         )}
-        {execution && <Stages execution={execution} />}
+        {execution && purchase && (
+          <Stages execution={execution} purchase={purchase} />
+        )}
         {execution?.errorMessage && (
           <p className="text-sm text-negative">{execution.errorMessage}</p>
         )}
