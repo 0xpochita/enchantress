@@ -16,6 +16,12 @@ export interface StoredSnapshot {
   totalValueUsd: number;
 }
 
+export interface DatedFlow {
+  at: string;
+  direction: "in" | "out";
+  valueUsd: number;
+}
+
 function roundCents(value: number): number {
   return Math.round(value * CENTS) / CENTS;
 }
@@ -40,8 +46,19 @@ export function snapshotRow(
   };
 }
 
+function netDepositSteps(flows: DatedFlow[]): ValuePoint[] {
+  let total = 0;
+  return [...flows]
+    .sort((a, b) => a.at.localeCompare(b.at))
+    .map((flow) => {
+      total += flow.direction === "in" ? flow.valueUsd : -flow.valueUsd;
+      return { time: Date.parse(flow.at), valueUsd: total };
+    });
+}
+
 export function historySeries(
   snapshots: StoredSnapshot[],
+  flows: DatedFlow[],
   live: ValuePoint,
 ): ValuePoint[] {
   const today = snapshotDate(new Date(live.time));
@@ -49,5 +66,5 @@ export function historySeries(
     .filter((s) => s.takenAt < today)
     .sort((a, b) => a.takenAt.localeCompare(b.takenAt))
     .map((s) => ({ time: Date.parse(s.takenAt), valueUsd: s.totalValueUsd }));
-  return [...past, live];
+  return [...(past.length > 0 ? past : netDepositSteps(flows)), live];
 }

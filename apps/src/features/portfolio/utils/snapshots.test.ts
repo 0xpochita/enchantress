@@ -36,10 +36,27 @@ test("historySeries orders past snapshots and ends with the live point", () => {
       { takenAt: "2026-10-02", totalValueUsd: 20 },
       { takenAt: "2026-10-01", totalValueUsd: 10 },
     ],
+    [{ at: "2026-09-01T00:00:00Z", direction: "in", valueUsd: 5 }],
     live,
   );
   assert.deepEqual(
     series.map((p) => p.valueUsd),
     [10, 20, 30],
+  );
+});
+
+test("historySeries falls back to net deposits before the first snapshot", () => {
+  const live = { time: Date.parse("2026-10-03T12:00:00Z"), valueUsd: 31 };
+  const series = historySeries(
+    [{ takenAt: "2026-10-03", totalValueUsd: 30 }],
+    [
+      { at: "2026-10-02T00:00:00Z", direction: "out", valueUsd: 10 },
+      { at: "2026-10-01T00:00:00Z", direction: "in", valueUsd: 40 },
+    ],
+    live,
+  );
+  assert.deepEqual(
+    series.map((p) => p.valueUsd),
+    [40, 30, 31],
   );
 });

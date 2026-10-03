@@ -3,7 +3,7 @@ import { monadToken } from "@/features/chain/config/tokens";
 import { listIndexes } from "@/features/indexes/services/index-repository";
 import { VENUE_CONFIGS } from "@/features/vaults/config/venues";
 import { getVenueSnapshot } from "@/features/vaults/services/venue-snapshot";
-import { summarizePortfolio, valueSeries } from "@/utils/portfolio";
+import { summarizePortfolio } from "@/utils/portfolio";
 import type {
   Portfolio,
   PortfolioActivity,
@@ -16,11 +16,9 @@ import {
   type IndexPosition,
   netInvestedByIndex,
 } from "../utils/positions";
-import { historySeries, type StoredSnapshot } from "../utils/snapshots";
+import { historySeries } from "../utils/snapshots";
 import { userLedger, userLots, userSnapshots } from "./portfolio-repository";
 import { valueLots } from "./valuation";
-
-const CHART_POINTS = 60;
 
 type LedgerRow = Awaited<ReturnType<typeof userLedger>>[number];
 type IndexNames = Map<string, string>;
@@ -79,26 +77,6 @@ function buildTotals(positions: IndexPosition[]): Portfolio["totals"] {
   };
 }
 
-function buildHistory(
-  snapshots: StoredSnapshot[],
-  ledgerRows: LedgerRow[],
-  totals: Portfolio["totals"],
-): Portfolio["history"] {
-  const now = new Date();
-  const series = historySeries(snapshots, {
-    time: now.getTime(),
-    valueUsd: totals.valueUsd,
-  });
-  if (series.length > 1 || totals.valueUsd === 0) return series;
-  const deposits = ledgerRows
-    .filter((row) => row.direction === "in")
-    .map((row) => ({
-      timestamp: row.at.toISOString(),
-      valueUsd: Number(row.valueUsd),
-    }));
-  return valueSeries(deposits, totals.apy, now.toISOString(), CHART_POINTS);
-}
-
 export async function getPortfolio(userId: string): Promise<Portfolio> {
   const [lots, ledgerRows, snapshots, indexes, venues] = await Promise.all([
     userLots(userId),
@@ -117,7 +95,10 @@ export async function getPortfolio(userId: string): Promise<Portfolio> {
   return {
     totals,
     positions: positions.map((p) => toPosition(p, names)),
-    history: buildHistory(snapshots, ledgerRows, totals),
+    history: historySeries(snapshots, flows, {
+      time: Date.now(),
+      valueUsd: totals.valueUsd,
+    }),
     activity: flows,
     prices: Object.fromEntries(
       venues.assets.map((a) => [a.symbol, a.priceUsd]),
