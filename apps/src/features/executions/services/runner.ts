@@ -1,6 +1,7 @@
 import "server-only";
 import type { Address, Hex } from "viem";
 import { serverEnv } from "@/config/env.server";
+import { advanceBridging } from "@/features/bridge/services/bridge-lifecycle";
 import { UNISWAP_MONAD } from "@/features/chain/abis/uniswap";
 import {
   type ChainToken,
@@ -35,6 +36,7 @@ import {
   releaseLease,
   updateStep,
 } from "./execution-repository";
+import { DepositRequestError } from "./plan-deposit";
 import { readTransactionState, sendMonadTransaction } from "./privy-sender";
 import { bestSwapQuote, NoLiquidityError } from "./uniswap-quote";
 
@@ -322,7 +324,11 @@ async function settleStep(
 }
 
 function failureOf(error: unknown): { code: string; message: string } {
-  if (error instanceof ExecutionStepError || error instanceof NoLiquidityError)
+  if (
+    error instanceof ExecutionStepError ||
+    error instanceof NoLiquidityError ||
+    error instanceof DepositRequestError
+  )
     return { code: error.name, message: error.message };
   return {
     code: "UNEXPECTED",
@@ -352,7 +358,9 @@ export async function advanceExecution(id: string): Promise<void> {
   const loaded = await loadExecution(id);
   const step = loaded?.steps.find((s) => s.status !== "confirmed");
   try {
-    if (!loaded || loaded.execution.status !== "executing") return;
+    if (!loaded) return;
+    if (loaded.execution.status === "bridging") return advanceBridging(loaded);
+    if (loaded.execution.status !== "executing") return;
     if (!step) return finishExecution(id, "succeeded");
     await runStep(loaded, step);
   } catch (error) {

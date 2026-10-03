@@ -2,6 +2,7 @@ import { ArrowDown, ChevronRight, Wallet } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { buttonClassName, Card, TokenStack } from "@/components/ui";
+import type { BridgeDepositController, QuotePreview } from "@/features/bridge";
 import type { DepositRoutes } from "@/hooks/useDepositRoutes";
 import type { IndexQuote } from "@/types/market";
 import { formatAmount, formatPercent, formatUsd } from "@/utils/format";
@@ -10,25 +11,37 @@ import { TokenButton } from "../token-select/TokenButton";
 interface DepositFormProps {
   deposit: DepositRoutes;
   quote?: IndexQuote;
+  preview: { data?: QuotePreview; isPending: boolean; error?: Error };
+  bridge: BridgeDepositController;
+  isBalanceLoading: boolean;
 }
+
+type FormProps = Pick<DepositFormProps, "deposit" | "quote">;
 
 const BOX = "flex flex-col gap-3 rounded-md bg-surface-raised p-5";
 
-export function DepositForm({ deposit, quote }: DepositFormProps) {
+export function DepositForm(props: DepositFormProps) {
+  const { deposit, quote } = props;
   return (
     <Card className="flex h-full flex-col gap-2 p-4">
-      <SellBox deposit={deposit} />
+      <SellBox deposit={deposit} isBalanceLoading={props.isBalanceLoading} />
       <span className="relative z-1 mx-auto -my-5 rounded-full border-4 border-surface bg-surface-raised p-2">
         <ArrowDown aria-hidden className="size-4 text-ink-muted" />
       </span>
       <EarnBox deposit={deposit} quote={quote} />
-      <DetailsBox deposit={deposit} quote={quote} />
-      <SubmitRow deposit={deposit} quote={quote} />
+      <DetailsBox {...props} />
+      <SubmitRow {...props} />
     </Card>
   );
 }
 
-function SellBox({ deposit }: { deposit: DepositRoutes }) {
+function SellBox({
+  deposit,
+  isBalanceLoading,
+}: {
+  deposit: DepositRoutes;
+  isBalanceLoading: boolean;
+}) {
   const { token, chain } = deposit;
   return (
     <div
@@ -56,7 +69,8 @@ function SellBox({ deposit }: { deposit: DepositRoutes }) {
           className={`flex items-center gap-2 ${deposit.isInsufficient ? "text-negative" : "text-ink-muted"}`}
         >
           <Wallet aria-hidden className="size-4" />
-          {formatAmount(deposit.balance)} {token?.symbol}
+          {isBalanceLoading ? "Loading" : formatAmount(deposit.balance)}{" "}
+          {token?.symbol}
         </span>
         <span className="text-ink-muted">~{formatUsd(deposit.amountUsd)}</span>
       </div>
@@ -64,7 +78,7 @@ function SellBox({ deposit }: { deposit: DepositRoutes }) {
   );
 }
 
-function EarnBox({ deposit, quote }: DepositFormProps) {
+function EarnBox({ deposit, quote }: FormProps) {
   return (
     <div className={BOX}>
       <span className="text-sm text-ink-muted">You earn</span>
@@ -118,19 +132,27 @@ function RouteLabel({ deposit }: { deposit: DepositRoutes }) {
   );
 }
 
-function DetailsBox({ deposit, quote }: DepositFormProps) {
+function feeUsd(deposit: DepositRoutes, preview?: QuotePreview): number {
+  if (!deposit.isCrossChain || !preview) return 0;
+  return Math.max(0, preview.amountInUsd - preview.amountOutUsd);
+}
+
+function arrivesIn(deposit: DepositRoutes, preview?: QuotePreview): string {
+  if (!deposit.isCrossChain) return "Instant";
+  if (!preview) return "Quoting";
+  return `~${Math.max(1, Math.ceil(preview.timeEstimateSeconds / 60))} min`;
+}
+
+function DetailsBox({ deposit, quote, preview }: DepositFormProps) {
   const rows = [
     { label: "Route", value: <RouteLabel deposit={deposit} /> },
-    { label: "Arrives", value: deposit.isCrossChain ? "~1 min" : "Instant" },
+    { label: "Arrives", value: arrivesIn(deposit, preview.data) },
     { label: "Protocols", value: quote?.venues.length ?? 0 },
     {
       label: "Rewards / month",
       value: formatUsd((deposit.selected?.yearlyUsd ?? 0) / MONTHS_PER_YEAR),
     },
-    {
-      label: "Est. fee",
-      value: `~${formatUsd(deposit.selected?.feeUsd ?? 0)}`,
-    },
+    { label: "Bridge fee", value: formatUsd(feeUsd(deposit, preview.data)) },
   ];
   return (
     <dl className="mt-2 flex flex-1 flex-col justify-center gap-3 rounded-md border border-line px-5 py-4 text-sm">
@@ -147,15 +169,32 @@ function DetailsBox({ deposit, quote }: DepositFormProps) {
   );
 }
 
-function SubmitRow({ deposit, quote }: DepositFormProps) {
+function submitLabel(props: DepositFormProps): string {
+  if (!props.bridge.isAuthenticated) return "Log in to deposit";
+  if (props.deposit.isInsufficient) return "Not enough balance";
+  if (props.deposit.isCrossChain && props.preview.error)
+    return "No route right now";
+  return "Deposit";
+}
+
+function SubmitRow(props: DepositFormProps) {
+  const { deposit, quote, preview, bridge } = props;
+  const waitingForQuote =
+    deposit.isCrossChain && (preview.isPending || Boolean(preview.error));
+  const isDisabled =
+    bridge.isAuthenticated &&
+    (!quote ||
+      deposit.amountUsd <= 0 ||
+      deposit.isInsufficient ||
+      waitingForQuote);
   return (
     <button
       type="button"
-      disabled={!quote || deposit.amountUsd <= 0}
-      onClick={deposit.review}
+      disabled={isDisabled}
+      onClick={bridge.review}
       className={buttonClassName("primary", "mt-2 w-full py-3")}
     >
-      Deposit
+      {submitLabel(props)}
     </button>
   );
 }

@@ -1,20 +1,36 @@
 import "server-only";
 import { createPublicClient, http, type PublicClient } from "viem";
-import { MONAD_CHAIN } from "@/config/chains";
+import { originChainById } from "@/config/chains";
 import { serverEnv } from "@/config/env.server";
 
-let client: PublicClient | undefined;
+const clients = new Map<string, PublicClient>();
 
-function rpcUrl(): string | undefined {
+function rpcOverride(chainId: string): string | undefined {
   const env = serverEnv();
-  return env.MONAD_RPC_URL ?? env.NEXT_PUBLIC_MONAD_RPC_URL;
+  const overrides: Record<string, string | undefined> = {
+    monad: env.MONAD_RPC_URL ?? env.NEXT_PUBLIC_MONAD_RPC_URL,
+    eth: env.ETHEREUM_RPC_URL,
+    base: env.BASE_RPC_URL,
+    arb: env.ARBITRUM_RPC_URL,
+  };
+  return overrides[chainId];
+}
+
+export function originChainClient(chainId: string): PublicClient {
+  const origin = originChainById(chainId);
+  if (!origin) throw new Error(`Unsupported chain ${chainId}`);
+  let client = clients.get(chainId);
+  if (!client) {
+    client = createPublicClient({
+      chain: origin.chain,
+      transport: http(rpcOverride(chainId), { batch: true }),
+      batch: { multicall: true },
+    });
+    clients.set(chainId, client);
+  }
+  return client;
 }
 
 export function monadClient(): PublicClient {
-  client ??= createPublicClient({
-    chain: MONAD_CHAIN,
-    transport: http(rpcUrl(), { batch: true }),
-    batch: { multicall: true },
-  });
-  return client;
+  return originChainClient("monad");
 }

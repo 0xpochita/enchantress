@@ -54,3 +54,17 @@ export async function apiPost<T>(
   if (!response.ok) throw new ApiError(response.status, failureMessage(parsed));
   return schema.parse(parsed);
 }
+
+export async function apiDelete<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  accessToken: string,
+): Promise<T> {
+  const response = await fetch(path, {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${accessToken}` },
+  });
+  const parsed = await readJson(response);
+  if (!response.ok) throw new ApiError(response.status, failureMessage(parsed));
+  return schema.parse(parsed);
+}

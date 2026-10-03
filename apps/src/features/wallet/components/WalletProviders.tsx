@@ -8,7 +8,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import type { ReactNode } from "react";
-import { MONAD_CHAIN } from "@/config/chains";
+import { MONAD_CHAIN, ORIGIN_CHAINS } from "@/config/chains";
 import { readClientEnv } from "@/config/env.client";
 
 const LOGIN_METHODS: PrivyClientConfig["loginMethods"] = ["email", "google"];
@@ -45,7 +45,10 @@ export function WalletProviders({ children }: { children: ReactNode }) {
         loginMethods: LOGIN_METHODS,
         embeddedWallets: { ethereum: { createOnLogin: "all-users" } },
         defaultChain: chain,
-        supportedChains: [chain],
+        supportedChains: [
+          chain,
+          ...ORIGIN_CHAINS.filter((c) => c.id !== "monad").map((c) => c.chain),
+        ],
       }}
     >
       <QueryClientProvider client={getQueryClient()}>

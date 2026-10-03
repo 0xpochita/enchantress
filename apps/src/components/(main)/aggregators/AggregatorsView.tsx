@@ -1,12 +1,11 @@
 import {
-  DEFAULT_DEPOSIT_TOKEN_ID,
+  getBridgeSource,
+  MONAD_USDC_ASSET_ID,
+} from "@/features/bridge/services/bridge-catalog";
+import {
   getAllVenues,
-  getChains,
   getIndexSummaries,
-  getTokens,
   type IndexSummary,
-  POPULAR_TOKEN_IDS,
-  WALLET_BALANCES,
 } from "@/lib/market";
 import type { IndexQuote, Venue } from "@/types/market";
 import { DepositAggregator } from "./DepositAggregator";
@@ -39,16 +38,11 @@ function toHubProtocol(venue: Venue): HubProtocol {
 }
 
 export async function AggregatorsView() {
-  const [venues, summaries] = await Promise.all([
+  const [venues, summaries, source] = await Promise.all([
     getAllVenues(),
     getIndexSummaries(),
+    getBridgeSource(),
   ]);
-  const catalog = {
-    chains: getChains(),
-    tokens: getTokens(),
-    balances: WALLET_BALANCES,
-    popularTokenIds: POPULAR_TOKEN_IDS,
-  };
   return (
     <>
       <div className="flex max-w-2xl flex-col gap-2">
@@ -61,11 +55,11 @@ export async function AggregatorsView() {
         </p>
       </div>
       <DepositAggregator
-        catalog={catalog}
+        catalog={source.catalog}
         quotes={summaries.map(toQuote)}
         protocols={venues.map(toHubProtocol)}
         venues={venues}
-        defaultTokenId={DEFAULT_DEPOSIT_TOKEN_ID}
+        defaultTokenId={MONAD_USDC_ASSET_ID}
       />
     </>
   );

@@ -9,7 +9,7 @@ import {
   ledger,
   positionLots,
 } from "@/lib/db/schema";
-import type { ExecutionView } from "../types";
+import { ACTIVE_STATUSES, type ExecutionView } from "../types";
 import type { PlannedStep } from "../utils/plan";
 
 const LEASE_SECONDS = 60;
@@ -77,7 +77,7 @@ export async function acquireLease(id: string): Promise<boolean> {
     .where(
       and(
         eq(executions.id, id),
-        eq(executions.status, "executing"),
+        inArray(executions.status, [...ACTIVE_STATUSES]),
         or(
           isNull(executions.leaseUntil),
           lt(executions.leaseUntil, sql`now()`),
@@ -107,7 +107,7 @@ export async function updateStep(
 
 export async function finishExecution(
   id: string,
-  status: "succeeded" | "failed",
+  status: "succeeded" | "failed" | "refunded" | "cancelled",
   error?: { code: string; message: string },
 ): Promise<void> {
   await db()
@@ -158,7 +158,10 @@ export async function activeExecutionId(
     .select({ id: executions.id })
     .from(executions)
     .where(
-      and(eq(executions.userId, userId), eq(executions.status, "executing")),
+      and(
+        eq(executions.userId, userId),
+        inArray(executions.status, [...ACTIVE_STATUSES]),
+      ),
     )
     .limit(1);
   return row?.id ?? null;
@@ -185,7 +188,7 @@ export async function staleExecutionIds(): Promise<string[]> {
     .from(executions)
     .where(
       and(
-        eq(executions.status, "executing"),
+        inArray(executions.status, [...ACTIVE_STATUSES]),
         or(
           isNull(executions.leaseUntil),
           lt(executions.leaseUntil, sql`now()`),
@@ -204,6 +207,9 @@ export function toExecutionView(loaded: LoadedExecution): ExecutionView {
     depositAsset: execution.depositAsset,
     depositAmountBase: execution.depositAmountBase,
     valueUsd: Number(execution.valueUsd),
+    originChain: execution.originChain,
+    originTxHash: execution.originTxHash,
+    auroraStatus: execution.auroraStatus,
     errorMessage: execution.errorMessage,
     steps: steps.map((step) => ({
       position: step.position,
@@ -214,4 +220,58 @@ export function toExecutionView(loaded: LoadedExecution): ExecutionView {
       txHash: step.txHash,
     })),
   };
+}
+
+export async function createBridgingExecution(input: {
+  userId: string;
+  indexId: string;
+  valueUsd: number;
+  estimatedLandedBase: bigint;
+  originChain: string;
+  originAssetId: string;
+  originAmountBase: bigint;
+  depositAddress: string;
+  depositMemo: string | null;
+  deadline: Date;
+}): Promise<ExecutionRow> {
+  const [execution] = await db()
+    .insert(executions)
+    .values({
+      userId: input.userId,
+      indexId: input.indexId,
+      kind: "deposit",
+      status: "bridging",
+      depositAsset: "USDC",
+      depositAmountBase: input.estimatedLandedBase.toString(),
+      valueUsd: input.valueUsd.toFixed(2),
+      originChain: input.originChain,
+      originAssetId: input.originAssetId,
+      originAmountBase: input.originAmountBase.toString(),
+      auroraDepositAddress: input.depositAddress,
+      auroraDepositMemo: input.depositMemo,
+      auroraDeadline: input.deadline,
+      auroraStatus: "PENDING_DEPOSIT",
+    })
+    .returning();
+  return execution;
+}
+
+export async function insertSteps(
+  executionId: string,
+  steps: PlannedStep[],
+): Promise<void> {
+  if (steps.length === 0) return;
+  await db()
+    .insert(executionSteps)
+    .values(steps.map((step) => ({ executionId, ...step })));
+}
+
+export async function updateExecution(
+  id: string,
+  patch: Partial<ExecutionRow>,
+): Promise<void> {
+  await db()
+    .update(executions)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(eq(executions.id, id));
 }

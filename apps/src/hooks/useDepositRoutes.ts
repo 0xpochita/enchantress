@@ -1,7 +1,8 @@
+"use client";
+
 import { useMemo, useState } from "react";
 import type { Chain, IndexQuote, Token, WalletBalance } from "@/types/market";
 import { rankRoutes } from "@/utils/routes";
-import { useSubmitFlow } from "./useSubmitFlow";
 
 export const ALL_VENUES = "all";
 
@@ -21,7 +22,6 @@ export function useDepositRoutes(source: DepositRoutesSource) {
   const [venueId, setVenueId] = useState(ALL_VENUES);
   const [selectedIndexId, setSelectedIndexId] = useState<string | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const flow = useSubmitFlow(() => setAmount(""));
 
   const derived = useMemo(() => {
     const token = source.tokens.find((t) => t.id === tokenId);
@@ -64,7 +64,6 @@ export function useDepositRoutes(source: DepositRoutesSource) {
     setVenueId,
     selectIndex: setSelectedIndexId,
     isPickerOpen,
-    ...flow,
     openPicker: () => setIsPickerOpen(true),
     closePicker: () => setIsPickerOpen(false),
   };

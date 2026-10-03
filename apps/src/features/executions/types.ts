@@ -1,6 +1,15 @@
 import { z } from "zod";
 
-export const EXECUTION_STATUSES = ["executing", "succeeded", "failed"] as const;
+export const EXECUTION_STATUSES = [
+  "bridging",
+  "executing",
+  "succeeded",
+  "failed",
+  "refunded",
+  "cancelled",
+] as const;
+
+export const ACTIVE_STATUSES = ["bridging", "executing"] as const;
 
 export type ExecutionStatus = (typeof EXECUTION_STATUSES)[number];
 
@@ -29,6 +38,9 @@ export const executionViewSchema = z.object({
   depositAsset: z.string(),
   depositAmountBase: z.string(),
   valueUsd: z.number(),
+  originChain: z.string().nullable(),
+  originTxHash: z.string().nullable(),
+  auroraStatus: z.string().nullable(),
   errorMessage: z.string().nullable(),
   steps: z.array(executionStepViewSchema),
 });

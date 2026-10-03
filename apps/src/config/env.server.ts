@@ -21,6 +21,10 @@ const serverEnvSchema = clientEnvSchema.extend({
     ),
   SWAP_SLIPPAGE_BPS: z.coerce.number().int().min(1).max(1000).default(50),
   SWAP_MAX_ORACLE_DEVIATION_BPS: z.coerce.number().int().min(1).default(500),
+  AURORA_INTENTS_API_KEY: z.string().min(1).optional(),
+  ETHEREUM_RPC_URL: z.url().optional(),
+  BASE_RPC_URL: z.url().optional(),
+  ARBITRUM_RPC_URL: z.url().optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -41,5 +45,9 @@ export function serverEnv(): ServerEnv {
     SWAP_SLIPPAGE_BPS: process.env.SWAP_SLIPPAGE_BPS || undefined,
     SWAP_MAX_ORACLE_DEVIATION_BPS:
       process.env.SWAP_MAX_ORACLE_DEVIATION_BPS || undefined,
+    AURORA_INTENTS_API_KEY: process.env.AURORA_INTENTS_API_KEY || undefined,
+    ETHEREUM_RPC_URL: process.env.ETHEREUM_RPC_URL || undefined,
+    BASE_RPC_URL: process.env.BASE_RPC_URL || undefined,
+    ARBITRUM_RPC_URL: process.env.ARBITRUM_RPC_URL || undefined,
   });
 }
