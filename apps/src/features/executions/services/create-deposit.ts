@@ -1,19 +1,18 @@
 import "server-only";
 import { type Address, parseUnits } from "viem";
-import { serverEnv } from "@/config/env.server";
 import { MONAD_TOKENS } from "@/features/chain/config/tokens";
 import { readTokenBalance } from "@/features/chain/services/balances";
+import { monadClient } from "@/features/chain/services/public-client";
 import type { UserRow } from "@/lib/db/schema";
 import type { CreateExecutionBody, ExecutionView } from "../types";
-import { checkBetaGate } from "../utils/beta-gate";
 import {
   activeExecutionId,
   createExecution,
   loadExecution,
-  spentTodayUsd,
   toExecutionView,
 } from "./execution-repository";
 import { buildDepositPlan, DepositRequestError } from "./plan-deposit";
+import { isMonadSponsored } from "./privy-sender";
 
 export { DepositRequestError };
 
@@ -38,19 +37,15 @@ export function requireDelegatedWallet(user: UserRow): DelegatedWallet {
   return { id: user.walletId, address: user.walletAddress as Address };
 }
 
-export async function assertBetaGate(
-  user: UserRow,
-  valueUsd: number,
-): Promise<void> {
-  const env = serverEnv();
-  const gate = checkBetaGate({
-    email: user.email,
-    allowlist: env.BETA_ALLOWLIST_EMAILS,
-    spentTodayUsd: await spentTodayUsd(user.id),
-    valueUsd,
-    maxPerDayUsd: env.BETA_MAX_DEPOSIT_USD_PER_DAY,
-  });
-  if (!gate.ok) throw new DepositRequestError(403, "BETA_LIMIT", gate.reason);
+export async function assertMonadGas(address: Address): Promise<void> {
+  if (isMonadSponsored()) return;
+  const balance = await monadClient().getBalance({ address });
+  if (balance === 0n)
+    throw new DepositRequestError(
+      400,
+      "NO_GAS",
+      "Add a little MON to your wallet on Monad to pay for gas.",
+    );
 }
 
 export async function assertNoActiveExecution(user: UserRow): Promise<void> {
@@ -68,6 +63,7 @@ export async function createDeposit(
 ): Promise<ExecutionView> {
   const wallet = requireDelegatedWallet(user);
   await assertNoActiveExecution(user);
+  await assertMonadGas(wallet.address);
   const token = MONAD_TOKENS[body.depositAsset];
   const amountBase = parseUnits(body.amount, token.decimals);
   const balance = await readTokenBalance(wallet.address, token);
@@ -86,7 +82,6 @@ export async function createDeposit(
     plan.summary.allocations.find((a) => a.asset.symbol === body.depositAsset)
       ?.asset.priceUsd ?? 1;
   const valueUsd = Number(body.amount) * price;
-  await assertBetaGate(user, valueUsd);
   const execution = await createExecution({
     userId: user.id,
     indexId: plan.summary.index.id,

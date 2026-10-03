@@ -15,6 +15,7 @@ import {
   withdrawSteps,
 } from "../utils/withdraw";
 import {
+  assertMonadGas,
   assertNoActiveExecution,
   requireDelegatedWallet,
 } from "./create-deposit";
@@ -105,6 +106,7 @@ export async function createWithdraw(
 ): Promise<ExecutionView> {
   const wallet = requireDelegatedWallet(user);
   await assertNoActiveExecution(user);
+  await assertMonadGas(wallet.address);
   const legs = await plannedLegs(user, wallet.address, body);
   const price = await priceLookup();
   const symbols = [...new Set(legs.map((leg) => leg.holding.assetSymbol))];

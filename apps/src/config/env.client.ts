@@ -10,7 +10,7 @@ export const clientEnvSchema = z.object({
   NEXT_PUBLIC_PRIVY_VAULT_POLICY_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_SPONSORED_CHAIN_IDS: z
     .string()
-    .default("143")
+    .default("")
     .transform((value) =>
       value
         .split(",")

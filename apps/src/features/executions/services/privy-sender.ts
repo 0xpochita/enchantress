@@ -29,6 +29,10 @@ function signerKey(): string {
   return key;
 }
 
+export function isMonadSponsored(): boolean {
+  return serverEnv().NEXT_PUBLIC_SPONSORED_CHAIN_IDS.includes(MONAD_CHAIN.id);
+}
+
 export async function sendMonadTransaction(input: {
   walletId: string;
   to: Address;
@@ -40,7 +44,7 @@ export async function sendMonadTransaction(input: {
     .ethereum()
     .sendTransaction(input.walletId, {
       caip2: MONAD_CAIP2,
-      sponsor: true,
+      sponsor: isMonadSponsored(),
       idempotency_key: input.idempotencyKey,
       authorization_context: { authorization_private_keys: [signerKey()] },
       params: {

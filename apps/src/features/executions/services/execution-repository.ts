@@ -1,17 +1,5 @@
 import "server-only";
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  gt,
-  inArray,
-  isNull,
-  lt,
-  ne,
-  or,
-  sql,
-} from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   type ExecutionRow,
@@ -27,7 +15,6 @@ import type { PlannedStep } from "../utils/plan";
 import { reduceLots } from "../utils/withdraw";
 
 const LEASE_SECONDS = 60;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface LoadedExecution {
   execution: ExecutionRow;
@@ -180,22 +167,6 @@ export async function activeExecutionId(
     )
     .limit(1);
   return row?.id ?? null;
-}
-
-export async function spentTodayUsd(userId: string): Promise<number> {
-  const since = new Date(Date.now() - DAY_MS);
-  const [row] = await db()
-    .select({ total: sql<string>`coalesce(sum(${executions.valueUsd}), 0)` })
-    .from(executions)
-    .where(
-      and(
-        eq(executions.userId, userId),
-        ne(executions.kind, "withdraw"),
-        inArray(executions.status, ["executing", "succeeded"]),
-        gt(executions.createdAt, since),
-      ),
-    );
-  return Number(row?.total ?? 0);
 }
 
 export async function staleExecutionIds(): Promise<string[]> {

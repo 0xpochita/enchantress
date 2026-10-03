@@ -2,7 +2,7 @@ import "server-only";
 import { parseUnits } from "viem";
 import { MONAD_CHAIN, originChainById } from "@/config/chains";
 import {
-  assertBetaGate,
+  assertMonadGas,
   assertNoActiveExecution,
   createDeposit,
   DepositRequestError,
@@ -48,6 +48,7 @@ export async function createBridgeDeposit(
   }
   const wallet = requireDelegatedWallet(user);
   await assertNoActiveExecution(user);
+  await assertMonadGas(wallet.address);
   const token = await getBridgeTokenDetail(body.originTokenId);
   if (!token)
     throw new DepositRequestError(400, "TOKEN", "This token is not supported.");
@@ -60,7 +61,6 @@ export async function createBridgeDeposit(
     );
   await assertOriginBalance(wallet.address, token, body.amount);
   const quote = await requestBridgeQuote(token, body.amount, wallet.address);
-  await assertBetaGate(user, Number(quote.amountInUsd));
   const execution = await createBridgingExecution({
     userId: user.id,
     indexId: body.indexId,
