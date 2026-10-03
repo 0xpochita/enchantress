@@ -48,7 +48,11 @@ export async function buildDepositPlan(
       "This index does not exist.",
     );
   if (amountBase <= 0n)
-    throw new ExecutionRequestError(400, "AMOUNT", "Enter an amount above zero.");
+    throw new ExecutionRequestError(
+      400,
+      "AMOUNT",
+      "Enter an amount above zero.",
+    );
   const { summary, routing } = routed;
   if (!routing.ok)
     throw new ExecutionRequestError(
