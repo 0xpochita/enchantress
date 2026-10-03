@@ -1,11 +1,12 @@
 import { ArrowDown, ChevronRight, Wallet } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { buttonClassName, Card, TokenStack } from "@/components/ui";
 import type { BridgeDepositController, QuotePreview } from "@/features/bridge";
 import type { DepositRoutes } from "@/hooks/useDepositRoutes";
 import type { IndexQuote } from "@/types/market";
+import { cleanAmountInput } from "@/utils/amount-input";
 import { formatAmount, formatPercent, formatUsd } from "@/utils/format";
+import { AuroraIntents } from "../flow/AuroraIntents";
 import { TokenButton } from "../token-select/TokenButton";
 
 interface DepositFormProps {
@@ -24,7 +25,11 @@ export function DepositForm(props: DepositFormProps) {
   const { deposit, quote } = props;
   return (
     <Card className="flex h-full flex-col gap-2 p-4">
-      <SellBox deposit={deposit} isBalanceLoading={props.isBalanceLoading} />
+      <SellBox
+        deposit={deposit}
+        isBalanceLoading={props.isBalanceLoading}
+        error={amountError(props)}
+      />
       <span className="relative z-1 mx-auto -my-5 rounded-full border-4 border-surface bg-surface-raised p-2">
         <ArrowDown aria-hidden className="size-4 text-ink-muted" />
       </span>
@@ -35,17 +40,31 @@ export function DepositForm(props: DepositFormProps) {
   );
 }
 
+function minimumError(props: DepositFormProps): string | null {
+  if (!props.deposit.isCrossChain) return null;
+  const message = props.preview.error?.message;
+  return message?.startsWith("Minimum") ? message : null;
+}
+
+function amountError(props: DepositFormProps): string | null {
+  if (props.deposit.isInsufficient)
+    return `Not enough ${props.deposit.token?.symbol ?? "balance"}`;
+  return minimumError(props);
+}
+
 function SellBox({
   deposit,
   isBalanceLoading,
+  error,
 }: {
   deposit: DepositRoutes;
   isBalanceLoading: boolean;
+  error: string | null;
 }) {
   const { token, chain } = deposit;
   return (
     <div
-      className={`${BOX} border border-transparent focus-within:border-line`}
+      className={`${BOX} border ${error ? "border-negative" : "border-transparent focus-within:border-line"}`}
     >
       <label htmlFor="aggregator-amount" className="text-sm text-ink-muted">
         You deposit
@@ -57,9 +76,11 @@ function SellBox({
           inputMode="decimal"
           autoComplete="off"
           placeholder="0"
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "aggregator-amount-error" : undefined}
           value={deposit.amount}
           onChange={(e) =>
-            deposit.setAmount(e.target.value.replace(/[^0-9.]/g, ""))
+            deposit.setAmount(cleanAmountInput(e.target.value, token?.decimals))
           }
           className="w-full min-w-0 bg-transparent text-right text-3xl font-light outline-none placeholder:text-ink-subtle"
         />
@@ -74,6 +95,15 @@ function SellBox({
         </span>
         <span className="text-ink-muted">~{formatUsd(deposit.amountUsd)}</span>
       </div>
+      {error && (
+        <p
+          id="aggregator-amount-error"
+          role="alert"
+          className="text-sm text-negative"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -117,19 +147,7 @@ const MONTHS_PER_YEAR = 12;
 
 function RouteLabel({ deposit }: { deposit: DepositRoutes }) {
   if (!deposit.isCrossChain) return <span>Already on Monad</span>;
-  return (
-    <span className="flex items-center gap-1.5">
-      {deposit.chain?.name} via
-      <Image
-        src="/logo/aurora-logo.avif"
-        alt=""
-        width={14}
-        height={15}
-        className="rounded-sm"
-      />
-      Aurora Intents
-    </span>
-  );
+  return <AuroraIntents />;
 }
 
 function feeUsd(deposit: DepositRoutes, preview?: QuotePreview): number {
@@ -172,6 +190,8 @@ function DetailsBox({ deposit, quote, preview }: DepositFormProps) {
 function submitLabel(props: DepositFormProps): string {
   if (!props.bridge.isAuthenticated) return "Log in to deposit";
   if (props.deposit.isInsufficient) return "Not enough balance";
+  const minimum = minimumError(props);
+  if (minimum) return minimum;
   if (props.deposit.isCrossChain && props.preview.error)
     return "No route right now";
   return "Deposit";

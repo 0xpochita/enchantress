@@ -81,7 +81,13 @@ function FailedStep({ draft }: { draft: IndexDraft }) {
   );
 }
 
-function PendingContent({ draft }: { draft: IndexDraft }) {
+function PendingContent({
+  draft,
+  chain,
+}: {
+  draft: IndexDraft;
+  chain?: Chain;
+}) {
   if (draft.flow.indexId && draft.flow.hasDeposit)
     return (
       <ProgressStep
@@ -90,6 +96,7 @@ function PendingContent({ draft }: { draft: IndexDraft }) {
           isCrossChain: draft.depositToken?.chainId !== VAULT_CHAIN_ID,
           amount: draft.amount,
           token: draft.depositToken,
+          chain,
         }}
       />
     );
@@ -108,7 +115,7 @@ export function CreateFlowModal({ draft, chain }: CreateFlowModalProps) {
       label="Create index"
       steps={{
         confirming: <ConfirmStep draft={draft} chain={chain} />,
-        pending: <PendingContent draft={draft} />,
+        pending: <PendingContent draft={draft} chain={chain} />,
         success: <SuccessStep draft={draft} />,
         failed: <FailedStep draft={draft} />,
       }}

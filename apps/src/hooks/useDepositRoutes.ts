@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { Chain, IndexQuote, Token, WalletBalance } from "@/types/market";
 import { rankRoutes } from "@/utils/routes";
+import { useLastToken } from "./useLastToken";
 
 export const ALL_VENUES = "all";
 
@@ -17,7 +18,10 @@ interface DepositRoutesSource {
 const VAULT_CHAIN_ID = "monad";
 
 export function useDepositRoutes(source: DepositRoutesSource) {
-  const [tokenId, setTokenId] = useState(source.defaultTokenId);
+  const [tokenId, setTokenId] = useLastToken(
+    source.defaultTokenId,
+    source.tokens.map((t) => t.id),
+  );
   const [amount, setAmount] = useState("");
   const [venueId, setVenueId] = useState(ALL_VENUES);
   const [selectedIndexId, setSelectedIndexId] = useState<string | null>(null);

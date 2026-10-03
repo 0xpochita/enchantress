@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { buttonClassName, CryptoIcon } from "@/components/ui";
+import { buttonClassName, CryptoIcon, TokenStack } from "@/components/ui";
 import type { RoutedAllocation } from "@/types/market";
 import { formatPercent } from "@/utils/format";
 
@@ -11,17 +11,42 @@ export interface ReviewItem {
   hint: string;
 }
 
+export interface HeaderIcon {
+  iconKey: string;
+  label: string;
+  badgeIconKey?: string;
+}
+
+export function indexIcons(allocations: RoutedAllocation[]): HeaderIcon[] {
+  const bySymbol = new Map(
+    allocations.map((a) => [
+      a.asset.symbol,
+      { iconKey: a.asset.iconKey, label: a.asset.symbol },
+    ]),
+  );
+  return [...bySymbol.values()];
+}
+
 export function ReviewHeader({
   eyebrow,
   title,
+  icons = [],
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
+  icons?: HeaderIcon[];
 }) {
   return (
     <header className="flex flex-col gap-1">
-      <p className="text-xs text-ink-muted">{eyebrow}</p>
-      <h2 className="text-xl font-light tracking-tight">{title}</h2>
+      {eyebrow && <p className="text-xs text-ink-muted">{eyebrow}</p>}
+      <h2 className="flex items-center gap-3 text-xl font-light tracking-tight">
+        {icons.length === 1 ? (
+          <CryptoIcon {...icons[0]} size={28} />
+        ) : (
+          icons.length > 1 && <TokenStack items={icons} size={28} />
+        )}
+        {title}
+      </h2>
     </header>
   );
 }

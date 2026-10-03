@@ -75,6 +75,7 @@ export interface IndexQuote {
   apy: number;
   assets: { symbol: string; iconKey: string }[];
   venues: { id: string; name: string; iconKey: string }[];
+  allocations: RoutedAllocation[];
 }
 
 export interface IndexTransaction {

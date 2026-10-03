@@ -6,6 +6,7 @@ import { formatUsd } from "@/utils/format";
 import { FlowModal } from "../flow/FlowModal";
 import { ActionButton, ResultStep } from "../flow/ResultStep";
 import {
+  type HeaderIcon,
   ReviewActions,
   ReviewHeader,
   ReviewSummary,
@@ -15,9 +16,10 @@ import { ExecutionSteps } from "./ExecutionSteps";
 interface WithdrawFlowModalProps {
   withdraw: IndexWithdrawController;
   indexName: string;
+  icons: HeaderIcon[];
 }
 
-function ConfirmStep({ withdraw, indexName }: WithdrawFlowModalProps) {
+function ConfirmStep({ withdraw, indexName, icons }: WithdrawFlowModalProps) {
   const assets = withdraw.holdings.map((h) => h.assetSymbol).join(", ");
   const items = [
     { label: "Withdraw", value: withdraw.choice, hint: "of your position" },
@@ -30,7 +32,11 @@ function ConfirmStep({ withdraw, indexName }: WithdrawFlowModalProps) {
   ];
   return (
     <div className="flex flex-col gap-5 p-6">
-      <ReviewHeader eyebrow="Review your withdrawal" title={indexName} />
+      <ReviewHeader
+        eyebrow="Review your withdrawal"
+        title={indexName}
+        icons={icons}
+      />
       <ReviewSummary items={items} />
       {withdraw.needsDelegation && (
         <p className="text-xs text-ink-muted">
@@ -58,8 +64,8 @@ function ProgressStep({ withdraw }: { withdraw: IndexWithdrawController }) {
       />
       <ExecutionSteps execution={withdraw.execution} fallbackAsset="" />
       <p className="text-xs text-ink-subtle">
-        Gas on Monad is paid by Enchantress. Keep this page open; you can also
-        come back later.
+        Gas on Monad is paid from the MON in your wallet. Keep this page open;
+        you can also come back later.
       </p>
     </div>
   );

@@ -23,14 +23,15 @@ interface TagBarProps {
   wrap?: boolean;
 }
 
-const BAR = "flex max-w-full gap-1 border border-line bg-surface p-1";
+const BAR = "flex max-w-full gap-1";
 const BAR_LAYOUT = {
-  scroll: "w-fit overflow-x-auto rounded-full [scrollbar-width:none]",
-  wrap: "flex-wrap rounded-3xl",
+  scroll:
+    "w-fit overflow-x-auto rounded-full border border-line bg-surface p-1 [scrollbar-width:none]",
+  wrap: "flex-wrap gap-y-2",
 };
 
 const TAG =
-  "relative flex flex-none items-center gap-2 rounded-full py-1.5 pr-3 pl-1.5 text-sm text-ink-muted transition-colors duration-200 hover:text-ink aria-[current=true]:text-ink";
+  "relative flex flex-none items-center gap-2 rounded-full py-1.5 pr-3 pl-1.5 text-sm text-ink-muted transition-colors duration-200 hover:bg-surface-hover hover:text-ink aria-[current=true]:text-ink";
 
 function TagContent({
   item,
@@ -60,7 +61,7 @@ function TagContent({
         )}
       </span>
       <span className="relative whitespace-nowrap">{item.label}</span>
-      <span className="relative rounded-full bg-surface px-1.5 text-xs text-ink-subtle tabular-nums">
+      <span className="relative text-xs text-ink-subtle tabular-nums">
         {item.count}
       </span>
     </>

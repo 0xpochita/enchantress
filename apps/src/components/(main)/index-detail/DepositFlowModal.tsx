@@ -6,6 +6,7 @@ import { yearlyRewardsUsd } from "@/utils/yield-index";
 import { FlowModal } from "../flow/FlowModal";
 import { ActionButton, ResultStep } from "../flow/ResultStep";
 import {
+  indexIcons,
   ReviewActions,
   ReviewHeader,
   ReviewSummary,
@@ -85,7 +86,7 @@ function ConfirmStep({
   ];
   return (
     <div className="flex flex-col gap-5 p-6">
-      <ReviewHeader eyebrow="Review your deposit" title={indexName} />
+      <ReviewHeader title={indexName} icons={indexIcons(allocations)} />
       <ReviewSummary items={items} />
       <SliceList slices={allocations} />
       <RouteDetails

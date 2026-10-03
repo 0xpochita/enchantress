@@ -13,6 +13,7 @@ import type {
 } from "@/features/portfolio/utils/wallet-rows";
 import { useSession } from "@/features/wallet";
 import type { Chain } from "@/types/market";
+import { cleanAmountInput } from "@/utils/amount-input";
 import { formatAmount, formatUsd } from "@/utils/format";
 
 const GAS_RESERVE: Record<string, number> = { MON: 0.1, ETH: 0.0005 };
@@ -284,7 +285,7 @@ function AmountBox({ form }: { form: SendForm }) {
           placeholder="0.00"
           value={form.amount}
           onChange={(e) =>
-            form.setAmount(e.target.value.replace(/[^0-9.]/g, ""))
+            form.setAmount(cleanAmountInput(e.target.value, row?.decimals))
           }
           className="w-full min-w-0 bg-transparent text-3xl font-light outline-none placeholder:text-ink-subtle"
         />

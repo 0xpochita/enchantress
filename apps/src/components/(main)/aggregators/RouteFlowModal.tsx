@@ -1,19 +1,24 @@
 "use client";
 
 import { Check, CircleDashed, Loader2, X } from "lucide-react";
-import { TokenStack } from "@/components/ui";
+import type { ReactNode } from "react";
+import { CryptoIcon } from "@/components/ui";
 import type { BridgeDepositController, QuotePreview } from "@/features/bridge";
 import type { DepositRoutes } from "@/hooks/useDepositRoutes";
 import type { IndexQuote } from "@/types/market";
 import { formatAmount, formatPercent, formatUsd } from "@/utils/format";
+import { AuroraIntents } from "../flow/AuroraIntents";
+import { ElapsedTime } from "../flow/ElapsedTime";
 import { FlowModal } from "../flow/FlowModal";
 import { ActionButton, ActionLink, ResultStep } from "../flow/ResultStep";
 import {
+  indexIcons,
   ReviewActions,
   ReviewHeader,
   ReviewSummary,
 } from "../flow/ReviewParts";
 import { StepLabel } from "../flow/StepLabel";
+import { FundsTree } from "../index-detail/FundsTree";
 
 interface RouteFlowModalProps {
   bridge: BridgeDepositController;
@@ -34,25 +39,54 @@ function StageIcon({ tone }: { tone: Tone }) {
   return <CircleDashed aria-hidden className="size-4 text-ink-subtle" />;
 }
 
-function VenueRow({ quote }: { quote: IndexQuote }) {
+function DepositRoot({ deposit }: { deposit: DepositRoutes }) {
+  const symbol = deposit.token?.symbol ?? "";
   return (
-    <div className="flex items-center gap-3 text-sm">
-      <TokenStack
-        items={quote.venues.map((v) => ({ iconKey: v.iconKey, label: v.name }))}
-        size={24}
+    <span className="flex w-fit items-center gap-2 rounded-full border border-line bg-surface-raised py-1.5 pr-3 pl-1.5 text-sm">
+      <CryptoIcon
+        iconKey={deposit.token?.iconKey ?? "generic"}
+        label={symbol}
+        badgeIconKey={deposit.chain?.iconKey}
+        size={22}
       />
-      <span className="text-ink-muted">
-        {quote.venues.length > 1 ? "Split across" : "Goes into"}{" "}
-        {quote.venues.map((v) => v.name).join(" · ")}
+      <span className="font-medium">
+        {formatAmount(Number(deposit.amount))} {symbol}
       </span>
+      <span className="text-ink-muted">{formatUsd(deposit.amountUsd)}</span>
+    </span>
+  );
+}
+
+function AllocationTree({
+  quote,
+  deposit,
+  amountUsd,
+}: {
+  quote: IndexQuote;
+  deposit: DepositRoutes;
+  amountUsd: number;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-xs text-ink-muted">Where your deposit goes</span>
+      <div className="flex flex-col">
+        <DepositRoot deposit={deposit} />
+        <div className="ml-[17px] h-3 w-0.5 bg-line" />
+        <div className="-mt-2 ml-[17px]">
+          <FundsTree allocations={quote.allocations} depositUsd={amountUsd} />
+        </div>
+      </div>
     </div>
   );
 }
 
-function routeLabel(deposit: DepositRoutes): string {
-  return deposit.isCrossChain
-    ? `${deposit.chain?.name ?? "Origin"} to Monad via Aurora Intents`
-    : "Already on Monad";
+function RouteLabel({ deposit }: { deposit: DepositRoutes }) {
+  if (!deposit.isCrossChain) return "Already on Monad";
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {deposit.chain?.name ?? "Origin"} to Monad via <AuroraIntents />
+    </span>
+  );
 }
 
 function ConfirmStep({
@@ -83,19 +117,21 @@ function ConfirmStep({
   ];
   return (
     <div className="flex flex-col gap-5 p-6">
-      <ReviewHeader eyebrow="Review your deposit" title={quote.name} />
+      <ReviewHeader title={quote.name} icons={indexIcons(quote.allocations)} />
       <ReviewSummary items={items} />
-      <VenueRow quote={quote} />
+      <AllocationTree quote={quote} deposit={deposit} amountUsd={landedUsd} />
       <dl className="flex flex-col gap-2 border-t border-line pt-4 text-xs">
         <div className="flex justify-between gap-3">
           <dt className="text-ink-muted">Route</dt>
-          <dd className="text-right">{routeLabel(deposit)}</dd>
+          <dd className="text-right">
+            <RouteLabel deposit={deposit} />
+          </dd>
         </div>
         <div className="flex justify-between gap-3">
           <dt className="text-ink-muted">Arrives</dt>
           <dd>
             {deposit.isCrossChain && preview
-              ? `~${Math.max(1, Math.ceil(preview.timeEstimateSeconds / 60))} min`
+              ? etaLabel(preview.timeEstimateSeconds)
               : "Instant"}
           </dd>
         </div>
@@ -106,7 +142,7 @@ function ConfirmStep({
           : ""}
         {bridge.needsDelegation
           ? "Enchantress needs one time permission to move your deposit into the vaults; it can only deposit or withdraw to your own wallet."
-          : "Gas on Monad is paid by Enchantress."}
+          : "Gas on Monad is paid from the MON in your wallet."}
       </p>
       <ReviewActions
         onCancel={bridge.dismiss}
@@ -128,12 +164,34 @@ function stageTone(
   return targetIndex === currentIndex ? "active" : "todo";
 }
 
+function MonadLabel() {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <CryptoIcon iconKey="monad" label="" size={14} />
+      Monad
+    </span>
+  );
+}
+
+const SECONDS_PER_MINUTE = 60;
+
+function etaLabel(seconds: number): string {
+  return `~${Math.max(1, Math.ceil(seconds / SECONDS_PER_MINUTE))} min`;
+}
+
+const AURORA_HINTS: Record<string, string> = {
+  PENDING_DEPOSIT: "Waiting for transfer",
+  KNOWN_DEPOSIT_TX: "Transfer seen",
+  PROCESSING: "Processing",
+  SUCCESS: "Arrived",
+};
+
 export function ProgressStep({
   bridge,
   deposit,
 }: {
   bridge: BridgeDepositController;
-  deposit: Pick<DepositRoutes, "isCrossChain" | "amount" | "token">;
+  deposit: Pick<DepositRoutes, "isCrossChain" | "amount" | "token" | "chain">;
 }) {
   const order = [
     "permission",
@@ -143,14 +201,27 @@ export function ProgressStep({
     "bridging",
     "executing",
   ] as const;
-  const labels: Record<(typeof order)[number], string> = {
+  const labels: Record<(typeof order)[number], ReactNode> = {
     permission: "Allow vault access",
     quote: "Getting a quote",
-    sign: "Confirm the transfer in your wallet",
-    submit: "Handing the transfer to Aurora",
-    bridging: `Bridging to Monad${bridge.execution?.auroraStatus ? ` (${bridge.execution.auroraStatus.toLowerCase().replaceAll("_", " ")})` : ""}`,
-    executing: "Depositing on Monad",
+    sign: "Confirm in your wallet",
+    submit: (
+      <>
+        Sent to <AuroraIntents />
+      </>
+    ),
+    bridging: (
+      <>
+        Bridging to <MonadLabel />
+      </>
+    ),
+    executing: (
+      <>
+        Depositing on <MonadLabel />
+      </>
+    ),
   };
+  const bridgingHint = AURORA_HINTS[bridge.execution?.auroraStatus ?? ""];
   const shown = order.filter(
     (stage) =>
       (deposit.isCrossChain ||
@@ -162,21 +233,40 @@ export function ProgressStep({
       <ReviewHeader
         eyebrow="Deposit in progress"
         title={`${formatAmount(Number(deposit.amount))} ${deposit.token?.symbol ?? ""}`}
+        icons={
+          deposit.token
+            ? [
+                {
+                  iconKey: deposit.token.iconKey,
+                  label: deposit.token.symbol,
+                  badgeIconKey: deposit.chain?.iconKey,
+                },
+              ]
+            : []
+        }
       />
+      {bridge.execution && (
+        <p className="-mt-3 text-sm text-ink-muted">
+          Running for <ElapsedTime since={bridge.execution.createdAt} />
+        </p>
+      )}
       <ol className="flex flex-col gap-3 text-sm">
         {shown.map((stage) => (
           <li key={stage} className="flex flex-col gap-2">
             <span className="flex items-center gap-3">
               <StageIcon tone={stageTone(order, bridge.stage, stage)} />
               <span
-                className={
+                className={`flex flex-1 items-center gap-1.5 ${
                   stageTone(order, bridge.stage, stage) === "todo"
                     ? "text-ink-muted"
                     : ""
-                }
+                }`}
               >
                 {labels[stage]}
               </span>
+              {stage === "bridging" && bridgingHint && (
+                <span className="text-xs text-ink-subtle">{bridgingHint}</span>
+              )}
             </span>
             {stage === "executing" && bridge.stage === "executing" && (
               <ul className="ml-7 flex flex-col gap-1 text-xs text-ink-muted">
@@ -204,10 +294,19 @@ export function ProgressStep({
           </li>
         ))}
       </ol>
-      <p className="text-xs text-ink-subtle">
-        You can close this window; the deposit keeps going and shows up in your
-        portfolio.
-      </p>
+      {bridge.phase === "tracking" && (
+        <>
+          <p className="text-xs text-ink-subtle">
+            You can close this window; the deposit keeps going and shows up in
+            your portfolio.
+          </p>
+          <ActionButton
+            label="Close"
+            variant="secondary"
+            onClick={bridge.dismiss}
+          />
+        </>
+      )}
     </div>
   );
 }

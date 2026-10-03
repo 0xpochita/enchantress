@@ -2,15 +2,20 @@ import { BranchedMenu, type BranchSection, CryptoIcon } from "@/components/ui";
 import type { RoutedAllocation } from "@/types/market";
 import { formatPercent, formatUsd } from "@/utils/format";
 
+function sliceUsd(slice: RoutedAllocation, depositUsd?: number): number {
+  return depositUsd === undefined ? slice.valueUsd : depositUsd * slice.weight;
+}
+
 function groupByVenue(
   allocations: RoutedAllocation[],
   previewUsd: number,
+  depositUsd?: number,
 ): BranchSection[] {
   const venueIds = [...new Set(allocations.map((a) => a.venue.id))];
   return venueIds.map((venueId) => {
     const slices = allocations.filter((a) => a.venue.id === venueId);
     const venue = slices[0].venue;
-    const totalUsd = slices.reduce((sum, a) => sum + a.valueUsd, 0);
+    const totalUsd = slices.reduce((s, a) => s + sliceUsd(a, depositUsd), 0);
     return {
       label: venue.name,
       icon: <CryptoIcon iconKey={venue.iconKey} label="" size={20} />,
@@ -27,7 +32,7 @@ function groupByVenue(
                 {formatUsd(Math.abs(previewUsd * slice.weight))}
               </span>
             )}
-            {formatUsd(slice.valueUsd)} ·{" "}
+            {formatUsd(sliceUsd(slice, depositUsd))} ·{" "}
             <span className="text-positive">{formatPercent(slice.apy)}</span>
           </>
         ),
@@ -38,15 +43,17 @@ function groupByVenue(
 
 export function FundsTree({
   allocations,
-  previewUsd,
+  previewUsd = 0,
+  depositUsd,
 }: {
   allocations: RoutedAllocation[];
-  previewUsd: number;
+  previewUsd?: number;
+  depositUsd?: number;
 }) {
   return (
     <BranchedMenu
       label="Index funds by protocol"
-      sections={groupByVenue(allocations, previewUsd)}
+      sections={groupByVenue(allocations, previewUsd, depositUsd)}
     />
   );
 }

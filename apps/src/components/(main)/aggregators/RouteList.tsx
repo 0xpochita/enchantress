@@ -16,13 +16,15 @@ interface RouteListProps {
 function routeTags(quotes: IndexQuote[], venues: Venue[]): TagItem[] {
   return [
     { id: ALL_VENUES, label: "All", count: quotes.length, icons: [] },
-    ...venues.map((venue) => ({
-      id: venue.id,
-      label: venue.name,
-      count: quotes.filter((q) => q.venues.some((v) => v.id === venue.id))
-        .length,
-      icons: [{ iconKey: venue.iconKey, label: venue.name }],
-    })),
+    ...venues
+      .map((venue) => ({
+        id: venue.id,
+        label: venue.name,
+        count: quotes.filter((q) => q.venues.some((v) => v.id === venue.id))
+          .length,
+        icons: [{ iconKey: venue.iconKey, label: venue.name }],
+      }))
+      .filter((tag) => tag.count > 0),
   ];
 }
 

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { IndexDraft } from "@/hooks/useIndexDraft";
 import type { Chain, Venue } from "@/types/market";
+import { cleanAmountInput } from "@/utils/amount-input";
 import { RouteDetails } from "../routing/RouteDetails";
 import { TokenButton } from "../token-select/TokenButton";
 import { AssetPicker } from "./AssetPicker";
@@ -54,7 +55,12 @@ function AmountRow({
         placeholder="0.00"
         value={draft.amount}
         onChange={(e) =>
-          draft.update({ amount: e.target.value.replace(/[^0-9.]/g, "") })
+          draft.update({
+            amount: cleanAmountInput(
+              e.target.value,
+              draft.depositToken?.decimals,
+            ),
+          })
         }
         className="w-full min-w-0 bg-transparent text-2xl font-light outline-none placeholder:text-ink-subtle"
       />

@@ -24,6 +24,7 @@ function toQuote({ index, allocations, apy }: IndexSummary): IndexQuote {
       name: v.name,
       iconKey: v.iconKey,
     })),
+    allocations,
   };
 }
 

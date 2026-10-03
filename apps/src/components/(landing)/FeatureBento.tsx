@@ -12,7 +12,7 @@ const SOURCES = [
 ];
 
 const VENUES = [
-  { name: "Aave v3", iconKey: "/crypto/aave.png" },
+  { name: "Aave V3", iconKey: "/crypto/aave.png" },
   { name: "Neverland", iconKey: "/logo/neverland-logo.jpg" },
   { name: "Morpho", iconKey: "/crypto/morpho.png" },
 ];

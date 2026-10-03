@@ -1,13 +1,26 @@
 import { NextResponse } from "next/server";
 import { type Address, parseUnits } from "viem";
+import { AuroraError } from "@/features/bridge/services/aurora-client";
+import type { BridgeTokenDetail } from "@/features/bridge/services/bridge-catalog";
 import {
   getBridgeTokenDetail,
   MONAD_DIRECT_ASSETS,
 } from "@/features/bridge/services/bridge-catalog";
 import { previewBridgeQuote } from "@/features/bridge/services/bridge-quote";
 import { quotePreviewBodySchema } from "@/features/bridge/types";
+import { minimumAmountMessage } from "@/features/bridge/utils/minimum";
 import { requireUser } from "@/features/wallet/server";
 import { apiErrorResponse } from "@/lib/api-error";
+
+function explainQuoteError(error: unknown, token: BridgeTokenDetail): unknown {
+  if (!(error instanceof AuroraError)) return error;
+  const minimum = minimumAmountMessage(
+    error.message,
+    token.decimals,
+    token.symbol,
+  );
+  return minimum ? new AuroraError(400, minimum) : error;
+}
 
 export async function POST(request: Request) {
   try {
@@ -32,7 +45,9 @@ export async function POST(request: Request) {
       token,
       body.amount,
       user.walletAddress as Address,
-    );
+    ).catch((error: unknown) => {
+      throw explainQuoteError(error, token);
+    });
     return NextResponse.json(preview);
   } catch (error) {
     return apiErrorResponse(error);

@@ -25,7 +25,7 @@ export type VenueConfig = AavePoolVenue | Erc4626Venue;
 export const VENUE_CONFIGS: VenueConfig[] = [
   {
     id: "aave-v3",
-    name: "Aave v3",
+    name: "Aave V3",
     iconKey: "/crypto/aave.png",
     kind: "aave-pool",
     pool: "0x69a5F9AD4f96ebf0a0C792dD42a01cC5C0102fef",

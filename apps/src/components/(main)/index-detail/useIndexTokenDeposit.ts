@@ -7,6 +7,7 @@ import {
   useOriginBalances,
 } from "@/features/bridge";
 import { useSession } from "@/features/wallet";
+import { useLastToken } from "@/hooks/useLastToken";
 
 function useTokenBalance(tokenId: string) {
   const session = useSession();
@@ -26,7 +27,10 @@ export function useIndexTokenDeposit(
 ) {
   const session = useSession();
   const [amount, setAmount] = useState("");
-  const [tokenId, setTokenId] = useState(defaultTokenId);
+  const [tokenId, setTokenId] = useLastToken(
+    defaultTokenId,
+    catalog.tokens.map((t) => t.id),
+  );
   const token =
     catalog.tokens.find((t) => t.id === tokenId) ?? catalog.tokens[0];
   const flow = useBridgeDeposit({ indexId, originTokenId: token.id, amount });

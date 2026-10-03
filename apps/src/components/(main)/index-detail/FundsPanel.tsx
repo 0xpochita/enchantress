@@ -9,6 +9,7 @@ import type { BridgeCatalog } from "@/features/bridge";
 import { useIndexWithdraw } from "@/features/executions";
 import type { Chain, RoutedAllocation } from "@/types/market";
 import { formatUsd } from "@/utils/format";
+import { indexIcons } from "../flow/ReviewParts";
 import { TokenSelectModal } from "../token-select/TokenSelectModal";
 import { DepositBar } from "./DepositBar";
 import { DepositFlowModal } from "./DepositFlowModal";
@@ -179,7 +180,11 @@ export function FundsPanel({
         apy={apy}
         chain={chain}
       />
-      <WithdrawFlowModal withdraw={withdraw} indexName={indexName} />
+      <WithdrawFlowModal
+        withdraw={withdraw}
+        indexName={indexName}
+        icons={indexIcons(allocations)}
+      />
       <TokenSelectModal
         isOpen={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}

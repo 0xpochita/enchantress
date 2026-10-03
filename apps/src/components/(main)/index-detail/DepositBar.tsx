@@ -4,6 +4,7 @@ import { ChevronDown, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { buttonClassName, CryptoIcon } from "@/components/ui";
 import type { Chain } from "@/types/market";
+import { cleanAmountInput } from "@/utils/amount-input";
 import { formatAmount, formatPercent, formatUsd } from "@/utils/format";
 import { yearlyRewardsUsd } from "@/utils/yield-index";
 import { RouteDetails } from "../routing/RouteDetails";
@@ -74,7 +75,9 @@ export function DepositBar({
             placeholder="0.00"
             value={deposit.amount}
             onChange={(event) =>
-              deposit.setAmount(event.target.value.replace(/[^0-9.]/g, ""))
+              deposit.setAmount(
+                cleanAmountInput(event.target.value, deposit.token?.decimals),
+              )
             }
             className="w-full min-w-0 bg-transparent text-3xl font-light outline-none placeholder:text-ink-subtle"
           />

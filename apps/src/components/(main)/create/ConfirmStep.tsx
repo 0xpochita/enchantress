@@ -29,7 +29,7 @@ function footnote(draft: IndexDraft): string {
     return "Your index is visible to you until it holds deposits.";
   if (draft.flow.needsDelegation)
     return "Enchantress needs one time permission to move your deposit into the vaults; it can only deposit or withdraw to your own wallet.";
-  return "Gas on Monad is paid by Enchantress.";
+  return "Gas on Monad is paid from the MON in your wallet.";
 }
 
 export function ConfirmStep({ draft, chain }: ConfirmStepProps) {
