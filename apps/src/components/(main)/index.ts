@@ -6,3 +6,9 @@ export { IndexDetailView } from "./index-detail/IndexDetailView";
 export { PortfolioView } from "./portfolio/PortfolioView";
 export { MainShell } from "./shell/MainShell";
 export { NotFoundView } from "./shell/NotFoundView";
+export {
+  CreateSkeleton,
+  DepositSkeleton,
+  InvestSkeleton,
+  PortfolioSkeleton,
+} from "./shell/PageSkeletons";

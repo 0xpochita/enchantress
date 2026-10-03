@@ -3,9 +3,10 @@
 import type { BridgeCatalog } from "@/features/bridge";
 import { type Portfolio, usePortfolio } from "@/features/portfolio";
 import { useSession } from "@/features/wallet";
+import { PortfolioBodySkeleton } from "../shell/PageSkeletons";
 import { ActivityTable } from "./ActivityTable";
 import { DepositsSummary } from "./DepositsSummary";
-import { EmptyCard, ErrorCard, LoadingCard } from "./PortfolioStates";
+import { EmptyCard, ErrorCard } from "./PortfolioStates";
 import { PortfolioTabs } from "./PortfolioTabs";
 import { PositionsTable } from "./PositionsTable";
 import { PurchaseHistory } from "./PurchaseHistory";
@@ -53,7 +54,7 @@ function PositionsPanel({ portfolio, catalog }: PanelProps) {
 
 function PortfolioBody({ catalog }: { catalog: BridgeCatalog }) {
   const portfolio = usePortfolio();
-  if (portfolio.isPending) return <LoadingCard label="Loading portfolio" />;
+  if (portfolio.isPending) return <PortfolioBodySkeleton />;
   if (portfolio.isError)
     return (
       <ErrorCard
