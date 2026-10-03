@@ -1,5 +1,9 @@
 import { notFound } from "next/navigation";
 import { originChainById } from "@/config/chains";
+import {
+  getBridgeSource,
+  MONAD_USDC_ASSET_ID,
+} from "@/features/bridge/services/bridge-catalog";
 import { getIndexSummary } from "@/features/indexes/services/index-catalog";
 import { VAULT_CHAIN_ID } from "@/features/vaults/config/venues";
 import type { RoutedAllocation, Venue } from "@/types/market";
@@ -13,7 +17,10 @@ function uniqueVenues(allocations: RoutedAllocation[]): Venue[] {
 }
 
 export async function IndexDetailView({ indexId }: { indexId: string }) {
-  const summary = await getIndexSummary(indexId);
+  const [summary, source] = await Promise.all([
+    getIndexSummary(indexId),
+    getBridgeSource(),
+  ]);
   if (!summary) notFound();
   const { index, allocations, apy } = summary;
   const protocols = uniqueVenues(allocations);
@@ -46,6 +53,8 @@ export async function IndexDetailView({ indexId }: { indexId: string }) {
             summary={<IndexStats index={index} apy={apy} />}
             apy={apy}
             chain={chain}
+            catalog={source.catalog}
+            defaultTokenId={MONAD_USDC_ASSET_ID}
           />
         </div>
         <div className="min-w-0">

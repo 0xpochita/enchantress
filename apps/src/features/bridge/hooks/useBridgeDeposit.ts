@@ -38,7 +38,7 @@ function sponsoredChainIds(): number[] {
   return env.success ? env.data.NEXT_PUBLIC_SPONSORED_CHAIN_IDS : [];
 }
 
-function useSignTransfer() {
+export function useSignTransfer() {
   const { sendTransaction } = useSendTransaction();
   return async (transfer: TransferInstruction): Promise<`0x${string}`> => {
     const request = buildTransferRequest(transfer);

@@ -1,7 +1,7 @@
 import "server-only";
 import { after } from "next/server";
 import type { Address } from "viem";
-import { MONAD_USDC_ASSET_ID } from "@/features/bridge/services/bridge-catalog";
+import { MONAD_DIRECT_ASSETS } from "@/features/bridge/services/bridge-catalog";
 import { notifyAuroraTransfer } from "@/features/bridge/services/bridge-lifecycle";
 import { prepareBridgeDeposit } from "@/features/bridge/services/create-bridge-deposit";
 import type {
@@ -138,11 +138,12 @@ export async function startBridgeDeposit(
   user: UserRow,
   body: CreateBridgeDepositBody,
 ): Promise<BridgeDepositResponse> {
-  if (body.originTokenId === MONAD_USDC_ASSET_ID) {
+  const directAsset = MONAD_DIRECT_ASSETS[body.originTokenId];
+  if (directAsset) {
     const { indexId, amount } = body;
     const execution = await startDeposit(user, {
       indexId,
-      depositAsset: "USDC",
+      depositAsset: directAsset,
       amount,
     });
     return { execution, transfer: null };

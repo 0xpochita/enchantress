@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { type Address, parseUnits } from "viem";
 import {
   getBridgeTokenDetail,
-  MONAD_USDC_ASSET_ID,
+  MONAD_DIRECT_ASSETS,
 } from "@/features/bridge/services/bridge-catalog";
 import { previewBridgeQuote } from "@/features/bridge/services/bridge-quote";
 import { quotePreviewBodySchema } from "@/features/bridge/types";
@@ -19,8 +19,8 @@ export async function POST(request: Request) {
         { error: "This token is not supported." },
         { status: 400 },
       );
-    if (token.assetId === MONAD_USDC_ASSET_ID) {
-      const usd = Number(body.amount);
+    if (MONAD_DIRECT_ASSETS[token.assetId]) {
+      const usd = Number(body.amount) * token.priceUsd;
       return NextResponse.json({
         amountOutBase: parseUnits(body.amount, token.decimals).toString(),
         amountOutUsd: usd,

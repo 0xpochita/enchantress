@@ -3,7 +3,6 @@
 import { Check, CircleDashed, Loader2, X } from "lucide-react";
 import { TokenStack } from "@/components/ui";
 import type { BridgeDepositController, QuotePreview } from "@/features/bridge";
-import type { ExecutionView } from "@/features/executions";
 import type { DepositRoutes } from "@/hooks/useDepositRoutes";
 import type { IndexQuote } from "@/types/market";
 import { formatAmount, formatPercent, formatUsd } from "@/utils/format";
@@ -14,6 +13,7 @@ import {
   ReviewHeader,
   ReviewSummary,
 } from "../flow/ReviewParts";
+import { StepLabel } from "../flow/StepLabel";
 
 interface RouteFlowModalProps {
   bridge: BridgeDepositController;
@@ -32,12 +32,6 @@ function StageIcon({ tone }: { tone: Tone }) {
   if (tone === "active")
     return <Loader2 aria-hidden className="size-4 animate-spin text-brand" />;
   return <CircleDashed aria-hidden className="size-4 text-ink-subtle" />;
-}
-
-function stepLabel(step: ExecutionView["steps"][number]): string {
-  if (step.kind === "swap") return `Swap USDC to ${step.assetSymbol}`;
-  if (step.kind === "approve") return `Approve ${step.assetSymbol}`;
-  return `Supply ${step.assetSymbol} to ${step.venueId}`;
 }
 
 function VenueRow({ quote }: { quote: IndexQuote }) {
@@ -199,7 +193,10 @@ export function ProgressStep({
                               : "todo"
                       }
                     />
-                    {stepLabel(step)}
+                    <StepLabel
+                      step={step}
+                      depositAsset={bridge.execution?.depositAsset ?? "USDC"}
+                    />
                   </li>
                 ))}
               </ul>

@@ -1,23 +1,24 @@
 "use client";
 
-import { Wallet } from "lucide-react";
+import { ChevronDown, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { buttonClassName, CryptoIcon } from "@/components/ui";
-import type { IndexDepositController } from "@/features/executions";
 import type { Chain } from "@/types/market";
 import { formatAmount, formatPercent, formatUsd } from "@/utils/format";
 import { yearlyRewardsUsd } from "@/utils/yield-index";
 import { RouteDetails } from "../routing/RouteDetails";
+import type { IndexTokenDeposit } from "./useIndexTokenDeposit";
 
 interface DepositBarProps {
-  deposit: IndexDepositController;
+  deposit: IndexTokenDeposit;
+  onPickToken: () => void;
   apy: number;
   sliceCount: number;
   chain?: Chain;
   header: ReactNode;
 }
 
-function BalanceLine({ deposit }: { deposit: IndexDepositController }) {
+function BalanceLine({ deposit }: { deposit: IndexTokenDeposit }) {
   if (!deposit.isAuthenticated) return null;
   const text = deposit.isBalanceLoading
     ? "Loading balance"
@@ -39,10 +40,10 @@ function BalanceLine({ deposit }: { deposit: IndexDepositController }) {
   );
 }
 
-function submitLabel(deposit: IndexDepositController): string {
+function submitLabel(deposit: IndexTokenDeposit): string {
   if (!deposit.isAuthenticated) return "Log in to deposit";
-  if (deposit.balance !== undefined && deposit.valueUsd > deposit.balance)
-    return "Not enough USDC on Monad";
+  if (deposit.balance !== undefined && deposit.amountNumber > deposit.balance)
+    return `Not enough ${deposit.token.symbol} on ${deposit.chain?.name ?? "this chain"}`;
   return "Deposit";
 }
 
@@ -52,9 +53,10 @@ export function DepositBar({
   sliceCount,
   chain,
   header,
+  onPickToken,
 }: DepositBarProps) {
   const overBalance =
-    deposit.balance !== undefined && deposit.valueUsd > deposit.balance;
+    deposit.balance !== undefined && deposit.amountNumber > deposit.balance;
   const isDisabled =
     deposit.isAuthenticated && (deposit.valueUsd <= 0 || overBalance);
   return (
@@ -76,15 +78,21 @@ export function DepositBar({
             }
             className="w-full min-w-0 bg-transparent text-3xl font-light outline-none placeholder:text-ink-subtle"
           />
-          <span className="flex shrink-0 items-center gap-2 rounded-full bg-surface py-1.5 pr-3.5 pl-1.5 font-medium">
+          <button
+            type="button"
+            onClick={onPickToken}
+            aria-label={`Deposit token: ${deposit.token.symbol} on ${deposit.chain?.name ?? "Monad"}. Change`}
+            className="flex shrink-0 items-center gap-2 rounded-full bg-surface py-1.5 pr-3 pl-1.5 font-medium transition-colors duration-200 hover:bg-surface-hover"
+          >
             <CryptoIcon
               iconKey={deposit.token.iconKey}
               label=""
-              badgeIconKey="monad"
+              badgeIconKey={deposit.chain?.iconKey ?? "monad"}
               size={28}
             />
             {deposit.token.symbol}
-          </span>
+            <ChevronDown aria-hidden className="size-4 text-ink-muted" />
+          </button>
         </div>
       </div>
       <BalanceLine deposit={deposit} />
@@ -93,7 +101,7 @@ export function DepositBar({
         {formatPercent(apy)}
       </span>
       <div className="mt-auto flex flex-col gap-4">
-        <RouteDetails chain={chain} sliceCount={sliceCount} />
+        <RouteDetails chain={deposit.chain ?? chain} sliceCount={sliceCount} />
         <button
           type="button"
           disabled={isDisabled}

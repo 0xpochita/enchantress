@@ -61,7 +61,7 @@ export type ExecutionView = z.infer<typeof executionViewSchema>;
 
 export const createExecutionBodySchema = z.object({
   indexId: z.string().min(1),
-  depositAsset: z.literal("USDC"),
+  depositAsset: z.enum(["USDC", "USDT0"]),
   amount: z
     .string()
     .regex(/^\d+(\.\d{1,6})?$/, "Enter an amount with up to 6 decimals."),

@@ -10,6 +10,14 @@ const CATALOG_REVALIDATE_SECONDS = 300;
 export const MONAD_USDC_ASSET_ID =
   "nep245:v2_1.omni.hot.tg:143_2dmLwYWkCQKyTjeUPAsGJuiVLbFx";
 
+export const MONAD_USDT0_ASSET_ID =
+  "nep245:v2_1.omni.hot.tg:143_4EJiJxSALvGoTZbnc8K7Ft9533et";
+
+export const MONAD_DIRECT_ASSETS: Record<string, "USDC" | "USDT0"> = {
+  [MONAD_USDC_ASSET_ID]: "USDC",
+  [MONAD_USDT0_ASSET_ID]: "USDT0",
+};
+
 export interface BridgeTokenDetail {
   assetId: string;
   chainId: string;
@@ -58,9 +66,18 @@ function fallbackSource(): BridgeSource {
   };
 }
 
-async function readBridgeSource(): Promise<BridgeSource> {
+const cachedAuroraTokens = unstable_cache(
+  fetchAuroraTokens,
+  ["aurora-tokens"],
+  {
+    revalidate: CATALOG_REVALIDATE_SECONDS,
+    tags: ["aurora-tokens"],
+  },
+);
+
+export async function getBridgeSource(): Promise<BridgeSource> {
   if (!isAuroraConfigured()) return fallbackSource();
-  const tokens = await fetchAuroraTokens();
+  const tokens = await cachedAuroraTokens();
   const catalog = buildBridgeCatalog(chainsForCatalog, tokens);
   const byChainCode = new Map(ORIGIN_CHAINS.map((c) => [c.auroraCode, c.id]));
   const details: Record<string, BridgeTokenDetail> = {};
@@ -78,15 +95,6 @@ async function readBridgeSource(): Promise<BridgeSource> {
   }
   return { catalog, details };
 }
-
-export const getBridgeSource = unstable_cache(
-  readBridgeSource,
-  ["bridge-source"],
-  {
-    revalidate: CATALOG_REVALIDATE_SECONDS,
-    tags: ["aurora-tokens"],
-  },
-);
 
 export async function getBridgeTokenDetail(
   assetId: string,

@@ -13,6 +13,8 @@ export interface Token {
   chainId: ChainId;
   iconKey: string;
   priceUsd: number;
+  address?: string | null;
+  decimals?: number;
 }
 
 export interface WalletBalance {

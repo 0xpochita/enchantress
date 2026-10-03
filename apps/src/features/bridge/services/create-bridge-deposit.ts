@@ -45,7 +45,7 @@ async function originToken(tokenId: string) {
     throw new ExecutionRequestError(
       400,
       "TOKEN",
-      "Deposit USDC directly when your funds are already on Monad.",
+      "Deposit USDC or USDT0 directly when your funds are already on Monad.",
     );
   return { token, chainId: origin.chain.id };
 }

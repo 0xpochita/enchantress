@@ -3,6 +3,7 @@ export {
   type BridgeStartStage,
   bridgeStage,
   useBridgeDeposit,
+  useSignTransfer,
   useStartBridgeDeposit,
 } from "./hooks/useBridgeDeposit";
 export { useBridgePreview } from "./hooks/useBridgePreview";

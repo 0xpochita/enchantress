@@ -2,15 +2,19 @@
 
 import { FolderOpen, ListTree } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { useSearchParams } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { Card, SegmentedControl } from "@/components/ui";
-import { useIndexDeposit, useIndexWithdraw } from "@/features/executions";
+import type { BridgeCatalog } from "@/features/bridge";
+import { useIndexWithdraw } from "@/features/executions";
 import type { Chain, RoutedAllocation } from "@/types/market";
 import { formatUsd } from "@/utils/format";
+import { TokenSelectModal } from "../token-select/TokenSelectModal";
 import { DepositBar } from "./DepositBar";
 import { DepositFlowModal } from "./DepositFlowModal";
 import { FundsFolder } from "./FundsFolder";
 import { FundsTree } from "./FundsTree";
+import { useIndexTokenDeposit } from "./useIndexTokenDeposit";
 import { WithdrawBar } from "./WithdrawBar";
 import { WithdrawFlowModal } from "./WithdrawFlowModal";
 
@@ -92,6 +96,8 @@ interface FundsPanelProps {
   summary: ReactNode;
   apy: number;
   chain?: Chain;
+  catalog: BridgeCatalog;
+  defaultTokenId: string;
 }
 
 export function FundsPanel({
@@ -102,10 +108,15 @@ export function FundsPanel({
   summary,
   apy,
   chain,
+  catalog,
+  defaultTokenId,
 }: FundsPanelProps) {
   const [view, setView] = useState<View>("Tree");
-  const [action, setAction] = useState<Action>("Deposit");
-  const deposit = useIndexDeposit(indexId);
+  const initialAction =
+    useSearchParams().get("action") === "withdraw" ? "Withdraw" : "Deposit";
+  const [action, setAction] = useState<Action>(initialAction);
+  const deposit = useIndexTokenDeposit(indexId, catalog, defaultTokenId);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const withdraw = useIndexWithdraw(indexId);
   const hasAmount = action === "Deposit" && deposit.valueUsd > 0;
   const toggle = <ActionToggle action={action} onChange={setAction} />;
@@ -127,6 +138,7 @@ export function FundsPanel({
               sliceCount={allocations.length}
               chain={chain}
               header={toggle}
+              onPickToken={() => setIsPickerOpen(true)}
             />
           ) : (
             <WithdrawBar withdraw={withdraw} header={toggle} />
@@ -168,6 +180,13 @@ export function FundsPanel({
         chain={chain}
       />
       <WithdrawFlowModal withdraw={withdraw} indexName={indexName} />
+      <TokenSelectModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        catalog={{ ...catalog, balances: deposit.balances }}
+        selectedId={deposit.tokenId}
+        onSelect={(token) => deposit.setTokenId(token.id)}
+      />
     </Card>
   );
 }

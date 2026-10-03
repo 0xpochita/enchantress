@@ -42,8 +42,8 @@ export function IndexCard({ summary }: { summary: IndexSummary }) {
           <span className="ml-1 text-sm text-ink-muted">APY</span>
         </span>
         <span className="text-xs text-ink-muted">
-          {venues.map((v) => v.name).join(" + ")} · TVL{" "}
-          {formatCompactUsd(index.tvlUsd)}
+          {venues.map((v) => v.name).join(" + ")}
+          {index.tvlUsd > 0 && ` · TVL ${formatCompactUsd(index.tvlUsd)}`}
         </span>
       </div>
     </Link>

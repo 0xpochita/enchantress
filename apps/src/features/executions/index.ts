@@ -5,10 +5,6 @@ export {
 } from "./hooks/useExecutionFlow";
 export { useIndexActivity } from "./hooks/useIndexActivity";
 export {
-  type IndexDepositController,
-  useIndexDeposit,
-} from "./hooks/useIndexDeposit";
-export {
   type IndexWithdrawController,
   useIndexWithdraw,
   WITHDRAW_CHOICES,

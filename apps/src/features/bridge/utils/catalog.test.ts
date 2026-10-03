@@ -33,7 +33,33 @@ test("buildBridgeCatalog keeps only tokens on supported chains", () => {
   );
 });
 
+test("buildBridgeCatalog lists well known tokens first", () => {
+  const catalog = buildBridgeCatalog(chains, [
+    {
+      assetId: "x",
+      blockchain: "base",
+      symbol: "SSC1_PIT",
+      price: 1,
+      decimals: 18,
+    },
+    {
+      assetId: "k",
+      blockchain: "base",
+      symbol: "KAITO",
+      price: 1,
+      decimals: 18,
+    },
+    { assetId: "e", blockchain: "base", symbol: "ETH", price: 1, decimals: 18 },
+    { assetId: "u", blockchain: "base", symbol: "USDC", price: 1, decimals: 6 },
+  ]);
+  assert.deepEqual(
+    catalog.tokens.map((t) => t.symbol),
+    ["USDC", "ETH", "KAITO", "SSC1_PIT"],
+  );
+});
+
 test("tokenIconKey falls back to the generic icon", () => {
   assert.equal(tokenIconKey("usdt0"), "usdt");
+  assert.equal(tokenIconKey("sparkUSDC"), "usdc");
   assert.equal(tokenIconKey("XYZ"), "generic");
 });
