@@ -6,6 +6,8 @@ export const clientEnvSchema = z.object({
   NEXT_PUBLIC_PRIVY_APP_ID: z.string().min(1),
   NEXT_PUBLIC_PRIVY_CLIENT_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_MONAD_RPC_URL: z.url().optional(),
+  NEXT_PUBLIC_PRIVY_SIGNER_QUORUM_ID: z.string().min(1).optional(),
+  NEXT_PUBLIC_PRIVY_VAULT_POLICY_ID: z.string().min(1).optional(),
 });
 
 export type ClientEnv = z.infer<typeof clientEnvSchema>;
@@ -16,6 +18,12 @@ export const clientEnvValues = {
     process.env.NEXT_PUBLIC_PRIVY_CLIENT_ID,
   ),
   NEXT_PUBLIC_MONAD_RPC_URL: optional(process.env.NEXT_PUBLIC_MONAD_RPC_URL),
+  NEXT_PUBLIC_PRIVY_SIGNER_QUORUM_ID: optional(
+    process.env.NEXT_PUBLIC_PRIVY_SIGNER_QUORUM_ID,
+  ),
+  NEXT_PUBLIC_PRIVY_VAULT_POLICY_ID: optional(
+    process.env.NEXT_PUBLIC_PRIVY_VAULT_POLICY_ID,
+  ),
 };
 
 export function readClientEnv(): z.ZodSafeParseResult<ClientEnv> {

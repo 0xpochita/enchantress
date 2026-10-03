@@ -31,12 +31,14 @@ test("summarizePrivyAccounts picks the email and the embedded EVM wallet", () =>
       address: "0xAbC",
       wallet_client_type: "privy",
       chain_type: "ethereum",
+      delegated: true,
     },
   ]);
   assert.deepEqual(summary, {
     email: "me@example.com",
     walletId: "wallet-1",
     walletAddress: "0xabc",
+    isDelegated: true,
   });
 });
 
@@ -45,6 +47,7 @@ test("summarizePrivyAccounts returns nulls before the wallet exists", () => {
     email: null,
     walletId: null,
     walletAddress: null,
+    isDelegated: false,
   });
 });
 

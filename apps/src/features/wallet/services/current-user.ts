@@ -1,6 +1,6 @@
 import "server-only";
 import { InvalidAuthTokenError } from "@privy-io/node";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { type UserRow, users } from "@/lib/db/schema";
 import type { Account } from "../types/account";
@@ -31,15 +31,24 @@ async function verifiedUserDid(request: Request): Promise<string> {
   }
 }
 
-async function syncUser(privyDid: string): Promise<UserRow> {
+export async function syncUser(privyDid: string): Promise<UserRow> {
   const privyUser = await privyServer().users()._get(privyDid);
-  const summary = summarizePrivyAccounts(privyUser.linked_accounts);
+  const { isDelegated, ...summary } = summarizePrivyAccounts(
+    privyUser.linked_accounts,
+  );
+  const delegatedAt = isDelegated ? new Date() : null;
   const [row] = await db()
     .insert(users)
-    .values({ privyDid, ...summary })
+    .values({ privyDid, ...summary, delegatedAt })
     .onConflictDoUpdate({
       target: users.privyDid,
-      set: { ...summary, updatedAt: new Date() },
+      set: {
+        ...summary,
+        delegatedAt: isDelegated
+          ? sql`coalesce(${users.delegatedAt}, now())`
+          : null,
+        updatedAt: new Date(),
+      },
     })
     .returning();
   return row;
@@ -63,4 +72,13 @@ export function toAccount(user: UserRow): Account {
     walletAddress: user.walletAddress,
     isDelegated: user.delegatedAt !== null,
   };
+}
+
+export async function findUserById(id: string): Promise<UserRow | undefined> {
+  const [row] = await db()
+    .select()
+    .from(users)
+    .where(eq(users.id, id))
+    .limit(1);
+  return row;
 }

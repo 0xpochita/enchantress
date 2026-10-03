@@ -4,12 +4,14 @@ export interface PrivyLinkedAccount {
   id?: string | null;
   wallet_client_type?: string;
   chain_type?: string;
+  delegated?: boolean;
 }
 
 export interface PrivyAccountSummary {
   email: string | null;
   walletId: string | null;
   walletAddress: string | null;
+  isDelegated: boolean;
 }
 
 function isEmbeddedEthereumWallet(account: PrivyLinkedAccount): boolean {
@@ -29,6 +31,7 @@ export function summarizePrivyAccounts(
     email: email?.address ?? null,
     walletId: wallet?.id ?? null,
     walletAddress: wallet?.address?.toLowerCase() ?? null,
+    isDelegated: wallet?.delegated === true,
   };
 }
 

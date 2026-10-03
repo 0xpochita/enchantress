@@ -35,3 +35,22 @@ export async function apiGet<T>(
   if (!response.ok) throw new ApiError(response.status, failureMessage(body));
   return schema.parse(body);
 }
+
+export async function apiPost<T>(
+  path: string,
+  body: unknown,
+  schema: z.ZodType<T>,
+  accessToken: string,
+): Promise<T> {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const parsed = await readJson(response);
+  if (!response.ok) throw new ApiError(response.status, failureMessage(parsed));
+  return schema.parse(parsed);
+}

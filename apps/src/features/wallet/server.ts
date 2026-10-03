@@ -1,5 +1,7 @@
 export {
+  findUserById,
   requireUser,
+  syncUser,
   toAccount,
   UnauthorizedError,
 } from "./services/current-user";
