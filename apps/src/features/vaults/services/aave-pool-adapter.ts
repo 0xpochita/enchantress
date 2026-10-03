@@ -158,12 +158,8 @@ async function readMarket(
     }),
   ]);
   if (!usable) return [];
-  const available = await underlyingBalance(
-    client,
-    asset,
-    reserve.aTokenAddress,
-  );
-  const rate = reserve.currentLiquidityRate;
+  const { aTokenAddress, currentLiquidityRate: rate } = reserve;
+  const available = await underlyingBalance(client, asset, aTokenAddress);
   return [toMarketRead(symbol, { rate, supplied, available, priceE8 })];
 }
 

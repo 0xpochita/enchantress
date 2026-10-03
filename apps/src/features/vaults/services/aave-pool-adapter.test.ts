@@ -58,6 +58,15 @@ const reserve = {
   isolationModeTotalDebt: 0n,
 };
 
+const ABIS = [
+  aavePoolAbi,
+  incomeAbi,
+  aTokenAbi,
+  erc20Abi,
+  aaveDataProviderAbi,
+  aaveOracleAbi,
+];
+
 function chain(state: { units: bigint; frozen?: boolean }) {
   const reads: Record<string, (call: StubCall) => unknown> = {
     getReserveData: () => reserve,
@@ -80,15 +89,7 @@ function chain(state: { units: bigint; frozen?: boolean }) {
     getATokenTotalSupply: () => 5_000_000n,
     getAssetPrice: () => 100_000_000n,
   };
-  const abis = [
-    aavePoolAbi,
-    incomeAbi,
-    aTokenAbi,
-    erc20Abi,
-    aaveDataProviderAbi,
-    aaveOracleAbi,
-  ];
-  return stubClient(abis, (call) => reads[call.functionName](call));
+  return stubClient(ABIS, (call) => reads[call.functionName](call));
 }
 
 const receipt = { logs: [] } as unknown as TransactionReceipt;
