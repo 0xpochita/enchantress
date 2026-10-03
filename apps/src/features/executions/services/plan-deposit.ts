@@ -1,21 +1,11 @@
 import "server-only";
 import { MONAD_TOKENS } from "@/features/chain/config/tokens";
 import { getIndexSummary, type IndexSummary } from "@/lib/market";
+import { ExecutionRequestError } from "../types";
 import { type PlannedStep, type PlanSlice, planDeposit } from "../utils/plan";
 import { bestSwapQuote } from "./uniswap-quote";
 
 const BPS = 10_000;
-
-export class DepositRequestError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string,
-    message: string,
-  ) {
-    super(message);
-    this.name = "DepositRequestError";
-  }
-}
 
 export interface DepositPlan {
   summary: IndexSummary;
@@ -39,7 +29,7 @@ export async function assertSwappable(
       expectedOut: 0n,
       pairLabel: to.symbol,
     }).catch((error: Error) => {
-      throw new DepositRequestError(422, "NO_LIQUIDITY", error.message);
+      throw new ExecutionRequestError(422, "NO_LIQUIDITY", error.message);
     });
   }
 }
@@ -51,13 +41,17 @@ export async function buildDepositPlan(
 ): Promise<DepositPlan> {
   const summary = await getIndexSummary(indexId);
   if (!summary)
-    throw new DepositRequestError(
+    throw new ExecutionRequestError(
       404,
       "NOT_FOUND",
       "This index does not exist.",
     );
   if (amountBase <= 0n)
-    throw new DepositRequestError(400, "AMOUNT", "Enter an amount above zero.");
+    throw new ExecutionRequestError(
+      400,
+      "AMOUNT",
+      "Enter an amount above zero.",
+    );
   const slices = summary.allocations.map((a) => ({
     assetSymbol: a.asset.symbol,
     weightBps: Math.round(a.weight * BPS),

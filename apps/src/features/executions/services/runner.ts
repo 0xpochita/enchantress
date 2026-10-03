@@ -19,6 +19,7 @@ import {
 } from "@/features/vaults/services/venue-snapshot";
 import { findUserById } from "@/features/wallet/server";
 import type { ExecutionRow, ExecutionStepRow } from "@/lib/db/schema";
+import { ExecutionRequestError } from "../types";
 import {
   aaveSupplyCalldata,
   aaveWithdrawCalldata,
@@ -39,7 +40,6 @@ import {
   releaseLease,
   updateStep,
 } from "./execution-repository";
-import { DepositRequestError } from "./plan-deposit";
 import { readTransactionState, sendMonadTransaction } from "./privy-sender";
 import { bestSwapQuote, NoLiquidityError } from "./uniswap-quote";
 
@@ -416,7 +416,7 @@ function failureOf(error: unknown): { code: string; message: string } {
   if (
     error instanceof ExecutionStepError ||
     error instanceof NoLiquidityError ||
-    error instanceof DepositRequestError
+    error instanceof ExecutionRequestError
   )
     return { code: error.name, message: error.message };
   return {

@@ -13,6 +13,18 @@ export const ACTIVE_STATUSES = ["bridging", "executing"] as const;
 
 export type ExecutionStatus = (typeof EXECUTION_STATUSES)[number];
 
+export class ExecutionRequestError extends Error {
+  readonly status: number;
+  readonly code: string;
+
+  constructor(status: number, code: string, message: string) {
+    super(message);
+    this.name = "ExecutionRequestError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
 export const STEP_STATUSES = [
   "pending",
   "sent",

@@ -1,5 +1,16 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  lt,
+  or,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   type ExecutionRow,
@@ -7,49 +18,92 @@ import {
   executionSteps,
   executions,
   ledger,
+  ONE_ACTIVE_EXECUTION_INDEX,
   positionLots,
   users,
 } from "@/lib/db/schema";
-import { ACTIVE_STATUSES, type ExecutionView } from "../types";
+import {
+  ACTIVE_STATUSES,
+  ExecutionRequestError,
+  type ExecutionStatus,
+  type ExecutionView,
+} from "../types";
 import type { PlannedStep } from "../utils/plan";
+import { statusesLeadingTo } from "../utils/transitions";
 import { reduceLots } from "../utils/withdraw";
 
 const LEASE_SECONDS = 60;
+const UNIQUE_VIOLATION = "23505";
+
+type Executor = Pick<ReturnType<typeof db>, "insert" | "update">;
 
 export interface LoadedExecution {
   execution: ExecutionRow;
   steps: ExecutionStepRow[];
 }
 
-export async function createExecution(input: {
-  kind?: "deposit" | "withdraw";
+export const BUSY_MESSAGE =
+  "Another deposit or withdrawal is still running. Wait for it to finish.";
+
+function isActiveExecutionConflict(error: unknown): boolean {
+  const cause = error instanceof Error ? (error.cause ?? error) : error;
+  if (typeof cause !== "object" || cause === null) return false;
+  const pgError = cause as { code?: string; constraint_name?: string };
+  return (
+    pgError.code === UNIQUE_VIOLATION &&
+    pgError.constraint_name === ONE_ACTIVE_EXECUTION_INDEX
+  );
+}
+
+async function insertActiveExecution<T>(create: () => Promise<T>): Promise<T> {
+  try {
+    return await create();
+  } catch (error) {
+    if (!isActiveExecutionConflict(error)) throw error;
+    throw new ExecutionRequestError(409, "BUSY", BUSY_MESSAGE);
+  }
+}
+
+async function insertPlannedSteps(
+  executor: Executor,
+  executionId: string,
+  steps: PlannedStep[],
+): Promise<void> {
+  if (steps.length === 0) return;
+  await executor
+    .insert(executionSteps)
+    .values(steps.map((step) => ({ executionId, ...step })));
+}
+
+export interface NewExecution {
+  kind: "deposit" | "withdraw";
   userId: string;
   indexId: string;
   depositAsset: string;
   depositAmountBase: bigint;
   valueUsd: number;
   steps: PlannedStep[];
-}): Promise<ExecutionRow> {
-  return db().transaction(async (tx) => {
-    const [execution] = await tx
-      .insert(executions)
-      .values({
-        userId: input.userId,
-        indexId: input.indexId,
-        kind: input.kind ?? "deposit",
-        status: "executing",
-        depositAsset: input.depositAsset,
-        depositAmountBase: input.depositAmountBase.toString(),
-        valueUsd: input.valueUsd.toFixed(2),
-      })
-      .returning();
-    await tx
-      .insert(executionSteps)
-      .values(
-        input.steps.map((step) => ({ executionId: execution.id, ...step })),
-      );
-    return execution;
-  });
+}
+
+export function createExecution(input: NewExecution): Promise<ExecutionRow> {
+  return insertActiveExecution(() =>
+    db().transaction(async (tx) => {
+      const [execution] = await tx
+        .insert(executions)
+        .values({
+          userId: input.userId,
+          indexId: input.indexId,
+          kind: input.kind,
+          status: "executing",
+          depositAsset: input.depositAsset,
+          depositAmountBase: input.depositAmountBase.toString(),
+          valueUsd: input.valueUsd.toFixed(2),
+        })
+        .returning();
+      await insertPlannedSteps(tx, execution.id, input.steps);
+      return execution;
+    }),
+  );
 }
 
 export async function loadExecution(
@@ -107,21 +161,86 @@ export async function updateStep(
     .where(eq(executionSteps.id, stepId));
 }
 
+export async function transitionExecution(input: {
+  id: string;
+  to: ExecutionStatus;
+  patch?: ExecutionPatch;
+  condition?: SQL;
+  executor?: Executor;
+}): Promise<boolean> {
+  const rows = await (input.executor ?? db())
+    .update(executions)
+    .set({ ...input.patch, status: input.to, updatedAt: new Date() })
+    .where(
+      and(
+        eq(executions.id, input.id),
+        inArray(executions.status, statusesLeadingTo(input.to)),
+        input.condition,
+      ),
+    )
+    .returning({ id: executions.id });
+  return rows.length > 0;
+}
+
 export async function finishExecution(
   id: string,
   status: "succeeded" | "failed" | "refunded" | "cancelled",
   error?: { code: string; message: string },
 ): Promise<void> {
-  await db()
-    .update(executions)
-    .set({
-      status,
+  await transitionExecution({
+    id,
+    to: status,
+    patch: {
       errorCode: error?.code ?? null,
       errorMessage: error?.message ?? null,
       leaseUntil: null,
-      updatedAt: new Date(),
-    })
-    .where(eq(executions.id, id));
+    },
+  });
+}
+
+export function cancelUnsentBridging(id: string): Promise<boolean> {
+  return transitionExecution({
+    id,
+    to: "cancelled",
+    patch: { errorCode: null, errorMessage: null, leaseUntil: null },
+    condition: isNull(executions.originTxHash),
+  });
+}
+
+export async function recordOriginTx(
+  id: string,
+  txHash: string,
+): Promise<void> {
+  await db()
+    .update(executions)
+    .set({ originTxHash: txHash, updatedAt: new Date() })
+    .where(
+      and(
+        eq(executions.id, id),
+        eq(executions.status, "bridging"),
+        isNull(executions.originTxHash),
+      ),
+    );
+}
+
+export function landBridgedExecution(input: {
+  id: string;
+  landedBase: bigint;
+  steps: PlannedStep[];
+}): Promise<boolean> {
+  return db().transaction(async (tx) => {
+    const landed = await transitionExecution({
+      id: input.id,
+      to: "executing",
+      patch: {
+        depositAmountBase: input.landedBase.toString(),
+        auroraStatus: "SUCCESS",
+      },
+      executor: tx,
+    });
+    if (landed) await insertPlannedSteps(tx, input.id, input.steps);
+    return landed;
+  });
 }
 
 export async function recordDeposit(input: {
@@ -209,7 +328,7 @@ export function toExecutionView(loaded: LoadedExecution): ExecutionView {
   };
 }
 
-export async function createBridgingExecution(input: {
+export interface NewBridgingExecution {
   userId: string;
   indexId: string;
   valueUsd: number;
@@ -220,42 +339,40 @@ export async function createBridgingExecution(input: {
   depositAddress: string;
   depositMemo: string | null;
   deadline: Date;
-}): Promise<ExecutionRow> {
-  const [execution] = await db()
-    .insert(executions)
-    .values({
-      userId: input.userId,
-      indexId: input.indexId,
-      kind: "deposit",
-      status: "bridging",
-      depositAsset: "USDC",
-      depositAmountBase: input.estimatedLandedBase.toString(),
-      valueUsd: input.valueUsd.toFixed(2),
-      originChain: input.originChain,
-      originAssetId: input.originAssetId,
-      originAmountBase: input.originAmountBase.toString(),
-      auroraDepositAddress: input.depositAddress,
-      auroraDepositMemo: input.depositMemo,
-      auroraDeadline: input.deadline,
-      auroraStatus: "PENDING_DEPOSIT",
-    })
-    .returning();
+}
+
+export async function createBridgingExecution(
+  input: NewBridgingExecution,
+): Promise<ExecutionRow> {
+  const [execution] = await insertActiveExecution(() =>
+    db()
+      .insert(executions)
+      .values({
+        userId: input.userId,
+        indexId: input.indexId,
+        kind: "deposit",
+        status: "bridging",
+        depositAsset: "USDC",
+        depositAmountBase: input.estimatedLandedBase.toString(),
+        valueUsd: input.valueUsd.toFixed(2),
+        originChain: input.originChain,
+        originAssetId: input.originAssetId,
+        originAmountBase: input.originAmountBase.toString(),
+        auroraDepositAddress: input.depositAddress,
+        auroraDepositMemo: input.depositMemo,
+        auroraDeadline: input.deadline,
+        auroraStatus: "PENDING_DEPOSIT",
+      })
+      .returning(),
+  );
   return execution;
 }
 
-export async function insertSteps(
-  executionId: string,
-  steps: PlannedStep[],
-): Promise<void> {
-  if (steps.length === 0) return;
-  await db()
-    .insert(executionSteps)
-    .values(steps.map((step) => ({ executionId, ...step })));
-}
+export type ExecutionPatch = Omit<Partial<ExecutionRow>, "status">;
 
 export async function updateExecution(
   id: string,
-  patch: Partial<ExecutionRow>,
+  patch: ExecutionPatch,
 ): Promise<void> {
   await db()
     .update(executions)

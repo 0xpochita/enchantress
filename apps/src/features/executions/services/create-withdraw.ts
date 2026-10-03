@@ -3,10 +3,10 @@ import type { Address } from "viem";
 import { VENUE_CONFIGS } from "@/features/vaults/config/venues";
 import { getVenueSnapshot } from "@/features/vaults/services/venue-snapshot";
 import type { UserRow } from "@/lib/db/schema";
-import type {
-  CreateWithdrawBody,
-  ExecutionView,
-  IndexPosition,
+import {
+  type CreateWithdrawBody,
+  ExecutionRequestError,
+  type IndexPosition,
 } from "../types";
 import { baseToAmount } from "../utils/activity";
 import {
@@ -14,17 +14,7 @@ import {
   type WithdrawLeg,
   withdrawSteps,
 } from "../utils/withdraw";
-import {
-  assertMonadGas,
-  assertNoActiveExecution,
-  requireDelegatedWallet,
-} from "./create-deposit";
-import {
-  createExecution,
-  loadExecution,
-  toExecutionView,
-} from "./execution-repository";
-import { DepositRequestError } from "./plan-deposit";
+import type { NewExecution } from "./execution-repository";
 import { type HoldingRead, readIndexHoldings } from "./withdraw-holdings";
 
 async function priceLookup(): Promise<(symbol: string) => number> {
@@ -46,7 +36,7 @@ function assertLiquidity(legs: HoldingLeg[]): void {
       holding.assetSymbol,
       holding.availableAssets,
     );
-    throw new DepositRequestError(
+    throw new ExecutionRequestError(
       409,
       "LOW_LIQUIDITY",
       `Only ${available.toFixed(2)} ${holding.assetSymbol} is available on ${venueName(holding.venueId)} right now. Try a smaller amount later.`,
@@ -91,7 +81,7 @@ async function plannedLegs(
   const reads = await readIndexHoldings(user.id, wallet, body.indexId);
   const legs = planWithdrawLegs(reads, body.fraction);
   if (legs.length === 0)
-    throw new DepositRequestError(
+    throw new ExecutionRequestError(
       400,
       "NOTHING_TO_WITHDRAW",
       "You have nothing to withdraw from this index.",
@@ -100,17 +90,15 @@ async function plannedLegs(
   return legs;
 }
 
-export async function createWithdraw(
+export async function prepareWithdraw(
   user: UserRow,
+  wallet: Address,
   body: CreateWithdrawBody,
-): Promise<ExecutionView> {
-  const wallet = requireDelegatedWallet(user);
-  await assertNoActiveExecution(user);
-  await assertMonadGas(wallet.address);
-  const legs = await plannedLegs(user, wallet.address, body);
+): Promise<NewExecution> {
+  const legs = await plannedLegs(user, wallet, body);
   const price = await priceLookup();
   const symbols = [...new Set(legs.map((leg) => leg.holding.assetSymbol))];
-  const execution = await createExecution({
+  return {
     kind: "withdraw",
     userId: user.id,
     indexId: body.indexId,
@@ -118,13 +106,5 @@ export async function createWithdraw(
     depositAmountBase: 0n,
     valueUsd: legs.reduce((sum, leg) => sum + legValueUsd(leg, price), 0),
     steps: withdrawSteps(legs),
-  });
-  const loaded = await loadExecution(execution.id);
-  if (!loaded)
-    throw new DepositRequestError(
-      500,
-      "CREATE",
-      "Could not start the withdrawal.",
-    );
-  return toExecutionView(loaded);
+  };
 }

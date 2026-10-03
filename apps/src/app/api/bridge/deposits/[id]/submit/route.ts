@@ -1,7 +1,6 @@
-import { after, NextResponse } from "next/server";
-import { submitBridgeTransfer } from "@/features/bridge/services/bridge-lifecycle";
+import { NextResponse } from "next/server";
 import { submitBridgeBodySchema } from "@/features/bridge/types";
-import { advanceExecution } from "@/features/executions/services/runner";
+import { submitBridgeDeposit } from "@/features/executions/services/execution-lifecycle";
 import { requireUser } from "@/features/wallet/server";
 import { apiErrorResponse } from "@/lib/api-error";
 
@@ -13,9 +12,7 @@ export async function POST(
     const user = await requireUser(request);
     const { id } = await params;
     const body = submitBridgeBodySchema.parse(await request.json());
-    const view = await submitBridgeTransfer(user, id, body.txHash);
-    after(() => advanceExecution(id));
-    return NextResponse.json(view);
+    return NextResponse.json(await submitBridgeDeposit(user, id, body.txHash));
   } catch (error) {
     return apiErrorResponse(error);
   }

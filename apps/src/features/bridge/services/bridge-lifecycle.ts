@@ -1,16 +1,12 @@
 import "server-only";
-import { DepositRequestError } from "@/features/executions/services/create-deposit";
 import {
   finishExecution,
-  insertSteps,
   type LoadedExecution,
-  loadExecution,
-  toExecutionView,
+  landBridgedExecution,
   updateExecution,
 } from "@/features/executions/services/execution-repository";
 import { buildDepositPlan } from "@/features/executions/services/plan-deposit";
-import type { ExecutionView } from "@/features/executions/types";
-import type { UserRow } from "@/lib/db/schema";
+import type { ExecutionRow } from "@/lib/db/schema";
 import { bridgeTransition } from "../utils/bridge-transition";
 import {
   AuroraError,
@@ -20,67 +16,23 @@ import {
 
 const LANDED_ASSET = "USDC";
 
-async function ownedBridgingExecution(
-  user: UserRow,
-  id: string,
-): Promise<LoadedExecution> {
-  const loaded = await loadExecution(id);
-  if (!loaded || loaded.execution.userId !== user.id)
-    throw new DepositRequestError(404, "NOT_FOUND", "Deposit not found.");
-  if (loaded.execution.status !== "bridging")
-    throw new DepositRequestError(
-      409,
-      "STATE",
-      "This deposit is no longer waiting for a transfer.",
-    );
-  return loaded;
-}
-
-export async function submitBridgeTransfer(
-  user: UserRow,
-  id: string,
+export async function notifyAuroraTransfer(
+  execution: ExecutionRow,
   txHash: string,
-): Promise<ExecutionView> {
-  const loaded = await ownedBridgingExecution(user, id);
-  const { execution } = loaded;
-  if (!execution.originTxHash)
-    await updateExecution(id, { originTxHash: txHash });
-  if (execution.auroraDepositAddress) {
-    try {
-      await submitAuroraDeposit(
-        txHash,
-        execution.auroraDepositAddress,
-        execution.auroraDepositMemo ?? undefined,
-      );
-    } catch (error) {
-      if (!(error instanceof AuroraError)) throw error;
-      await updateExecution(id, {
-        auroraStatus: `SUBMIT_RETRY:${error.status}`,
-      });
-    }
-  }
-  const fresh = await loadExecution(id);
-  if (!fresh)
-    throw new DepositRequestError(500, "LOAD", "Could not load the deposit.");
-  return toExecutionView(fresh);
-}
-
-export async function cancelBridgeDeposit(
-  user: UserRow,
-  id: string,
-): Promise<ExecutionView> {
-  const loaded = await ownedBridgingExecution(user, id);
-  if (loaded.execution.originTxHash)
-    throw new DepositRequestError(
-      409,
-      "SENT",
-      "The transfer was already sent and cannot be cancelled.",
+): Promise<void> {
+  if (!execution.auroraDepositAddress) return;
+  try {
+    await submitAuroraDeposit(
+      txHash,
+      execution.auroraDepositAddress,
+      execution.auroraDepositMemo ?? undefined,
     );
-  await finishExecution(id, "cancelled");
-  const fresh = await loadExecution(id);
-  if (!fresh)
-    throw new DepositRequestError(500, "LOAD", "Could not load the deposit.");
-  return toExecutionView(fresh);
+  } catch (error) {
+    if (!(error instanceof AuroraError)) throw error;
+    await updateExecution(execution.id, {
+      auroraStatus: `SUBMIT_RETRY:${error.status}`,
+    });
+  }
 }
 
 async function landDeposit(
@@ -93,11 +45,10 @@ async function landDeposit(
     LANDED_ASSET,
     landedBase,
   );
-  await insertSteps(execution.id, plan.steps);
-  await updateExecution(execution.id, {
-    depositAmountBase: landedBase.toString(),
-    auroraStatus: "SUCCESS",
-    status: "executing",
+  await landBridgedExecution({
+    id: execution.id,
+    landedBase,
+    steps: plan.steps,
   });
 }
 
