@@ -1,10 +1,10 @@
 import { type StatItem, StatStrip } from "@/components/ui";
+import { UserPositionValue } from "@/features/portfolio";
 import type { Index } from "@/types/market";
 import {
   formatCompactUsd,
   formatDate,
   formatPercent,
-  formatUsd,
   shortenAddress,
 } from "@/utils/format";
 
@@ -18,7 +18,7 @@ export function IndexStats({ index, apy }: { index: Index; apy: number }) {
     },
     {
       label: "Your position",
-      value: formatUsd(index.positionUsd),
+      value: <UserPositionValue indexId={index.id} />,
       hint: "this index, your wallet",
     },
     {
