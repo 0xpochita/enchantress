@@ -1,5 +1,5 @@
 import "server-only";
-import type { Address, Hex } from "viem";
+import type { Address, Hex, TransactionReceipt } from "viem";
 import { serverEnv } from "@/config/env.server";
 import { advanceBridging } from "@/features/bridge/services/bridge-lifecycle";
 import { UNISWAP_MONAD } from "@/features/chain/abis/uniswap";
@@ -21,8 +21,10 @@ import { findUserById } from "@/features/wallet/server";
 import type { ExecutionRow, ExecutionStepRow } from "@/lib/db/schema";
 import {
   aaveSupplyCalldata,
+  aaveWithdrawCalldata,
   approveCalldata,
   erc4626DepositCalldata,
+  erc4626RedeemCalldata,
   minimumOut,
   uniswapSwapCalldata,
 } from "../utils/calldata";
@@ -33,6 +35,7 @@ import {
   type LoadedExecution,
   loadExecution,
   recordDeposit,
+  recordWithdraw,
   releaseLease,
   updateStep,
 } from "./execution-repository";
@@ -186,6 +189,31 @@ function supplyTransaction(
   return { to: target, data };
 }
 
+function exitTransaction(
+  step: ExecutionStepRow,
+  amount: bigint,
+  wallet: Wallet,
+): Transaction {
+  const venue = venueOf(step.venueId);
+  const data =
+    venue.kind === "aave-pool"
+      ? aaveWithdrawCalldata(
+          token(step.assetSymbol).address,
+          amount,
+          wallet.address,
+        )
+      : erc4626RedeemCalldata(amount, wallet.address);
+  return { to: venueTarget(venue, step.assetSymbol), data };
+}
+
+function isExit(step: ExecutionStepRow): boolean {
+  return step.kind === "withdraw" || step.kind === "redeem";
+}
+
+function tracksUnits(step: ExecutionStepRow): boolean {
+  return step.kind === "supply" || step.kind === "withdraw";
+}
+
 async function unitsHeld(
   step: ExecutionStepRow,
   wallet: Wallet,
@@ -208,6 +236,7 @@ async function buildTransaction(
   if (step.kind === "swap")
     return swapTransaction(loaded.execution, step, amount, wallet);
   if (step.kind === "approve") return approveTransaction(step, amount);
+  if (isExit(step)) return exitTransaction(step, amount, wallet);
   return supplyTransaction(step, amount, wallet);
 }
 
@@ -217,8 +246,9 @@ async function sendStep(
   wallet: Wallet,
 ) {
   const transaction = await buildTransaction(loaded, step, wallet);
-  const unitsBefore =
-    step.kind === "supply" ? (await unitsHeld(step, wallet)).toString() : null;
+  const unitsBefore = tracksUnits(step)
+    ? (await unitsHeld(step, wallet)).toString()
+    : null;
   const attempts = step.attempts + 1;
   const sent = await sendMonadTransaction({
     walletId: wallet.id,
@@ -235,39 +265,67 @@ async function sendStep(
   });
 }
 
-async function confirmedOutputs(
-  step: ExecutionStepRow,
-  hash: Hex,
-  wallet: Wallet,
-): Promise<{ amountOut: bigint | null; units: bigint | null }> {
+interface StepOutputs {
+  amountOut: bigint | null;
+  units: bigint | null;
+}
+
+async function successfulReceipt(hash: Hex): Promise<TransactionReceipt> {
   const receipt = await monadClient().getTransactionReceipt({ hash });
   if (receipt.status !== "success")
     throw new ExecutionStepError(
       "REVERTED",
       "The transaction reverted on Monad.",
     );
-  if (step.kind === "swap")
-    return {
-      amountOut: receivedAmount(
-        receipt.logs,
-        token(step.assetSymbol).address,
-        wallet.address,
-      ),
-      units: null,
-    };
-  if (step.kind !== "supply") return { amountOut: null, units: null };
+  return receipt;
+}
+
+async function suppliedUnits(
+  step: ExecutionStepRow,
+  receipt: TransactionReceipt,
+  wallet: Wallet,
+): Promise<bigint> {
   const venue = venueOf(step.venueId);
   if (venue.kind === "erc4626")
+    return mintedShares(
+      receipt.logs,
+      venueTarget(venue, step.assetSymbol),
+      wallet.address,
+    );
+  const after = await unitsHeld(step, wallet);
+  return after - BigInt(step.unitsBefore ?? "0");
+}
+
+async function burnedUnits(
+  step: ExecutionStepRow,
+  wallet: Wallet,
+): Promise<bigint> {
+  if (step.kind === "redeem") return BigInt(step.amountBase ?? "0");
+  const after = await unitsHeld(step, wallet);
+  return BigInt(step.unitsBefore ?? "0") - after;
+}
+
+async function confirmedOutputs(
+  step: ExecutionStepRow,
+  hash: Hex,
+  wallet: Wallet,
+): Promise<StepOutputs> {
+  const receipt = await successfulReceipt(hash);
+  const received = () =>
+    receivedAmount(
+      receipt.logs,
+      token(step.assetSymbol).address,
+      wallet.address,
+    );
+  if (step.kind === "swap") return { amountOut: received(), units: null };
+  if (step.kind === "supply")
     return {
       amountOut: null,
-      units: mintedShares(
-        receipt.logs,
-        venueTarget(venue, step.assetSymbol),
-        wallet.address,
-      ),
+      units: await suppliedUnits(step, receipt, wallet),
     };
-  const after = await unitsHeld(step, wallet);
-  return { amountOut: null, units: after - BigInt(step.unitsBefore ?? "0") };
+  if (isExit(step))
+    return { amountOut: received(), units: await burnedUnits(step, wallet) };
+  return { amountOut: null, units: null };
 }
 
 async function settleSupply(
@@ -291,6 +349,38 @@ async function settleSupply(
   });
 }
 
+async function settleWithdraw(
+  loaded: LoadedExecution,
+  step: ExecutionStepRow,
+  outputs: StepOutputs,
+  hash: string,
+) {
+  const amountBase = outputs.amountOut ?? 0n;
+  const asset = token(step.assetSymbol);
+  const valueUsd =
+    (Number(amountBase) / 10 ** asset.decimals) *
+    (await priceUsd(asset.symbol));
+  await recordWithdraw({
+    execution: loaded.execution,
+    step,
+    burnedUnits: outputs.units ?? 0n,
+    amountBase,
+    valueUsd,
+    txHash: hash,
+  });
+}
+
+async function settleOutputs(
+  loaded: LoadedExecution,
+  step: ExecutionStepRow,
+  outputs: StepOutputs,
+  hash: string,
+) {
+  if (isExit(step)) return settleWithdraw(loaded, step, outputs, hash);
+  if (outputs.units !== null)
+    await settleSupply(loaded, step, outputs.units, hash);
+}
+
 async function settleStep(
   loaded: LoadedExecution,
   step: ExecutionStepRow,
@@ -310,8 +400,7 @@ async function settleStep(
   if (state.status !== "confirmed" || !state.hash) return;
   const hash = state.hash as Hex;
   const outputs = await confirmedOutputs(step, hash, wallet);
-  if (outputs.units !== null)
-    await settleSupply(loaded, step, outputs.units, hash);
+  await settleOutputs(loaded, step, outputs, hash);
   await updateStep(step.id, {
     status: "confirmed",
     txHash: hash,

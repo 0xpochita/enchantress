@@ -1,5 +1,17 @@
 import "server-only";
-import { and, asc, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNull,
+  lt,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   type ExecutionRow,
@@ -8,9 +20,11 @@ import {
   executions,
   ledger,
   positionLots,
+  users,
 } from "@/lib/db/schema";
 import { ACTIVE_STATUSES, type ExecutionView } from "../types";
 import type { PlannedStep } from "../utils/plan";
+import { reduceLots } from "../utils/withdraw";
 
 const LEASE_SECONDS = 60;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -21,6 +35,7 @@ export interface LoadedExecution {
 }
 
 export async function createExecution(input: {
+  kind?: "deposit" | "withdraw";
   userId: string;
   indexId: string;
   depositAsset: string;
@@ -34,7 +49,7 @@ export async function createExecution(input: {
       .values({
         userId: input.userId,
         indexId: input.indexId,
-        kind: "deposit",
+        kind: input.kind ?? "deposit",
         status: "executing",
         depositAsset: input.depositAsset,
         depositAmountBase: input.depositAmountBase.toString(),
@@ -175,6 +190,7 @@ export async function spentTodayUsd(userId: string): Promise<number> {
     .where(
       and(
         eq(executions.userId, userId),
+        ne(executions.kind, "withdraw"),
         inArray(executions.status, ["executing", "succeeded"]),
         gt(executions.createdAt, since),
       ),
@@ -274,4 +290,95 @@ export async function updateExecution(
     .update(executions)
     .set({ ...patch, updatedAt: new Date() })
     .where(eq(executions.id, id));
+}
+
+export interface LotTotal {
+  indexId: string;
+  venueId: string;
+  assetSymbol: string;
+  units: bigint;
+}
+
+export async function userLotTotals(userId: string): Promise<LotTotal[]> {
+  const rows = await db()
+    .select({
+      indexId: positionLots.indexId,
+      venueId: positionLots.venueId,
+      assetSymbol: positionLots.assetSymbol,
+      units: sql<string>`sum(${positionLots.units}::numeric)::text`,
+    })
+    .from(positionLots)
+    .where(eq(positionLots.userId, userId))
+    .groupBy(
+      positionLots.indexId,
+      positionLots.venueId,
+      positionLots.assetSymbol,
+    );
+  return rows.map((row) => ({ ...row, units: BigInt(row.units) }));
+}
+
+export async function recordWithdraw(input: {
+  execution: ExecutionRow;
+  step: ExecutionStepRow;
+  burnedUnits: bigint;
+  amountBase: bigint;
+  valueUsd: number;
+  txHash: string;
+}): Promise<void> {
+  const shared = {
+    userId: input.execution.userId,
+    indexId: input.execution.indexId,
+    venueId: input.step.venueId,
+    assetSymbol: input.step.assetSymbol,
+  };
+  await db().transaction(async (tx) => {
+    const lots = await tx
+      .select({ id: positionLots.id, units: positionLots.units })
+      .from(positionLots)
+      .where(
+        and(
+          eq(positionLots.userId, shared.userId),
+          eq(positionLots.indexId, shared.indexId),
+          eq(positionLots.venueId, shared.venueId),
+          eq(positionLots.assetSymbol, shared.assetSymbol),
+        ),
+      )
+      .orderBy(asc(positionLots.createdAt))
+      .for("update");
+    const updates = reduceLots(
+      lots.map((lot) => ({ id: lot.id, units: BigInt(lot.units) })),
+      input.burnedUnits,
+    );
+    for (const lot of updates)
+      await tx
+        .update(positionLots)
+        .set({ units: lot.units.toString() })
+        .where(eq(positionLots.id, lot.id));
+    await tx.insert(ledger).values({
+      ...shared,
+      executionId: input.execution.id,
+      direction: "out",
+      amountBase: input.amountBase.toString(),
+      valueUsd: input.valueUsd.toFixed(2),
+      txHash: input.txHash,
+    });
+  });
+}
+
+export type ActivityLedgerRow = typeof ledger.$inferSelect & {
+  account: string | null;
+};
+
+export async function indexLedger(
+  indexId: string,
+  limit: number,
+): Promise<ActivityLedgerRow[]> {
+  const rows = await db()
+    .select({ entry: ledger, account: users.walletAddress })
+    .from(ledger)
+    .leftJoin(users, eq(users.id, ledger.userId))
+    .where(eq(ledger.indexId, indexId))
+    .orderBy(desc(ledger.at), desc(ledger.id))
+    .limit(limit);
+  return rows.map((row) => ({ ...row.entry, account: row.account }));
 }

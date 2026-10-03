@@ -40,6 +40,26 @@ export function erc4626DepositCalldata(amount: bigint, receiver: Address): Hex {
   });
 }
 
+export function aaveWithdrawCalldata(
+  asset: Address,
+  amount: bigint,
+  to: Address,
+): Hex {
+  return encodeFunctionData({
+    abi: aavePoolAbi,
+    functionName: "withdraw",
+    args: [asset, amount, to],
+  });
+}
+
+export function erc4626RedeemCalldata(shares: bigint, owner: Address): Hex {
+  return encodeFunctionData({
+    abi: erc4626Abi,
+    functionName: "redeem",
+    args: [shares, owner, owner],
+  });
+}
+
 export function uniswapSwapCalldata(params: SwapParams): Hex {
   return encodeFunctionData({
     abi: uniswapRouterAbi,

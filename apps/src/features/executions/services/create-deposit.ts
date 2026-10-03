@@ -58,7 +58,7 @@ export async function assertNoActiveExecution(user: UserRow): Promise<void> {
     throw new DepositRequestError(
       409,
       "BUSY",
-      "Another deposit is still running. Wait for it to finish.",
+      "Another deposit or withdrawal is still running. Wait for it to finish.",
     );
 }
 

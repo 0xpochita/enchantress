@@ -1,4 +1,4 @@
-export type StepKind = "swap" | "approve" | "supply";
+export type StepKind = "swap" | "approve" | "supply" | "withdraw" | "redeem";
 export type Spender = "venue" | "router";
 
 export interface PlannedStep {
