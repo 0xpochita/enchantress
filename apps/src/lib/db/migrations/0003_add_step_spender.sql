@@ -1,0 +1,1 @@
+ALTER TABLE "execution_steps" ADD COLUMN "spender" text;

@@ -15,6 +15,20 @@
       "when": 1790955504059,
       "tag": "0001_create_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790994406125,
+      "tag": "0002_create_executions",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790994747062,
+      "tag": "0003_add_step_spender",
+      "breakpoints": true
     }
   ]
 }
