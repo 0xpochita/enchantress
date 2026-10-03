@@ -121,12 +121,8 @@
           "name": "execution_steps_execution_id_executions_id_fk",
           "tableFrom": "execution_steps",
           "tableTo": "executions",
-          "columnsFrom": [
-            "execution_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["execution_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -136,10 +132,7 @@
         "execution_steps_execution_id_position_unique": {
           "name": "execution_steps_execution_id_position_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "execution_id",
-            "position"
-          ]
+          "columns": ["execution_id", "position"]
         }
       },
       "policies": {},
@@ -286,12 +279,8 @@
           "name": "executions_user_id_users_id_fk",
           "tableFrom": "executions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -299,12 +288,8 @@
           "name": "executions_index_id_indexes_id_fk",
           "tableFrom": "executions",
           "tableTo": "indexes",
-          "columnsFrom": [
-            "index_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["index_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -357,12 +342,8 @@
           "name": "index_allocations_index_id_indexes_id_fk",
           "tableFrom": "index_allocations",
           "tableTo": "indexes",
-          "columnsFrom": [
-            "index_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["index_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -372,10 +353,7 @@
         "index_allocations_index_id_asset_symbol_unique": {
           "name": "index_allocations_index_id_asset_symbol_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "index_id",
-            "asset_symbol"
-          ]
+          "columns": ["index_id", "asset_symbol"]
         }
       },
       "policies": {},
@@ -431,12 +409,8 @@
           "name": "indexes_creator_user_id_users_id_fk",
           "tableFrom": "indexes",
           "tableTo": "users",
-          "columnsFrom": [
-            "creator_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["creator_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -526,12 +500,8 @@
           "name": "ledger_user_id_users_id_fk",
           "tableFrom": "ledger",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -539,12 +509,8 @@
           "name": "ledger_index_id_indexes_id_fk",
           "tableFrom": "ledger",
           "tableTo": "indexes",
-          "columnsFrom": [
-            "index_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["index_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -552,12 +518,8 @@
           "name": "ledger_execution_id_executions_id_fk",
           "tableFrom": "ledger",
           "tableTo": "executions",
-          "columnsFrom": [
-            "execution_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["execution_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -629,12 +591,8 @@
           "name": "position_lots_user_id_users_id_fk",
           "tableFrom": "position_lots",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -642,12 +600,8 @@
           "name": "position_lots_index_id_indexes_id_fk",
           "tableFrom": "position_lots",
           "tableTo": "indexes",
-          "columnsFrom": [
-            "index_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["index_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -655,12 +609,8 @@
           "name": "position_lots_execution_id_executions_id_fk",
           "tableFrom": "position_lots",
           "tableTo": "executions",
-          "columnsFrom": [
-            "execution_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["execution_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -713,12 +663,8 @@
           "name": "position_snapshots_user_id_users_id_fk",
           "tableFrom": "position_snapshots",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -728,10 +674,7 @@
         "position_snapshots_user_id_taken_at_unique": {
           "name": "position_snapshots_user_id_taken_at_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "taken_at"
-          ]
+          "columns": ["user_id", "taken_at"]
         }
       },
       "policies": {},
@@ -801,9 +744,7 @@
         "users_privy_did_unique": {
           "name": "users_privy_did_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "privy_did"
-          ]
+          "columns": ["privy_did"]
         }
       },
       "policies": {},
