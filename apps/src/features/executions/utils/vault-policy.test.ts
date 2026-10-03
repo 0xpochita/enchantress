@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { test } from "node:test";
 import { UNISWAP_MONAD } from "../../chain/abis/uniswap.ts";
 import { buildVaultPolicyRules, vaultSpenders } from "./vault-policy.ts";
@@ -36,4 +37,12 @@ test("every outbound action is forced back to the signing wallet", () => {
     "redeem.owner",
     "exactInputSingle.params.recipient",
   ]);
+});
+
+test("rules stay byte-identical to the live Privy policy", () => {
+  const json = JSON.stringify(buildVaultPolicyRules());
+  assert.equal(
+    createHash("sha256").update(json).digest("hex"),
+    "a862ad7e4ec0329ef9b9c6839d0103d8906d034dfe90746755d1b35f4d281aeb",
+  );
 });
