@@ -1,9 +1,9 @@
 "use client";
 
-import { usePrivy, useSigners } from "@privy-io/react-auth";
+import { useSigners } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { readClientEnv } from "@/config/env.client";
-import { apiPost } from "@/lib/api-client";
+import { useApi } from "@/lib/api-client";
 import { accountSchema } from "../types/account";
 import { useSession } from "./useSession";
 
@@ -26,13 +26,11 @@ function signerConfig(): { signerId: string; policyId: string } {
 
 export function useDelegation() {
   const session = useSession();
-  const { getAccessToken } = usePrivy();
+  const api = useApi();
   const { addSigners, removeSigners } = useSigners();
   const queryClient = useQueryClient();
   const refresh = async () => {
-    const token = await getAccessToken();
-    if (!token) throw new Error("Please log in again.");
-    const account = await apiPost("/api/me/refresh", {}, accountSchema, token);
+    const account = await api.post("/api/me/refresh", {}, accountSchema);
     queryClient.setQueryData(ACCOUNT_QUERY_KEY, account);
     return account;
   };

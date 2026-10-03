@@ -1,3 +1,4 @@
+import { usePrivy } from "@privy-io/react-auth";
 import { z } from "zod";
 
 const errorBodySchema = z.object({ error: z.string() });
@@ -22,49 +23,46 @@ function failureMessage(body: unknown): string {
   return parsed.success ? parsed.data.error : "Something went wrong.";
 }
 
-export async function apiGet<T>(
+interface ApiRequest {
+  method?: "POST" | "DELETE";
+  body?: unknown;
+}
+
+async function request<T>(
   path: string,
   schema: z.ZodType<T>,
-  accessToken: string,
+  token: string,
+  { method, body }: ApiRequest = {},
 ): Promise<T> {
   const response = await fetch(path, {
-    headers: { authorization: `Bearer ${accessToken}` },
+    method,
     cache: "no-store",
-  });
-  const body = await readJson(response);
-  if (!response.ok) throw new ApiError(response.status, failureMessage(body));
-  return schema.parse(body);
-}
-
-export async function apiPost<T>(
-  path: string,
-  body: unknown,
-  schema: z.ZodType<T>,
-  accessToken: string,
-): Promise<T> {
-  const response = await fetch(path, {
-    method: "POST",
     headers: {
-      authorization: `Bearer ${accessToken}`,
-      "content-type": "application/json",
+      authorization: `Bearer ${token}`,
+      ...(body === undefined ? {} : { "content-type": "application/json" }),
     },
-    body: JSON.stringify(body),
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
   const parsed = await readJson(response);
   if (!response.ok) throw new ApiError(response.status, failureMessage(parsed));
   return schema.parse(parsed);
 }
 
-export async function apiDelete<T>(
-  path: string,
-  schema: z.ZodType<T>,
-  accessToken: string,
-): Promise<T> {
-  const response = await fetch(path, {
-    method: "DELETE",
-    headers: { authorization: `Bearer ${accessToken}` },
-  });
-  const parsed = await readJson(response);
-  if (!response.ok) throw new ApiError(response.status, failureMessage(parsed));
-  return schema.parse(parsed);
+export function useApi() {
+  const { getAccessToken } = usePrivy();
+  const token = async () => {
+    const accessToken = await getAccessToken();
+    if (!accessToken) throw new ApiError(401, "Please log in again.");
+    return accessToken;
+  };
+  return {
+    get: async <T>(path: string, schema: z.ZodType<T>) =>
+      request(path, schema, await token()),
+    post: async <T>(path: string, body: unknown, schema: z.ZodType<T>) =>
+      request(path, schema, await token(), { method: "POST", body }),
+    delete: async <T>(path: string, schema: z.ZodType<T>) =>
+      request(path, schema, await token(), { method: "DELETE" }),
+  };
 }
+
+export type Api = ReturnType<typeof useApi>;

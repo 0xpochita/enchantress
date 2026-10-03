@@ -1,9 +1,8 @@
 "use client";
 
-import { usePrivy } from "@privy-io/react-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ApiError, apiPost } from "@/lib/api-client";
+import { useApi } from "@/lib/api-client";
 import { quotePreviewSchema } from "../types";
 
 const DEBOUNCE_MS = 500;
@@ -23,21 +22,17 @@ export function useBridgePreview(input: {
   amount: string;
   enabled: boolean;
 }) {
-  const { getAccessToken } = usePrivy();
+  const api = useApi();
   const amount = useDebounced(input.amount);
   const isEnabled = input.enabled && Number(amount) > 0;
   const query = useQuery({
     queryKey: ["bridge-preview", input.originTokenId, amount],
-    queryFn: async () => {
-      const token = await getAccessToken();
-      if (!token) throw new ApiError(401, "Please log in again.");
-      return apiPost(
+    queryFn: () =>
+      api.post(
         "/api/bridge/quote",
         { originTokenId: input.originTokenId, amount },
         quotePreviewSchema,
-        token,
-      );
-    },
+      ),
     enabled: isEnabled,
     refetchInterval: REFRESH_MS,
     retry: false,

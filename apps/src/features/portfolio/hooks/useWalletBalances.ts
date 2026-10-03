@@ -1,10 +1,9 @@
 "use client";
 
-import { usePrivy } from "@privy-io/react-auth";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { useSession } from "@/features/wallet";
-import { ApiError, apiGet } from "@/lib/api-client";
+import { useApi } from "@/lib/api-client";
 
 const BALANCES_STALE_MS = 15_000;
 
@@ -20,14 +19,10 @@ const balancesSchema = z.object({
 
 export function useWalletBalances() {
   const session = useSession();
-  const { getAccessToken } = usePrivy();
+  const api = useApi();
   return useQuery({
     queryKey: ["balances"],
-    queryFn: async () => {
-      const token = await getAccessToken();
-      if (!token) throw new ApiError(401, "Please log in again.");
-      return apiGet("/api/balances", balancesSchema, token);
-    },
+    queryFn: () => api.get("/api/balances", balancesSchema),
     enabled: session.isAuthenticated,
     staleTime: BALANCES_STALE_MS,
     select: (data) => data.balances,
