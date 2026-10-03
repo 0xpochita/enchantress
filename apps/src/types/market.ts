@@ -35,13 +35,6 @@ export interface Venue {
   markets: VenueMarket[];
 }
 
-export interface Aggregator {
-  id: string;
-  name: string;
-  description: string;
-  venueIds: string[];
-}
-
 export interface VaultAsset {
   symbol: string;
   name: string;
@@ -52,13 +45,11 @@ export interface VaultAsset {
 export interface IndexAllocation {
   assetSymbol: string;
   weight: number;
-  venueId: string;
 }
 
 export interface Index {
   id: string;
   name: string;
-  aggregatorId: string;
   creator: string;
   createdAt: string;
   tvlUsd: number;
@@ -78,11 +69,9 @@ export interface RoutedAllocation {
 export interface IndexQuote {
   id: string;
   name: string;
-  aggregatorId: string;
-  aggregatorName: string;
   apy: number;
   assets: { symbol: string; iconKey: string }[];
-  venues: { name: string; iconKey: string }[];
+  venues: { id: string; name: string; iconKey: string }[];
 }
 
 export interface IndexTransaction {

@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useDepositRoutes } from "@/hooks/useDepositRoutes";
-import type { Aggregator, IndexQuote } from "@/types/market";
+import type { IndexQuote, Venue } from "@/types/market";
 import {
   type TokenCatalog,
   TokenSelectModal,
@@ -16,7 +16,7 @@ interface DepositAggregatorProps {
   catalog: TokenCatalog;
   quotes: IndexQuote[];
   protocols: HubProtocol[];
-  aggregators: Aggregator[];
+  venues: Venue[];
   defaultTokenId: string;
 }
 
@@ -26,7 +26,7 @@ export function DepositAggregator({
   catalog,
   quotes,
   protocols,
-  aggregators,
+  venues,
   defaultTokenId,
 }: DepositAggregatorProps) {
   const deposit = useDepositRoutes({ ...catalog, quotes, defaultTokenId });
@@ -55,7 +55,7 @@ export function DepositAggregator({
             <RouteList
               deposit={deposit}
               quotesById={quotesById}
-              aggregators={aggregators}
+              venues={venues}
             />
           ) : (
             <ProtocolHub protocols={protocols} />

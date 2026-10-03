@@ -1,45 +1,50 @@
 import type { TagItem } from "@/components/ui";
+import { usesVenue } from "@/features/indexes/utils/route-index";
 import {
-  getAggregators,
-  getAggregatorVenues,
+  getAllVenues,
   getBestVenueApy,
-  getIndexes,
-  getVenues,
+  getIndexSummaries,
+  type IndexSummary,
 } from "@/lib/market";
-import { AggregatorFilter } from "./AggregatorFilter";
+import type { Venue } from "@/types/market";
 import { ExploreHero } from "./ExploreHero";
 import { IndexGrid } from "./IndexGrid";
+import { ProtocolFilter } from "./ProtocolFilter";
 
-function filterOptions(): TagItem[] {
+function filterOptions(venues: Venue[], summaries: IndexSummary[]): TagItem[] {
   const all = {
     id: "all",
     label: "All indexes",
-    count: getIndexes().length,
+    count: summaries.length,
     icons: [],
     href: "/invest",
   };
   return [
     all,
-    ...getAggregators().map((aggregator) => ({
-      id: aggregator.id,
-      label: aggregator.name,
-      href: `/invest?aggregator=${aggregator.id}`,
-      count: getIndexes(aggregator.id).length,
-      icons: getAggregatorVenues(aggregator).map((venue) => ({
-        iconKey: venue.iconKey,
-        label: venue.name,
-      })),
+    ...venues.map((venue) => ({
+      id: venue.id,
+      label: venue.name,
+      count: summaries.filter((summary) => usesVenue(summary, venue.id)).length,
+      icons: [{ iconKey: venue.iconKey, label: venue.name }],
+      href: `/invest?protocol=${venue.id}`,
     })),
   ];
 }
 
-export function ExploreView({ aggregatorId }: { aggregatorId?: string }) {
+export async function ExploreView({ venueId }: { venueId?: string }) {
+  const [venues, summaries] = await Promise.all([
+    getAllVenues(),
+    getIndexSummaries(),
+  ]);
+  const shown = venueId
+    ? summaries.filter((summary) => usesVenue(summary, venueId))
+    : summaries;
   return (
     <>
       <ExploreHero
-        indexCount={getIndexes().length}
-        vaultCount={getVenues().length}
-        bestApy={getBestVenueApy()}
+        indexCount={summaries.length}
+        vaultCount={venues.length}
+        bestApy={getBestVenueApy(venues)}
       />
       <section
         aria-labelledby="indexes-heading"
@@ -48,8 +53,11 @@ export function ExploreView({ aggregatorId }: { aggregatorId?: string }) {
         <h2 id="indexes-heading" className="text-lg font-medium">
           Featured indexes
         </h2>
-        <AggregatorFilter options={filterOptions()} activeId={aggregatorId} />
-        <IndexGrid indexes={getIndexes(aggregatorId)} />
+        <ProtocolFilter
+          options={filterOptions(venues, summaries)}
+          activeId={venueId}
+        />
+        <IndexGrid summaries={shown} />
       </section>
     </>
   );

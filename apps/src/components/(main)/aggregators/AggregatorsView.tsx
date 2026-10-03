@@ -1,46 +1,48 @@
 import {
   DEFAULT_DEPOSIT_TOKEN_ID,
-  getAggregator,
-  getAggregators,
+  getAllVenues,
   getChains,
-  getIndexApy,
-  getIndexes,
+  getIndexSummaries,
   getTokens,
-  getVaultAsset,
-  getVenue,
-  getVenues,
+  type IndexSummary,
   POPULAR_TOKEN_IDS,
   WALLET_BALANCES,
 } from "@/lib/market";
-import type { IndexQuote } from "@/types/market";
+import type { IndexQuote, Venue } from "@/types/market";
 import { DepositAggregator } from "./DepositAggregator";
 import type { HubProtocol } from "./ProtocolHub";
 
-function buildQuotes(): IndexQuote[] {
-  return getIndexes().map((index) => ({
+function toQuote({ index, allocations, apy }: IndexSummary): IndexQuote {
+  const venues = new Map(allocations.map((a) => [a.venue.id, a.venue]));
+  return {
     id: index.id,
     name: index.name,
-    aggregatorId: index.aggregatorId,
-    aggregatorName: getAggregator(index.aggregatorId)?.name ?? "",
-    apy: getIndexApy(index),
-    assets: index.allocations.flatMap(
-      (a) => getVaultAsset(a.assetSymbol) ?? [],
-    ),
-    venues: [...new Set(index.allocations.map((a) => a.venueId))].flatMap(
-      (venueId) => getVenue(venueId) ?? [],
-    ),
-  }));
+    apy,
+    assets: allocations.map((a) => ({
+      symbol: a.asset.symbol,
+      iconKey: a.asset.iconKey,
+    })),
+    venues: [...venues.values()].map((v) => ({
+      id: v.id,
+      name: v.name,
+      iconKey: v.iconKey,
+    })),
+  };
 }
 
-function buildHubProtocols(): HubProtocol[] {
-  return getVenues().map((venue) => ({
+function toHubProtocol(venue: Venue): HubProtocol {
+  return {
     name: venue.name,
     iconKey: venue.iconKey,
     apy: Math.max(0, ...venue.markets.map((m) => m.apy)),
-  }));
+  };
 }
 
-export function AggregatorsView() {
+export async function AggregatorsView() {
+  const [venues, summaries] = await Promise.all([
+    getAllVenues(),
+    getIndexSummaries(),
+  ]);
   const catalog = {
     chains: getChains(),
     tokens: getTokens(),
@@ -54,15 +56,15 @@ export function AggregatorsView() {
           Deposit aggregator
         </h1>
         <p className="text-ink-muted">
-          Pick any token on any chain. We compare every index across aggregators
+          Pick any token on any chain. We compare every index across protocols
           and route your deposit to Monad through Aurora Intents.
         </p>
       </div>
       <DepositAggregator
         catalog={catalog}
-        quotes={buildQuotes()}
-        protocols={buildHubProtocols()}
-        aggregators={getAggregators()}
+        quotes={summaries.map(toQuote)}
+        protocols={venues.map(toHubProtocol)}
+        venues={venues}
         defaultTokenId={DEFAULT_DEPOSIT_TOKEN_ID}
       />
     </>

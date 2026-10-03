@@ -1,9 +1,8 @@
 import {
   DEFAULT_DEPOSIT_TOKEN_ID,
   getChains,
+  getMarketCatalog,
   getTokens,
-  getVaultAssets,
-  getVenues,
   POPULAR_TOKEN_IDS,
   WALLET_BALANCES,
 } from "@/lib/market";
@@ -11,15 +10,16 @@ import type { DraftCatalog } from "@/utils/draft";
 import type { TokenCatalog } from "../token-select/TokenSelectModal";
 import { CreateIndexForm } from "./CreateIndexForm";
 
-function buildCatalogs(): {
+async function buildCatalogs(): Promise<{
   catalog: DraftCatalog;
   tokenCatalog: TokenCatalog;
-} {
+}> {
   const tokens = getTokens();
+  const market = await getMarketCatalog();
   return {
     catalog: {
-      venues: getVenues(),
-      vaultAssets: getVaultAssets(),
+      venues: market.venues,
+      vaultAssets: market.assets,
       tokens,
       defaultDepositTokenId: DEFAULT_DEPOSIT_TOKEN_ID,
     },
@@ -32,7 +32,7 @@ function buildCatalogs(): {
   };
 }
 
-export function CreateIndexView() {
-  const { catalog, tokenCatalog } = buildCatalogs();
+export async function CreateIndexView() {
+  const { catalog, tokenCatalog } = await buildCatalogs();
   return <CreateIndexForm catalog={catalog} tokenCatalog={tokenCatalog} />;
 }

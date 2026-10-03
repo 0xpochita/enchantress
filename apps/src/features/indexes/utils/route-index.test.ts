@@ -1,0 +1,63 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import type { Index, Venue } from "../../../types/market.ts";
+import { routeIndex, summarizeIndex, usesVenue } from "./route-index.ts";
+
+const venue = (id: string, markets: Venue["markets"]): Venue => ({
+  id,
+  name: id,
+  iconKey: "generic",
+  chainId: "monad",
+  markets,
+});
+
+const market = (assetSymbol: string, apy: number) => ({
+  assetSymbol,
+  apy,
+  tvlUsd: 1,
+  liquidityUsd: 1,
+});
+
+const catalog = {
+  venues: [
+    venue("aave", [market("USDC", 6), market("WETH", 5)]),
+    venue("neverland", [market("USDC", 2), market("WMON", 11)]),
+  ],
+  assets: [
+    { symbol: "USDC", name: "USD Coin", iconKey: "usdc", priceUsd: 1 },
+    { symbol: "WMON", name: "Wrapped Monad", iconKey: "monad", priceUsd: 0.04 },
+  ],
+};
+
+const index: Index = {
+  id: "mon-maxi",
+  name: "MON Maxi",
+  creator: "0xabc",
+  createdAt: "2026-09-20T08:10:00Z",
+  tvlUsd: 1000,
+  positionUsd: 0,
+  isCreatedByUser: false,
+  allocations: [
+    { assetSymbol: "WMON", weight: 0.6 },
+    { assetSymbol: "USDC", weight: 0.4 },
+    { assetSymbol: "DAI", weight: 0 },
+  ],
+};
+
+test("routeIndex sends each slice to the best paying venue and skips unknown assets", () => {
+  const routed = routeIndex(index, 1000, catalog);
+  assert.deepEqual(
+    routed.map((r) => [r.asset.symbol, r.venue.id, r.apy, r.valueUsd]),
+    [
+      ["WMON", "neverland", 11, 600],
+      ["USDC", "aave", 6, 400],
+    ],
+  );
+});
+
+test("summarizeIndex blends the apy by weight and reports venue usage", () => {
+  const summary = summarizeIndex(index, catalog);
+  assert.ok(Math.abs(summary.apy - 9) < 1e-9);
+  assert.equal(usesVenue(summary, "neverland"), true);
+  assert.equal(usesVenue(summary, "morpho"), false);
+});

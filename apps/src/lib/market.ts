@@ -1,5 +1,16 @@
+import "server-only";
+import { serverEnv } from "@/config/env.server";
+import { listIndexes } from "@/features/indexes/services/index-repository";
+import {
+  type IndexSummary,
+  type MarketCatalog,
+  summarizeIndex,
+  usesVenue,
+} from "@/features/indexes/utils/route-index";
+import { VAULT_CHAIN_ID } from "@/features/vaults/config/venues";
+import { getVenueSnapshot } from "@/features/vaults/services/venue-snapshot";
+import { eligibleVenues } from "@/features/vaults/utils/eligibility";
 import { CHAINS } from "@/lib/mock/chains";
-import { INDEXES } from "@/lib/mock/indexes";
 import { PORTFOLIO_AS_OF, USER_PURCHASES } from "@/lib/mock/portfolio";
 import {
   DEFAULT_DEPOSIT_TOKEN_ID,
@@ -8,14 +19,7 @@ import {
   WALLET_BALANCES,
 } from "@/lib/mock/tokens";
 import { buildTransactions } from "@/lib/mock/transactions";
-import {
-  AGGREGATORS,
-  VAULT_ASSETS,
-  VAULT_CHAIN_ID,
-  VENUES,
-} from "@/lib/mock/vaults";
 import type {
-  Aggregator,
   Chain,
   Index,
   IndexTransaction,
@@ -24,7 +28,6 @@ import type {
   VaultAsset,
   Venue,
 } from "@/types/market";
-import { blendedApy } from "@/utils/yield-index";
 
 export {
   DEFAULT_DEPOSIT_TOKEN_ID,
@@ -33,6 +36,8 @@ export {
   VAULT_CHAIN_ID,
   WALLET_BALANCES,
 };
+
+export type { IndexSummary, MarketCatalog };
 
 export function getChains(): Chain[] {
   return CHAINS;
@@ -50,78 +55,46 @@ export function getToken(tokenId: string): Token | undefined {
   return TOKENS.find((token) => token.id === tokenId);
 }
 
-export function getVaultAssets(): VaultAsset[] {
-  return VAULT_ASSETS;
+export async function getMarketCatalog(): Promise<MarketCatalog> {
+  const snapshot = await getVenueSnapshot();
+  return {
+    venues: eligibleVenues(snapshot.venues, serverEnv().VENUE_MIN_TVL_USD),
+    assets: snapshot.assets,
+  };
 }
 
-export function getVaultAsset(symbol: string): VaultAsset | undefined {
-  return VAULT_ASSETS.find((asset) => asset.symbol === symbol);
+export async function getAllVenues(): Promise<Venue[]> {
+  return (await getVenueSnapshot()).venues;
 }
 
-export function getVenue(venueId: string): Venue | undefined {
-  return VENUES.find((venue) => venue.id === venueId);
+export async function getVenue(venueId: string): Promise<Venue | undefined> {
+  return (await getAllVenues()).find((venue) => venue.id === venueId);
 }
 
-export function getVenues(): Venue[] {
-  return VENUES;
-}
-
-export function getAggregators(): Aggregator[] {
-  return AGGREGATORS;
-}
-
-export function getAggregator(aggregatorId: string): Aggregator | undefined {
-  return AGGREGATORS.find((aggregator) => aggregator.id === aggregatorId);
-}
-
-export function getAggregatorVenues(aggregator: Aggregator): Venue[] {
-  return VENUES.filter((venue) => aggregator.venueIds.includes(venue.id));
-}
-
-export function getIndexes(aggregatorId?: string): Index[] {
-  if (!aggregatorId) return INDEXES;
-  return INDEXES.filter((index) => index.aggregatorId === aggregatorId);
-}
-
-export function getIndex(indexId: string): Index | undefined {
-  return INDEXES.find((index) => index.id === indexId);
-}
-
-export function routeIndex(index: Index, totalUsd: number): RoutedAllocation[] {
-  return index.allocations.flatMap((allocation) => {
-    const asset = getVaultAsset(allocation.assetSymbol);
-    const venue = getVenue(allocation.venueId);
-    const market = venue?.markets.find(
-      (m) => m.assetSymbol === allocation.assetSymbol,
-    );
-    if (!asset || !venue || !market) return [];
-    return [
-      {
-        asset,
-        venue,
-        weight: allocation.weight,
-        apy: market.apy,
-        valueUsd: totalUsd * allocation.weight,
-      },
-    ];
-  });
-}
-
-export function getIndexApy(index: Index): number {
-  return blendedApy(routeIndex(index, 0));
-}
-
-export function getBestVenueApy(venues: Venue[] = VENUES): number {
+export function getBestVenueApy(venues: Venue[]): number {
   return Math.max(
     0,
     ...venues.flatMap((venue) => venue.markets.map((m) => m.apy)),
   );
 }
 
-const TRANSACTIONS = buildTransactions(INDEXES.map((index) => index.id));
+export async function getIndexSummaries(
+  venueId?: string,
+): Promise<IndexSummary[]> {
+  const [indexes, catalog] = await Promise.all([
+    listIndexes(),
+    getMarketCatalog(),
+  ]);
+  const summaries = indexes.map((index) => summarizeIndex(index, catalog));
+  if (!venueId) return summaries;
+  return summaries.filter((summary) => usesVenue(summary, venueId));
+}
 
-export function getIndexTransactions(indexId: string): IndexTransaction[] {
-  return TRANSACTIONS.filter((tx) => tx.indexId === indexId);
+export async function getIndexSummary(
+  indexId: string,
+): Promise<IndexSummary | undefined> {
+  const summaries = await getIndexSummaries();
+  return summaries.find((summary) => summary.index.id === indexId);
 }
 
 export interface PortfolioPosition {
@@ -130,14 +103,20 @@ export interface PortfolioPosition {
   allocations: RoutedAllocation[];
 }
 
-export function getPositions(): PortfolioPosition[] {
-  return INDEXES.filter((index) => index.positionUsd > 0)
-    .map((index) => ({
-      index,
-      apy: getIndexApy(index),
-      allocations: routeIndex(index, index.positionUsd),
-    }))
+export async function getPositions(): Promise<PortfolioPosition[]> {
+  const summaries = await getIndexSummaries();
+  return summaries
+    .filter(({ index }) => index.positionUsd > 0)
     .sort((a, b) => b.index.positionUsd - a.index.positionUsd);
+}
+
+export async function getIndexTransactions(
+  indexId: string,
+): Promise<IndexTransaction[]> {
+  const indexes = await listIndexes();
+  return buildTransactions(indexes.map((index) => index.id)).filter(
+    (tx) => tx.indexId === indexId,
+  );
 }
 
 export function getUserPurchases(): IndexTransaction[] {
@@ -145,3 +124,5 @@ export function getUserPurchases(): IndexTransaction[] {
     (a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp),
   );
 }
+
+export type { VaultAsset };

@@ -13,7 +13,8 @@
     "test": "node --experimental-strip-types --test 'src/**/*.test.ts'",
     "db:up": "docker compose up -d --wait",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "node --experimental-strip-types scripts/seed-indexes.ts"
   },
   "dependencies": {
     "@privy-io/node": "^0.35.0",

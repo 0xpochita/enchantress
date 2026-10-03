@@ -2,12 +2,10 @@ import { notFound } from "next/navigation";
 import {
   DEFAULT_DEPOSIT_TOKEN_ID,
   getChains,
-  getIndex,
-  getIndexApy,
+  getIndexSummary,
   getIndexTransactions,
   getTokens,
   POPULAR_TOKEN_IDS,
-  routeIndex,
   WALLET_BALANCES,
 } from "@/lib/market";
 import type { RoutedAllocation, Venue } from "@/types/market";
@@ -20,13 +18,12 @@ function uniqueVenues(allocations: RoutedAllocation[]): Venue[] {
   return [...new Map(allocations.map((a) => [a.venue.id, a.venue])).values()];
 }
 
-export function IndexDetailView({ indexId }: { indexId: string }) {
-  const index = getIndex(indexId);
-  if (!index) notFound();
-  const fundsUsd = index.positionUsd > 0 ? index.positionUsd : index.tvlUsd;
-  const allocations = routeIndex(index, fundsUsd);
-  const apy = getIndexApy(index);
+export async function IndexDetailView({ indexId }: { indexId: string }) {
+  const summary = await getIndexSummary(indexId);
+  if (!summary) notFound();
+  const { index, allocations, apy } = summary;
   const protocols = uniqueVenues(allocations);
+  const transactions = await getIndexTransactions(index.id);
   const catalog = {
     chains: getChains(),
     tokens: getTokens(),
@@ -60,7 +57,7 @@ export function IndexDetailView({ indexId }: { indexId: string }) {
         </div>
         <div className="min-w-0">
           <TransactionHistory
-            transactions={getIndexTransactions(index.id)}
+            transactions={transactions}
             indexes={{ [index.id]: { name: index.name, protocols } }}
           />
         </div>

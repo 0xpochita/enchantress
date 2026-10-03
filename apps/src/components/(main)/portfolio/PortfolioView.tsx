@@ -73,8 +73,8 @@ function PositionsPanel({
   );
 }
 
-export function PortfolioView() {
-  const positions = getPositions();
+export async function PortfolioView() {
+  const positions = await getPositions();
   const purchases = getUserPurchases();
   return (
     <>

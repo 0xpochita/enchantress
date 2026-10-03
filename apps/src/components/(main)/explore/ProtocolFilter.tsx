@@ -2,7 +2,7 @@ import { TagBar, type TagItem } from "@/components/ui";
 
 const ALL = "all";
 
-export function AggregatorFilter({
+export function ProtocolFilter({
   options,
   activeId,
 }: {
@@ -11,10 +11,10 @@ export function AggregatorFilter({
 }) {
   return (
     <TagBar
-      label="Filter by aggregator"
+      label="Filter by protocol"
       items={options}
       activeId={activeId ?? ALL}
-      layoutId="aggregator-filter"
+      layoutId="protocol-filter"
     />
   );
 }

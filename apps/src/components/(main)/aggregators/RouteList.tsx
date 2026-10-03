@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import { Card, TagBar, type TagItem, TokenStack } from "@/components/ui";
-import { ALL_AGGREGATORS, type DepositRoutes } from "@/hooks/useDepositRoutes";
-import type { Aggregator, IndexQuote } from "@/types/market";
+import { ALL_VENUES, type DepositRoutes } from "@/hooks/useDepositRoutes";
+import type { IndexQuote, Venue } from "@/types/market";
 import { formatPercent, formatSignedPercent, formatUsd } from "@/utils/format";
 import type { RankedRoute } from "@/utils/routes";
 
@@ -10,49 +10,33 @@ const ROW_STAGGER_S = 0.06;
 interface RouteListProps {
   deposit: DepositRoutes;
   quotesById: Map<string, IndexQuote>;
-  aggregators: Aggregator[];
+  venues: Venue[];
 }
 
-function venueIcons(quotes: IndexQuote[]) {
-  const venues = new Map(
-    quotes.flatMap((q) => q.venues).map((v) => [v.name, v]),
-  );
-  return [...venues.values()].map((v) => ({
-    iconKey: v.iconKey,
-    label: v.name,
-  }));
-}
-
-function routeTags(quotes: IndexQuote[], aggregators: Aggregator[]): TagItem[] {
+function routeTags(quotes: IndexQuote[], venues: Venue[]): TagItem[] {
   return [
-    { id: ALL_AGGREGATORS, label: "All", count: quotes.length, icons: [] },
-    ...aggregators.map((aggregator) => {
-      const matching = quotes.filter((q) => q.aggregatorId === aggregator.id);
-      return {
-        id: aggregator.id,
-        label: aggregator.name,
-        count: matching.length,
-        icons: venueIcons(matching),
-      };
-    }),
+    { id: ALL_VENUES, label: "All", count: quotes.length, icons: [] },
+    ...venues.map((venue) => ({
+      id: venue.id,
+      label: venue.name,
+      count: quotes.filter((q) => q.venues.some((v) => v.id === venue.id))
+        .length,
+      icons: [{ iconKey: venue.iconKey, label: venue.name }],
+    })),
   ];
 }
 
-export function RouteList({
-  deposit,
-  quotesById,
-  aggregators,
-}: RouteListProps) {
+export function RouteList({ deposit, quotesById, venues }: RouteListProps) {
   return (
     <Card className="flex h-full min-h-0 flex-col gap-4 p-6 lg:max-h-[38rem]">
       <h2 className="text-sm text-ink-muted">Routes</h2>
       <TagBar
-        label="Filter routes by aggregator"
-        items={routeTags([...quotesById.values()], aggregators)}
-        activeId={deposit.aggregatorId}
+        label="Filter routes by protocol"
+        items={routeTags([...quotesById.values()], venues)}
+        activeId={deposit.venueId}
         layoutId="route-filter"
         wrap
-        onSelect={deposit.setAggregatorId}
+        onSelect={deposit.setVenueId}
       />
       <ul className="flex min-h-0 flex-col divide-y divide-line overflow-y-auto">
         {deposit.routes.map((route, position) => {

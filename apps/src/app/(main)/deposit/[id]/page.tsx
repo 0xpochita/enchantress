@@ -1,8 +1,8 @@
-import { AggregatorDetailView } from "@/components/(main)";
+import { ProtocolDetailView } from "@/components/(main)";
 
-export default async function AggregatorPage({
+export default async function ProtocolPage({
   params,
 }: PageProps<"/deposit/[id]">) {
   const { id } = await params;
-  return <AggregatorDetailView aggregatorId={id} />;
+  return <ProtocolDetailView venueId={id} />;
 }

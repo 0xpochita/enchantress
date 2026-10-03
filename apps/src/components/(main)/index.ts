@@ -1,5 +1,5 @@
-export { AggregatorDetailView } from "./aggregators/AggregatorDetailView";
 export { AggregatorsView } from "./aggregators/AggregatorsView";
+export { ProtocolDetailView } from "./aggregators/ProtocolDetailView";
 export { CreateIndexView } from "./create/CreateIndexView";
 export { ExploreView } from "./explore/ExploreView";
 export { IndexDetailView } from "./index-detail/IndexDetailView";

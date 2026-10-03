@@ -3,7 +3,7 @@ import type { Chain, IndexQuote, Token, WalletBalance } from "@/types/market";
 import { rankRoutes } from "@/utils/routes";
 import { useSubmitFlow } from "./useSubmitFlow";
 
-export const ALL_AGGREGATORS = "all";
+export const ALL_VENUES = "all";
 
 interface DepositRoutesSource {
   chains: Chain[];
@@ -18,7 +18,7 @@ const VAULT_CHAIN_ID = "monad";
 export function useDepositRoutes(source: DepositRoutesSource) {
   const [tokenId, setTokenId] = useState(source.defaultTokenId);
   const [amount, setAmount] = useState("");
-  const [aggregatorId, setAggregatorId] = useState(ALL_AGGREGATORS);
+  const [venueId, setVenueId] = useState(ALL_VENUES);
   const [selectedIndexId, setSelectedIndexId] = useState<string | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const flow = useSubmitFlow(() => setAmount(""));
@@ -32,8 +32,7 @@ export function useDepositRoutes(source: DepositRoutesSource) {
     const amountUsd = amountValue * (token?.priceUsd ?? 0);
     const isCrossChain = chain?.id !== VAULT_CHAIN_ID;
     const quotes = source.quotes.filter(
-      (q) =>
-        aggregatorId === ALL_AGGREGATORS || q.aggregatorId === aggregatorId,
+      (q) => venueId === ALL_VENUES || q.venues.some((v) => v.id === venueId),
     );
     const candidates = quotes.map((q) => ({
       indexId: q.id,
@@ -53,7 +52,7 @@ export function useDepositRoutes(source: DepositRoutesSource) {
       selected,
       isInsufficient: amountValue > balance,
     };
-  }, [source, tokenId, amount, aggregatorId, selectedIndexId]);
+  }, [source, tokenId, amount, venueId, selectedIndexId]);
 
   return {
     ...derived,
@@ -61,8 +60,8 @@ export function useDepositRoutes(source: DepositRoutesSource) {
     setTokenId,
     amount,
     setAmount,
-    aggregatorId,
-    setAggregatorId,
+    venueId,
+    setVenueId,
     selectIndex: setSelectedIndexId,
     isPickerOpen,
     ...flow,
