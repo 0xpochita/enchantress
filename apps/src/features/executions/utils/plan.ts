@@ -27,6 +27,11 @@ const BPS = 10_000n;
 
 export function sliceAmounts(total: bigint, weightsBps: number[]): bigint[] {
   if (weightsBps.length === 0) return [];
+  const totalBps = weightsBps.reduce((sum, bps) => sum + bps, 0);
+  if (BigInt(totalBps) !== BPS)
+    throw new RangeError(
+      `Slice weights add up to ${totalBps} bps, not ${BPS}.`,
+    );
   const amounts = weightsBps.map((bps) => (total * BigInt(bps)) / BPS);
   const assigned = amounts.reduce((sum, amount) => sum + amount, 0n);
   amounts[amounts.length - 1] += total - assigned;

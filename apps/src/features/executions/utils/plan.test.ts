@@ -9,6 +9,11 @@ test("sliceAmounts floors each slice and gives the dust to the last one", () => 
   assert.deepEqual(sliceAmounts(5n, []), []);
 });
 
+test("sliceAmounts refuses weights that do not add up to 100%", () => {
+  assert.throws(() => sliceAmounts(100n, [5000, 3000]), RangeError);
+  assert.throws(() => sliceAmounts(100n, [6000, 6000]), RangeError);
+});
+
 test("planDeposit approves and supplies the deposit asset directly", () => {
   const steps = planDeposit({
     depositAsset: "USDC",

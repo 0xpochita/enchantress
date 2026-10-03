@@ -1,6 +1,7 @@
 import "server-only";
 import { MONAD_TOKENS } from "@/features/chain/config/tokens";
-import { getIndexSummary, type IndexSummary } from "@/lib/market";
+import { routeIndexForDeposit } from "@/features/indexes/services/index-catalog";
+import type { IndexSummary } from "@/features/indexes/utils/route-index";
 import { ExecutionRequestError } from "../types";
 import { type PlannedStep, type PlanSlice, planDeposit } from "../utils/plan";
 import { bestSwapQuote } from "./uniswap-quote";
@@ -39,24 +40,23 @@ export async function buildDepositPlan(
   depositAsset: string,
   amountBase: bigint,
 ): Promise<DepositPlan> {
-  const summary = await getIndexSummary(indexId);
-  if (!summary)
+  const routed = await routeIndexForDeposit(indexId);
+  if (!routed)
     throw new ExecutionRequestError(
       404,
       "NOT_FOUND",
       "This index does not exist.",
     );
   if (amountBase <= 0n)
+    throw new ExecutionRequestError(400, "AMOUNT", "Enter an amount above zero.");
+  const { summary, routing } = routed;
+  if (!routing.ok)
     throw new ExecutionRequestError(
-      400,
-      "AMOUNT",
-      "Enter an amount above zero.",
+      422,
+      "UNROUTABLE",
+      `${routing.unroutableAsset} has no eligible vault right now, so this index cannot take deposits.`,
     );
-  const slices = summary.allocations.map((a) => ({
-    assetSymbol: a.asset.symbol,
-    weightBps: Math.round(a.weight * BPS),
-    venueId: a.venue.id,
-  }));
+  const { slices } = routing;
   await assertSwappable(depositAsset, slices, amountBase);
   const steps = planDeposit({
     depositAsset,

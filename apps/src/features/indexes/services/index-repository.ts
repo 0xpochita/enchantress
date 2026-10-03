@@ -48,3 +48,7 @@ export const listIndexes = unstable_cache(readIndexes, ["indexes"], {
   revalidate: INDEXES_REVALIDATE_SECONDS,
   tags: ["indexes"],
 });
+
+export async function findIndex(indexId: string): Promise<Index | undefined> {
+  return (await listIndexes()).find((index) => index.id === indexId);
+}

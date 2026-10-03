@@ -5,10 +5,10 @@ import { MONAD_TOKENS } from "@/features/chain/config/tokens";
 import { assertSwappable } from "@/features/executions/services/plan-deposit";
 import { db } from "@/lib/db/client";
 import { indexAllocations, indexes, type UserRow } from "@/lib/db/schema";
-import { getMarketCatalog } from "@/lib/market";
-import { findBestMarket } from "@/utils/yield-index";
 import type { CreateIndexBody } from "../types";
+import { routeSlices } from "../utils/route-index";
 import { slugify, uniqueSlug } from "../utils/slug";
+import { getMarketCatalog } from "./index-catalog";
 
 const LIQUIDITY_PROBE_USDC = 100n * 10n ** BigInt(MONAD_TOKENS.USDC.decimals);
 
@@ -24,18 +24,18 @@ export class IndexRequestError extends Error {
 }
 
 async function assertRoutable(body: CreateIndexBody): Promise<void> {
-  const { venues } = await getMarketCatalog();
-  const slices = body.allocations.map((allocation) => {
-    const best = findBestMarket(venues, allocation.assetSymbol);
-    if (!best)
-      throw new IndexRequestError(
-        422,
-        "NO_VENUE",
-        `No protocol on Monad takes ${allocation.assetSymbol} right now.`,
-      );
-    return { ...allocation, venueId: best.venue.id };
-  });
-  await assertSwappable(MONAD_TOKENS.USDC.symbol, slices, LIQUIDITY_PROBE_USDC);
+  const routing = routeSlices(body.allocations, await getMarketCatalog());
+  if (!routing.ok)
+    throw new IndexRequestError(
+      422,
+      "NO_VENUE",
+      `No protocol on Monad takes ${routing.unroutableAsset} right now.`,
+    );
+  await assertSwappable(
+    MONAD_TOKENS.USDC.symbol,
+    routing.slices,
+    LIQUIDITY_PROBE_USDC,
+  );
 }
 
 async function freeSlug(name: string): Promise<string> {

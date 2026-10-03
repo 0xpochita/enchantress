@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Index, Venue } from "../../../types/market.ts";
-import { routeIndex, summarizeIndex, usesVenue } from "./route-index.ts";
+import {
+  routeIndex,
+  routeSlices,
+  summarizeIndex,
+  usesVenue,
+  weightedAssets,
+} from "./route-index.ts";
 
 const venue = (id: string, markets: Venue["markets"]): Venue => ({
   id,
@@ -61,4 +67,58 @@ test("summarizeIndex blends the apy by weight and reports venue usage", () => {
   assert.ok(Math.abs(summary.apy - 9) < 1e-9);
   assert.equal(usesVenue(summary, "neverland"), true);
   assert.equal(usesVenue(summary, "morpho"), false);
+});
+
+test("routeSlices routes every allocation and keeps its weight in bps", () => {
+  const routing = routeSlices(
+    [
+      { assetSymbol: "WMON", weightBps: 5000 },
+      { assetSymbol: "USDC", weightBps: 3000 },
+      { assetSymbol: "WMON", weightBps: 2000 },
+    ],
+    catalog,
+  );
+  assert.deepEqual(routing, {
+    ok: true,
+    slices: [
+      { assetSymbol: "WMON", weightBps: 5000, venueId: "neverland" },
+      { assetSymbol: "USDC", weightBps: 3000, venueId: "aave" },
+      { assetSymbol: "WMON", weightBps: 2000, venueId: "neverland" },
+    ],
+  });
+});
+
+test("routeSlices names the asset that has no eligible venue", () => {
+  const routing = routeSlices(
+    [
+      { assetSymbol: "WMON", weightBps: 5000 },
+      { assetSymbol: "USDT0", weightBps: 3000 },
+      { assetSymbol: "USDC", weightBps: 2000 },
+    ],
+    catalog,
+  );
+  assert.deepEqual(routing, { ok: false, unroutableAsset: "USDT0" });
+});
+
+test("routeSlices rejects an asset with a venue but no price", () => {
+  const routing = routeSlices(
+    [{ assetSymbol: "WETH", weightBps: 10_000 }],
+    catalog,
+  );
+  assert.deepEqual(routing, { ok: false, unroutableAsset: "WETH" });
+});
+
+test("weightedAssets converts index weights to exact basis points", () => {
+  const thirds: Index = {
+    ...index,
+    allocations: [
+      { assetSymbol: "WMON", weight: 3333 / 10_000 },
+      { assetSymbol: "USDC", weight: 3333 / 10_000 },
+      { assetSymbol: "WETH", weight: 3334 / 10_000 },
+    ],
+  };
+  assert.deepEqual(
+    weightedAssets(thirds).map((a) => a.weightBps),
+    [3333, 3333, 3334],
+  );
 });
