@@ -1,22 +1,21 @@
 "use client";
 
-import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useSendTransaction } from "@privy-io/react-auth";
 import { toHex } from "viem";
 import { readClientEnv } from "@/config/env.client";
-import { type ExecutionView, executionViewSchema } from "@/features/executions";
-import { useDelegation, useSession } from "@/features/wallet";
-import { ApiError, apiDelete, apiGet, apiPost } from "@/lib/api-client";
-import type { FlowStatus } from "@/types/flow";
+import {
+  type ExecutionFlow,
+  type ExecutionView,
+  executionViewSchema,
+  type FlowContext,
+  useExecutionFlow,
+} from "@/features/executions";
+import { type Api, ApiError } from "@/lib/api-client";
 import {
   bridgeDepositResponseSchema,
   type TransferInstruction,
 } from "../types";
 import { buildTransferRequest } from "../utils/transfer";
-
-const POLL_MS = 4000;
-const TERMINAL = new Set(["succeeded", "failed", "refunded", "cancelled"]);
 
 export type BridgeStage =
   | "permission"
@@ -26,9 +25,9 @@ export type BridgeStage =
   | "bridging"
   | "executing";
 
-type Phase = "idle" | "confirming" | "submitting" | "tracking";
+export type BridgeStartStage = Exclude<BridgeStage, "bridging" | "executing">;
 
-interface BridgeDepositInput {
+export interface BridgeDepositInput {
   indexId: string | undefined;
   originTokenId: string;
   amount: string;
@@ -39,57 +38,9 @@ function sponsoredChainIds(): number[] {
   return env.success ? env.data.NEXT_PUBLIC_SPONSORED_CHAIN_IDS : [];
 }
 
-function errorText(error: unknown): string {
-  if (error instanceof ApiError || error instanceof Error) return error.message;
-  return "Something went wrong.";
-}
-
-function flowStatus(
-  phase: Phase,
-  execution: ExecutionView | undefined,
-  hasError: boolean,
-): FlowStatus {
-  if (phase === "idle") return "idle";
-  if (phase === "confirming") return "confirming";
-  if (hasError) return "failed";
-  if (execution?.status === "succeeded") return "success";
-  if (execution && TERMINAL.has(execution.status)) return "failed";
-  return "pending";
-}
-
-function trackingStage(execution: ExecutionView | undefined): BridgeStage {
-  return execution?.status === "bridging" ? "bridging" : "executing";
-}
-
-export function useBridgeDeposit(input: BridgeDepositInput) {
-  const session = useSession();
-  const delegation = useDelegation();
-  const { getAccessToken } = usePrivy();
+function useSignTransfer() {
   const { sendTransaction } = useSendTransaction();
-  const queryClient = useQueryClient();
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [stage, setStage] = useState<BridgeStage>("quote");
-  const [executionId, setExecutionId] = useState<string | null>(null);
-  const withToken = async <T>(call: (token: string) => Promise<T>) => {
-    const token = await getAccessToken();
-    if (!token) throw new ApiError(401, "Please log in again.");
-    return call(token);
-  };
-  const execution = useQuery({
-    queryKey: ["execution", executionId],
-    queryFn: () =>
-      withToken((token) =>
-        apiGet(`/api/executions/${executionId}`, executionViewSchema, token),
-      ),
-    enabled: executionId !== null && phase === "tracking",
-    refetchInterval: (query) =>
-      query.state.data && TERMINAL.has(query.state.data.status)
-        ? false
-        : POLL_MS,
-  });
-  const signTransfer = async (
-    transfer: TransferInstruction,
-  ): Promise<`0x${string}`> => {
+  return async (transfer: TransferInstruction): Promise<`0x${string}`> => {
     const request = buildTransferRequest(transfer);
     const { hash } = await sendTransaction(
       {
@@ -102,83 +53,62 @@ export function useBridgeDeposit(input: BridgeDepositInput) {
     );
     return hash;
   };
-  const cancel = async (id: string) => {
-    await withToken((token) =>
-      apiDelete(`/api/executions/${id}`, executionViewSchema, token),
-    ).catch(() => undefined);
-  };
-  const create = useMutation({
-    mutationFn: async () => {
-      if (!input.indexId) throw new ApiError(400, "Pick an index first.");
-      if (!delegation.isDelegated) {
-        setStage("permission");
-        await delegation.enable();
-      }
-      setStage("quote");
-      const body = {
-        indexId: input.indexId,
-        originTokenId: input.originTokenId,
-        amount: input.amount,
-      };
-      const result = await withToken((token) =>
-        apiPost(
-          "/api/bridge/deposits",
-          body,
-          bridgeDepositResponseSchema,
-          token,
-        ),
-      );
-      setExecutionId(result.execution.id);
-      if (!result.transfer) return result.execution;
-      setStage("sign");
-      const hash = await signTransfer(result.transfer).catch(
-        async (error: unknown) => {
-          await cancel(result.execution.id);
-          throw error;
-        },
-      );
-      setStage("submit");
-      return withToken((token) =>
-        apiPost(
-          `/api/bridge/deposits/${result.execution.id}/submit`,
-          { txHash: hash },
-          executionViewSchema,
-          token,
-        ),
-      );
-    },
-    onSuccess: () => setPhase("tracking"),
-  });
-  const reset = () => {
-    setPhase("idle");
+}
+
+async function cancelAndThrow(
+  api: Api,
+  executionId: string,
+  error: unknown,
+): Promise<never> {
+  await api
+    .delete(`/api/executions/${executionId}`, executionViewSchema)
+    .catch(() => undefined);
+  throw error;
+}
+
+export function useStartBridgeDeposit() {
+  const signTransfer = useSignTransfer();
+  return async (
+    { api, setStage, delegate }: FlowContext<BridgeStartStage>,
+    input: BridgeDepositInput,
+  ): Promise<ExecutionView> => {
+    if (!input.indexId) throw new ApiError(400, "Pick an index first.");
+    await delegate();
     setStage("quote");
-    setExecutionId(null);
-    create.reset();
+    const { indexId, originTokenId, amount } = input;
+    const result = await api.post(
+      "/api/bridge/deposits",
+      { indexId, originTokenId, amount },
+      bridgeDepositResponseSchema,
+    );
+    const id = result.execution.id;
+    if (!result.transfer) return result.execution;
+    setStage("sign");
+    const txHash = await signTransfer(result.transfer).catch((error) =>
+      cancelAndThrow(api, id, error),
+    );
+    setStage("submit");
+    return api.post(
+      `/api/bridge/deposits/${id}/submit`,
+      { txHash },
+      executionViewSchema,
+    );
   };
-  const hasError = create.isError;
-  const currentStage: BridgeStage =
-    phase === "tracking" ? trackingStage(execution.data) : stage;
-  return {
-    status: flowStatus(phase, execution.data, hasError),
-    stage: currentStage,
-    execution: execution.data,
-    errorMessage: hasError
-      ? errorText(create.error)
-      : (execution.data?.errorMessage ?? undefined),
-    needsDelegation: !delegation.isDelegated,
-    isAuthenticated: session.isAuthenticated,
-    review: () =>
-      session.isAuthenticated ? setPhase("confirming") : session.login(),
-    confirm: () => {
-      setPhase("submitting");
-      create.mutate();
-    },
-    dismiss: reset,
-    finish: () => {
-      reset();
-      queryClient.invalidateQueries({ queryKey: ["origin-balances"] });
-    },
-  };
+}
+
+export function bridgeStage(
+  flow: ExecutionFlow<BridgeStartStage>,
+): BridgeStage {
+  if (flow.phase !== "tracking") return flow.stage ?? "quote";
+  return flow.execution?.status === "bridging" ? "bridging" : "executing";
+}
+
+export function useBridgeDeposit(input: BridgeDepositInput) {
+  const start = useStartBridgeDeposit();
+  const flow = useExecutionFlow<BridgeStartStage>((context) =>
+    start(context, input),
+  );
+  return { ...flow, stage: bridgeStage(flow) };
 }
 
 export type BridgeDepositController = ReturnType<typeof useBridgeDeposit>;

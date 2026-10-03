@@ -4,9 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";
 import { useSession } from "@/features/wallet";
-import { apiGet, apiPost } from "@/lib/api-client";
+import { useApi } from "@/lib/api-client";
 import { executionViewSchema } from "../types";
-import { useAccessToken, useExecutionFlow } from "./useExecutionFlow";
+import { useExecutionFlow } from "./useExecutionFlow";
 
 const DEPOSIT_TOKEN = { symbol: "USDC", iconKey: "usdc", decimals: 6 } as const;
 
@@ -22,11 +22,10 @@ const balancesSchema = z.object({
 
 function useBalances() {
   const session = useSession();
-  const withToken = useAccessToken();
+  const api = useApi();
   const balances = useQuery({
     queryKey: ["balances"],
-    queryFn: () =>
-      withToken((token) => apiGet("/api/balances", balancesSchema, token)),
+    queryFn: () => api.get("/api/balances", balancesSchema),
     enabled: session.isAuthenticated,
     staleTime: 15_000,
   });
@@ -41,14 +40,14 @@ function useBalances() {
 export function useIndexDeposit(indexId: string) {
   const session = useSession();
   const [amount, setAmount] = useState("");
-  const flow = useExecutionFlow((token) =>
-    apiPost(
+  const flow = useExecutionFlow(async ({ api, delegate }) => {
+    await delegate();
+    return api.post(
       "/api/executions",
       { indexId, depositAsset: DEPOSIT_TOKEN.symbol, amount },
       executionViewSchema,
-      token,
-    ),
-  );
+    );
+  });
   return {
     ...flow,
     ...useBalances(),

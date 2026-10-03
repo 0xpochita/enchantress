@@ -3,9 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useSession } from "@/features/wallet";
-import { apiGet, apiPost } from "@/lib/api-client";
+import { useApi } from "@/lib/api-client";
 import { executionViewSchema, indexPositionSchema } from "../types";
-import { useAccessToken, useExecutionFlow } from "./useExecutionFlow";
+import { useExecutionFlow } from "./useExecutionFlow";
 
 export const WITHDRAW_CHOICES = ["25%", "50%", "75%", "Max"] as const;
 
@@ -20,13 +20,11 @@ const FRACTIONS: Record<WithdrawChoice, number> = {
 
 function useIndexPosition(indexId: string) {
   const session = useSession();
-  const withToken = useAccessToken();
+  const api = useApi();
   return useQuery({
     queryKey: ["index-position", indexId],
     queryFn: () =>
-      withToken((token) =>
-        apiGet(`/api/indexes/${indexId}/position`, indexPositionSchema, token),
-      ),
+      api.get(`/api/indexes/${indexId}/position`, indexPositionSchema),
     enabled: session.isAuthenticated,
     staleTime: 15_000,
   });
@@ -37,14 +35,14 @@ export function useIndexWithdraw(indexId: string) {
   const position = useIndexPosition(indexId);
   const [choice, setChoice] = useState<WithdrawChoice>("50%");
   const fraction = FRACTIONS[choice];
-  const flow = useExecutionFlow((token) =>
-    apiPost(
+  const flow = useExecutionFlow(async ({ api, delegate }) => {
+    await delegate();
+    return api.post(
       "/api/executions/withdraw",
       { indexId, fraction },
       executionViewSchema,
-      token,
-    ),
-  );
+    );
+  });
   const positionUsd = position.data?.valueUsd ?? 0;
   return {
     ...flow,

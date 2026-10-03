@@ -1,125 +1,107 @@
 "use client";
 
-import { usePrivy } from "@privy-io/react-auth";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useReducer, useState } from "react";
 import { useDelegation, useSession } from "@/features/wallet";
-import { ApiError, apiGet } from "@/lib/api-client";
-import type { FlowStatus } from "@/types/flow";
+import { type Api, useApi } from "@/lib/api-client";
 import { type ExecutionView, executionViewSchema } from "../types";
+import {
+  errorText,
+  type FlowState,
+  flowError,
+  flowReducer,
+  flowStatus,
+  INITIAL_FLOW,
+  shouldPoll,
+} from "../utils/flow";
 
 const POLL_MS = 4000;
 
-type Phase = "idle" | "confirming" | "submitting" | "tracking";
+const REFRESHED_QUERIES = [
+  "balances",
+  "origin-balances",
+  "index-position",
+  "portfolio",
+  "index-activity",
+];
 
-export type WithToken = <T>(call: (token: string) => Promise<T>) => Promise<T>;
-
-function flowStatus(
-  phase: Phase,
-  execution?: ExecutionView,
-  error?: string,
-): FlowStatus {
-  if (phase === "idle") return "idle";
-  if (phase === "confirming") return "confirming";
-  if (error) return "failed";
-  if (execution?.status === "succeeded") return "success";
-  if (execution?.status === "failed") return "failed";
-  return "pending";
+export interface FlowContext<S extends string> {
+  api: Api;
+  setStage: (stage: S) => void;
+  delegate: () => Promise<void>;
 }
 
-function errorText(error: unknown): string {
-  if (error instanceof ApiError || error instanceof Error) return error.message;
-  return "Something went wrong.";
-}
+export type StartExecution<S extends string> = (
+  context: FlowContext<S>,
+) => Promise<ExecutionView | null>;
 
-export function useAccessToken(): WithToken {
-  const { getAccessToken } = usePrivy();
-  return async (call) => {
-    const token = await getAccessToken();
-    if (!token) throw new ApiError(401, "Please log in again.");
-    return call(token);
-  };
-}
-
-function useTrackedExecution(executionId: string | null) {
-  const withToken = useAccessToken();
+function useTrackedExecution(api: Api, state: FlowState) {
   return useQuery({
-    queryKey: ["execution", executionId],
+    queryKey: ["execution", state.executionId],
     queryFn: () =>
-      withToken((token) =>
-        apiGet(`/api/executions/${executionId}`, executionViewSchema, token),
-      ),
-    enabled: executionId !== null,
+      api.get(`/api/executions/${state.executionId}`, executionViewSchema),
+    enabled: state.phase === "tracking" && state.executionId !== null,
     refetchInterval: (query) =>
-      query.state.data?.status === "executing" ? POLL_MS : false,
+      shouldPoll(query.state.data?.status) ? POLL_MS : false,
   });
 }
 
-const REFRESHED_QUERIES = ["balances", "index-position", "index-activity"];
-
-function useStartExecution(start: (token: string) => Promise<ExecutionView>) {
+function useStart<S extends string>(start: StartExecution<S>, api: Api) {
   const delegation = useDelegation();
-  const withToken = useAccessToken();
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [executionId, setExecutionId] = useState<string | null>(null);
-  const create = useMutation({
-    mutationFn: async () => {
-      if (!delegation.isDelegated) await delegation.enable();
-      return withToken(start);
-    },
-    onSuccess: (view) => {
-      setExecutionId(view.id);
-      setPhase("tracking");
-    },
-  });
-  const reset = () => {
-    setPhase("idle");
-    setExecutionId(null);
-    create.reset();
+  const [state, dispatch] = useReducer(flowReducer, INITIAL_FLOW);
+  const [stage, setStage] = useState<S | "permission">();
+  const delegate = async () => {
+    if (delegation.isDelegated) return;
+    setStage("permission");
+    await delegation.enable();
   };
-  const begin = () => {
-    setExecutionId(null);
-    setPhase("submitting");
-    create.mutate();
+  const begin = async () => {
+    const attempt = state.attempt + 1;
+    setStage(undefined);
+    dispatch({ type: "start" });
+    try {
+      const view = await start({ api, setStage, delegate });
+      dispatch({ type: "started", attempt, executionId: view?.id ?? null });
+    } catch (error) {
+      dispatch({ type: "failed", attempt, error: errorText(error) });
+    }
   };
   const needsDelegation = !delegation.isDelegated;
-  return {
-    phase,
-    setPhase,
-    executionId,
-    begin,
-    create,
-    reset,
-    needsDelegation,
-  };
+  return { state, dispatch, stage, begin, needsDelegation };
 }
 
-export function useExecutionFlow(
-  start: (token: string) => Promise<ExecutionView>,
+export function useExecutionFlow<S extends string = never>(
+  start: StartExecution<S>,
 ) {
   const session = useSession();
+  const api = useApi();
   const queryClient = useQueryClient();
-  const run = useStartExecution(start);
-  const execution = useTrackedExecution(run.executionId);
-  const createError = run.create.error
-    ? errorText(run.create.error)
-    : undefined;
+  const run = useStart(start, api);
+  const execution = useTrackedExecution(api, run.state);
+  const reset = () => {
+    if (run.state.executionId)
+      for (const key of REFRESHED_QUERIES)
+        queryClient.invalidateQueries({ queryKey: [key] });
+    run.dispatch({ type: "reset" });
+  };
   return {
     isAuthenticated: session.isAuthenticated,
     needsDelegation: run.needsDelegation,
-    status: flowStatus(run.phase, execution.data, createError),
+    phase: run.state.phase,
+    stage: run.stage,
+    status: flowStatus(run.state, execution.data),
     execution: execution.data,
-    errorMessage: createError ?? execution.data?.errorMessage ?? undefined,
+    errorMessage: flowError(run.state, execution.data),
     review: () =>
-      session.isAuthenticated ? run.setPhase("confirming") : session.login(),
-    confirm: run.begin,
-    dismiss: run.reset,
-    finish: () => {
-      run.reset();
-      for (const key of REFRESHED_QUERIES)
-        queryClient.invalidateQueries({ queryKey: [key] });
-    },
+      session.isAuthenticated
+        ? run.dispatch({ type: "review" })
+        : session.login(),
+    confirm: () => void run.begin(),
+    dismiss: reset,
+    finish: reset,
   };
 }
 
-export type ExecutionFlow = ReturnType<typeof useExecutionFlow>;
+export type ExecutionFlow<S extends string = never> = ReturnType<
+  typeof useExecutionFlow<S>
+>;

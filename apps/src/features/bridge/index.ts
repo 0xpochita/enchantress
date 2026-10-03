@@ -1,6 +1,9 @@
 export {
   type BridgeDepositController,
+  type BridgeStartStage,
+  bridgeStage,
   useBridgeDeposit,
+  useStartBridgeDeposit,
 } from "./hooks/useBridgeDeposit";
 export { useBridgePreview } from "./hooks/useBridgePreview";
 export { useOriginBalances } from "./hooks/useOriginBalances";
