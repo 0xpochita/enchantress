@@ -113,13 +113,17 @@ function PositionRow({
       <td className={CELL}>
         <RowActions indexId={row.indexId} indexName={row.indexName} />
       </td>
-      <td className={`${CELL} w-8`}>
+      <td className={`${CELL} text-right`}>
         <Link
           href={`/indexes/${row.indexId}`}
-          aria-label={`Open ${row.indexName}`}
-          className="flex text-ink-subtle hover:text-ink"
+          aria-label={`View ${row.indexName} details`}
+          className="group inline-flex items-center gap-1 text-sm whitespace-nowrap text-ink-muted transition-colors duration-200 hover:text-ink"
         >
-          <ChevronRight aria-hidden className="size-4" />
+          View detail
+          <ChevronRight
+            aria-hidden
+            className="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+          />
         </Link>
       </td>
     </tr>
