@@ -11,7 +11,6 @@ import { VAULT_CHAIN_ID } from "@/features/vaults/config/venues";
 import { getVenueSnapshot } from "@/features/vaults/services/venue-snapshot";
 import { eligibleVenues } from "@/features/vaults/utils/eligibility";
 import { CHAINS } from "@/lib/mock/chains";
-import { PORTFOLIO_AS_OF, USER_PURCHASES } from "@/lib/mock/portfolio";
 import {
   DEFAULT_DEPOSIT_TOKEN_ID,
   POPULAR_TOKEN_IDS,
@@ -20,9 +19,6 @@ import {
 } from "@/lib/mock/tokens";
 import type {
   Chain,
-  Index,
-  IndexTransaction,
-  RoutedAllocation,
   Token,
   VaultAsset,
   Venue,
@@ -30,7 +26,6 @@ import type {
 
 export {
   DEFAULT_DEPOSIT_TOKEN_ID,
-  PORTFOLIO_AS_OF,
   POPULAR_TOKEN_IDS,
   VAULT_CHAIN_ID,
   WALLET_BALANCES,
@@ -94,25 +89,6 @@ export async function getIndexSummary(
 ): Promise<IndexSummary | undefined> {
   const summaries = await getIndexSummaries();
   return summaries.find((summary) => summary.index.id === indexId);
-}
-
-export interface PortfolioPosition {
-  index: Index;
-  apy: number;
-  allocations: RoutedAllocation[];
-}
-
-export async function getPositions(): Promise<PortfolioPosition[]> {
-  const summaries = await getIndexSummaries();
-  return summaries
-    .filter(({ index }) => index.positionUsd > 0)
-    .sort((a, b) => b.index.positionUsd - a.index.positionUsd);
-}
-
-export function getUserPurchases(): IndexTransaction[] {
-  return [...USER_PURCHASES].sort(
-    (a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp),
-  );
 }
 
 export type { VaultAsset };

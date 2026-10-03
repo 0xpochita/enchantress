@@ -67,12 +67,3 @@ export function valueSeries(
     return { time, valueUsd: valueAt(deposits, apy, time) };
   });
 }
-
-export function accruedInterestUsd(
-  deposits: DatedValue[],
-  apy: number,
-  asOfIso: string,
-): number {
-  const principal = deposits.reduce((sum, d) => sum + d.valueUsd, 0);
-  return valueAt(deposits, apy, Date.parse(asOfIso)) - principal;
-}

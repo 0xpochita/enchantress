@@ -1,10 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import {
-  accruedInterestUsd,
-  summarizePortfolio,
-  valueSeries,
-} from "./portfolio.ts";
+import { summarizePortfolio, valueSeries } from "./portfolio.ts";
 
 test("summarizePortfolio weights apy by position value", () => {
   const summary = summarizePortfolio(
@@ -41,13 +37,4 @@ test("valueSeries steps up on each deposit and accrues yield", () => {
 
 test("valueSeries is empty without deposits", () => {
   assert.deepEqual(valueSeries([], 5, "2026-01-01T00:00:00Z", 10), []);
-});
-
-test("accruedInterestUsd returns only the yield on top of deposits", () => {
-  const earned = accruedInterestUsd(
-    [{ timestamp: "2026-01-01T00:00:00Z", valueUsd: 200 }],
-    5,
-    "2027-01-01T00:00:00Z",
-  );
-  assert.ok(Math.abs(earned - 10) < 1e-9);
 });
