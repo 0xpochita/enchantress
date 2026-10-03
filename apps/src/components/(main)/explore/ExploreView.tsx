@@ -1,11 +1,11 @@
 import type { TagItem } from "@/components/ui";
-import { usesVenue } from "@/features/indexes/utils/route-index";
+import { getIndexSummaries } from "@/features/indexes/services/index-catalog";
 import {
-  getAllVenues,
-  getBestVenueApy,
-  getIndexSummaries,
   type IndexSummary,
-} from "@/lib/market";
+  usesVenue,
+} from "@/features/indexes/utils/route-index";
+import { getVenueSnapshot } from "@/features/vaults/services/venue-snapshot";
+import { getBestVenueApy } from "@/features/vaults/utils/eligibility";
 import type { Venue } from "@/types/market";
 import { ExploreHero } from "./ExploreHero";
 import { IndexGrid } from "./IndexGrid";
@@ -33,8 +33,8 @@ function filterOptions(venues: Venue[], summaries: IndexSummary[]): TagItem[] {
 }
 
 export async function ExploreView({ venueId }: { venueId?: string }) {
-  const [venues, allSummaries] = await Promise.all([
-    getAllVenues(),
+  const [{ venues }, allSummaries] = await Promise.all([
+    getVenueSnapshot(),
     getIndexSummaries(),
   ]);
   const summaries = allSummaries.filter((summary) => summary.index.isFeatured);

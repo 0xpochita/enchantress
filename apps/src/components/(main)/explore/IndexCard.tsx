@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BRAND_FADE_SURFACE, HalftoneArt, TokenStack } from "@/components/ui";
-import type { IndexSummary } from "@/lib/market";
+import type { IndexSummary } from "@/features/indexes/utils/route-index";
 import type { Venue } from "@/types/market";
 import { formatCompactUsd, formatPercent } from "@/utils/format";
 

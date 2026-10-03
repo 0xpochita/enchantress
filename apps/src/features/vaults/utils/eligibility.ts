@@ -8,3 +8,10 @@ export function eligibleVenues(venues: Venue[], minTvlUsd: number): Venue[] {
     }))
     .filter((venue) => venue.markets.length > 0);
 }
+
+export function getBestVenueApy(venues: Venue[]): number {
+  return Math.max(
+    0,
+    ...venues.flatMap((venue) => venue.markets.map((m) => m.apy)),
+  );
+}

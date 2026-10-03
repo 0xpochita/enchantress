@@ -2,15 +2,17 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { buttonClassName } from "@/components/ui";
-import { getIndexSummaries, getVenue } from "@/lib/market";
+import { getIndexSummaries } from "@/features/indexes/services/index-catalog";
+import { getVenueSnapshot } from "@/features/vaults/services/venue-snapshot";
 import { IndexGrid } from "../explore/IndexGrid";
 import { VenueTable } from "./VenueTable";
 
 export async function ProtocolDetailView({ venueId }: { venueId: string }) {
-  const [venue, summaries] = await Promise.all([
-    getVenue(venueId),
+  const [{ venues }, summaries] = await Promise.all([
+    getVenueSnapshot(),
     getIndexSummaries(venueId),
   ]);
+  const venue = venues.find((candidate) => candidate.id === venueId);
   if (!venue) notFound();
   return (
     <>

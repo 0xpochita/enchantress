@@ -1,7 +1,7 @@
 "use client";
 
+import type { IndexSummary } from "@/features/indexes/utils/route-index";
 import { useSession } from "@/features/wallet";
-import type { IndexSummary } from "@/lib/market";
 import { IndexCard } from "./IndexCard";
 
 export function YourIndexes({ summaries }: { summaries: IndexSummary[] }) {

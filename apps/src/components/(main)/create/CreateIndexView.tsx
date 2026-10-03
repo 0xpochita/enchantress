@@ -2,7 +2,7 @@ import {
   getBridgeSource,
   MONAD_USDC_ASSET_ID,
 } from "@/features/bridge/services/bridge-catalog";
-import { getMarketCatalog } from "@/lib/market";
+import { getMarketCatalog } from "@/features/indexes/services/index-catalog";
 import { CreateIndexForm } from "./CreateIndexForm";
 
 export async function CreateIndexView() {

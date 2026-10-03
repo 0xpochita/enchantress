@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
-import { getChain, getIndexSummary, VAULT_CHAIN_ID } from "@/lib/market";
+import { originChainById } from "@/config/chains";
+import { getIndexSummary } from "@/features/indexes/services/index-catalog";
+import { VAULT_CHAIN_ID } from "@/features/vaults/config/venues";
 import type { RoutedAllocation, Venue } from "@/types/market";
 import { FundsPanel } from "./FundsPanel";
 import { IndexActivity } from "./IndexActivity";
@@ -15,7 +17,12 @@ export async function IndexDetailView({ indexId }: { indexId: string }) {
   if (!summary) notFound();
   const { index, allocations, apy } = summary;
   const protocols = uniqueVenues(allocations);
-  const chain = getChain(VAULT_CHAIN_ID);
+  const vaultChain = originChainById(VAULT_CHAIN_ID);
+  const chain = vaultChain && {
+    id: vaultChain.id,
+    name: vaultChain.name,
+    iconKey: vaultChain.iconKey,
+  };
 
   return (
     <>

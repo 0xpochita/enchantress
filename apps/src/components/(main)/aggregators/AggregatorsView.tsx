@@ -2,11 +2,9 @@ import {
   getBridgeSource,
   MONAD_USDC_ASSET_ID,
 } from "@/features/bridge/services/bridge-catalog";
-import {
-  getAllVenues,
-  getIndexSummaries,
-  type IndexSummary,
-} from "@/lib/market";
+import { getIndexSummaries } from "@/features/indexes/services/index-catalog";
+import type { IndexSummary } from "@/features/indexes/utils/route-index";
+import { getVenueSnapshot } from "@/features/vaults/services/venue-snapshot";
 import type { IndexQuote, Venue } from "@/types/market";
 import { DepositAggregator } from "./DepositAggregator";
 import type { HubProtocol } from "./ProtocolHub";
@@ -38,8 +36,8 @@ function toHubProtocol(venue: Venue): HubProtocol {
 }
 
 export async function AggregatorsView() {
-  const [venues, summaries, source] = await Promise.all([
-    getAllVenues(),
+  const [{ venues }, summaries, source] = await Promise.all([
+    getVenueSnapshot(),
     getIndexSummaries(),
     getBridgeSource(),
   ]);

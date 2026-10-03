@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { buttonClassName } from "@/components/ui";
-import type { IndexSummary } from "@/lib/market";
+import type { IndexSummary } from "@/features/indexes/utils/route-index";
 import { IndexCard } from "./IndexCard";
 
 export function IndexGrid({ summaries }: { summaries: IndexSummary[] }) {
