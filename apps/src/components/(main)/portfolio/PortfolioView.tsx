@@ -1,5 +1,6 @@
 "use client";
 
+import type { BridgeCatalog } from "@/features/bridge";
 import { type Portfolio, usePortfolio } from "@/features/portfolio";
 import { useSession } from "@/features/wallet";
 import { ActivityTable } from "./ActivityTable";
@@ -33,18 +34,23 @@ function IndexesSection({ portfolio }: { portfolio: Portfolio }) {
   );
 }
 
-function PositionsPanel({ portfolio }: { portfolio: Portfolio }) {
+interface PanelProps {
+  portfolio: Portfolio;
+  catalog: BridgeCatalog;
+}
+
+function PositionsPanel({ portfolio, catalog }: PanelProps) {
   return (
     <>
       <h2 className="text-xl font-light tracking-tight">Indexes</h2>
       <IndexesSection portfolio={portfolio} />
-      <h2 className="text-xl font-light tracking-tight">Wallet on Monad</h2>
-      <WalletBalances prices={portfolio.prices} />
+      <h2 className="text-xl font-light tracking-tight">Wallet balances</h2>
+      <WalletBalances prices={portfolio.prices} catalog={catalog} />
     </>
   );
 }
 
-function PortfolioBody() {
+function PortfolioBody({ catalog }: { catalog: BridgeCatalog }) {
   const portfolio = usePortfolio();
   if (portfolio.isPending) return <LoadingCard label="Loading portfolio" />;
   if (portfolio.isError)
@@ -57,19 +63,21 @@ function PortfolioBody() {
   return (
     <PortfolioTabs
       panels={{
-        Positions: <PositionsPanel portfolio={portfolio.data} />,
+        Positions: (
+          <PositionsPanel portfolio={portfolio.data} catalog={catalog} />
+        ),
         Activity: <ActivityTable rows={portfolio.data.activity} />,
       }}
     />
   );
 }
 
-export function PortfolioView() {
+export function PortfolioView({ catalog }: { catalog: BridgeCatalog }) {
   const session = useSession();
   return (
     <>
       <WalletHeader />
-      {session.isAuthenticated && <PortfolioBody />}
+      {session.isAuthenticated && <PortfolioBody catalog={catalog} />}
     </>
   );
 }
