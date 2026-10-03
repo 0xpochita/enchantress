@@ -1,12 +1,9 @@
 import { notFound } from "next/navigation";
 import {
-  DEFAULT_DEPOSIT_TOKEN_ID,
-  getChains,
+  getChain,
   getIndexSummary,
   getIndexTransactions,
-  getTokens,
-  POPULAR_TOKEN_IDS,
-  WALLET_BALANCES,
+  VAULT_CHAIN_ID,
 } from "@/lib/market";
 import type { RoutedAllocation, Venue } from "@/types/market";
 import { FundsPanel } from "./FundsPanel";
@@ -24,12 +21,7 @@ export async function IndexDetailView({ indexId }: { indexId: string }) {
   const { index, allocations, apy } = summary;
   const protocols = uniqueVenues(allocations);
   const transactions = await getIndexTransactions(index.id);
-  const catalog = {
-    chains: getChains(),
-    tokens: getTokens(),
-    balances: WALLET_BALANCES,
-    popularTokenIds: POPULAR_TOKEN_IDS,
-  };
+  const chain = getChain(VAULT_CHAIN_ID);
 
   return (
     <>
@@ -42,6 +34,7 @@ export async function IndexDetailView({ indexId }: { indexId: string }) {
         <div className="min-w-0">
           <FundsPanel
             key={index.id}
+            indexId={index.id}
             indexName={index.name}
             title={
               index.positionUsd > 0
@@ -51,8 +44,7 @@ export async function IndexDetailView({ indexId }: { indexId: string }) {
             allocations={allocations}
             summary={<IndexStats index={index} apy={apy} />}
             apy={apy}
-            catalog={catalog}
-            defaultTokenId={DEFAULT_DEPOSIT_TOKEN_ID}
+            chain={chain}
           />
         </div>
         <div className="min-w-0">

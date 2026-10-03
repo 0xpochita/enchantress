@@ -1,164 +1,168 @@
 "use client";
 
-import type { useDepositAction } from "@/hooks/useDepositAction";
-import type { RoutedAllocation, WalletBalance } from "@/types/market";
+import { Check, CircleDashed, Loader2, X } from "lucide-react";
+import type {
+  ExecutionView,
+  IndexDepositController,
+} from "@/features/executions";
+import type { Chain, RoutedAllocation } from "@/types/market";
 import { formatAmount, formatPercent, formatUsd } from "@/utils/format";
 import { yearlyRewardsUsd } from "@/utils/yield-index";
-import { FlowModal, PendingStep } from "../flow/FlowModal";
+import { FlowModal } from "../flow/FlowModal";
 import { ActionButton, ResultStep } from "../flow/ResultStep";
 import {
   ReviewActions,
   ReviewHeader,
-  type ReviewItem,
   ReviewSummary,
   SliceList,
 } from "../flow/ReviewParts";
 import { RouteDetails } from "../routing/RouteDetails";
 
-type DepositPanel = ReturnType<typeof useDepositAction>;
-
 interface DepositFlowModalProps {
-  panel: DepositPanel;
+  deposit: IndexDepositController;
   indexName: string;
   allocations: RoutedAllocation[];
   apy: number;
-  balances: WalletBalance[];
+  chain?: Chain;
 }
 
-interface FlowContext extends DepositFlowModalProps {
-  isDeposit: boolean;
-  balance: number;
-  availableUsd: number;
+type StepView = ExecutionView["steps"][number];
+
+function stepLabel(step: StepView, depositAsset: string): string {
+  if (step.kind === "swap")
+    return `Swap ${depositAsset} to ${step.assetSymbol}`;
+  if (step.kind === "approve") return `Approve ${step.assetSymbol}`;
+  return `Supply ${step.assetSymbol} to ${step.venueId}`;
 }
 
-function reviewItems(context: FlowContext): ReviewItem[] {
-  const { panel, isDeposit, availableUsd } = context;
-  return [
-    {
-      label: panel.action,
-      value: `${formatAmount(Number(panel.amount))} ${panel.token?.symbol ?? ""}`,
-      hint: formatUsd(panel.valueUsd),
-    },
-    { label: "Index APY", value: formatPercent(context.apy), hint: "blended" },
-    isDeposit
-      ? {
-          label: "Rewards / year",
-          value: formatUsd(yearlyRewardsUsd(panel.valueUsd, context.apy)),
-          hint: "at current rates",
-        }
-      : {
-          label: "Remaining",
-          value: formatUsd(Math.max(0, availableUsd - panel.valueUsd)),
-          hint: "in this index",
-        },
-  ];
+function StepIcon({ status }: { status: StepView["status"] }) {
+  if (status === "confirmed")
+    return <Check aria-hidden className="size-4 text-positive" />;
+  if (status === "failed")
+    return <X aria-hidden className="size-4 text-negative" />;
+  if (status === "sent")
+    return <Loader2 aria-hidden className="size-4 animate-spin text-brand" />;
+  return <CircleDashed aria-hidden className="size-4 text-ink-subtle" />;
 }
 
-function ConfirmStep(context: FlowContext) {
-  const { panel, allocations } = context;
+function ProgressStep({ deposit }: { deposit: IndexDepositController }) {
+  const execution = deposit.execution;
   return (
     <div className="flex flex-col gap-5 p-6">
       <ReviewHeader
-        eyebrow={`Review your ${panel.action.toLowerCase()}`}
-        title={context.indexName}
+        eyebrow="Depositing on Monad"
+        title={
+          execution
+            ? `${formatAmount(Number(deposit.amount))} ${deposit.token.symbol}`
+            : "Starting"
+        }
       />
-      <ReviewSummary items={reviewItems(context)} />
+      <ol className="flex flex-col gap-3 text-sm">
+        {(execution?.steps ?? []).map((step) => (
+          <li key={step.position} className="flex items-center gap-3">
+            <StepIcon status={step.status} />
+            <span className={step.status === "pending" ? "text-ink-muted" : ""}>
+              {stepLabel(step, execution?.depositAsset ?? deposit.token.symbol)}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <p className="text-xs text-ink-subtle">
+        Gas on Monad is paid by Enchantress. Keep this page open; you can also
+        come back later.
+      </p>
+    </div>
+  );
+}
+
+function ConfirmStep({
+  deposit,
+  indexName,
+  allocations,
+  apy,
+  chain,
+}: DepositFlowModalProps) {
+  const items = [
+    {
+      label: "Deposit",
+      value: `${formatAmount(Number(deposit.amount))} ${deposit.token.symbol}`,
+      hint: formatUsd(deposit.valueUsd),
+    },
+    { label: "Index APY", value: formatPercent(apy), hint: "blended" },
+    {
+      label: "Rewards / year",
+      value: formatUsd(yearlyRewardsUsd(deposit.valueUsd, apy)),
+      hint: "at current rates",
+    },
+  ];
+  return (
+    <div className="flex flex-col gap-5 p-6">
+      <ReviewHeader eyebrow="Review your deposit" title={indexName} />
+      <ReviewSummary items={items} />
       <SliceList slices={allocations} />
-      <RouteDetails chain={panel.chain} sliceCount={allocations.length} />
+      <RouteDetails chain={chain} sliceCount={allocations.length} />
+      {deposit.needsDelegation && (
+        <p className="text-xs text-ink-muted">
+          Enchantress needs one time permission to move your deposit into the
+          vaults. It can only deposit or withdraw to your own wallet.
+        </p>
+      )}
       <ReviewActions
-        onCancel={panel.dismiss}
-        onConfirm={() => confirm(context)}
+        onCancel={deposit.dismiss}
+        onConfirm={deposit.confirm}
+        confirmLabel={deposit.needsDelegation ? "Allow and deposit" : "Confirm"}
       />
     </div>
   );
 }
 
-function confirm({ panel, isDeposit, balance, availableUsd }: FlowContext) {
-  const canSucceed = isDeposit
-    ? Number(panel.amount) <= balance
-    : panel.valueUsd <= availableUsd;
-  panel.confirm(canSucceed);
-}
-
-function SuccessStep({ panel, isDeposit, indexName, apy }: FlowContext) {
-  const usd = formatUsd(panel.valueUsd);
-  return (
-    <ResultStep
-      tone="success"
-      title={isDeposit ? "Deposit complete" : "Withdrawal complete"}
-      message={
-        isDeposit
-          ? `${usd} is now earning ${formatPercent(apy)} APY in ${indexName}.`
-          : `${usd} from ${indexName} is on its way to your wallet.`
-      }
-      actions={
-        <ActionButton label="Done" variant="primary" onClick={panel.finish} />
-      }
-    />
-  );
-}
-
-function FailedStep({ panel, isDeposit, balance, availableUsd }: FlowContext) {
-  const symbol = panel.token?.symbol ?? "";
-  return (
-    <ResultStep
-      tone="failed"
-      title={isDeposit ? "Deposit failed" : "Withdrawal failed"}
-      message={
-        isDeposit
-          ? `Not enough ${symbol} in your wallet. You have ${formatAmount(balance)} ${symbol}.`
-          : `You can withdraw up to ${formatUsd(availableUsd)} from this index.`
-      }
-      actions={
-        <>
-          <ActionButton
-            label="Close"
-            variant="secondary"
-            onClick={panel.dismiss}
-          />
-          <ActionButton
-            label="Try again"
-            variant="primary"
-            onClick={panel.review}
-          />
-        </>
-      }
-    />
-  );
-}
-
-function pendingCopy({
-  panel,
-  isDeposit,
-  indexName,
-  allocations,
-}: FlowContext) {
-  const count = new Set(allocations.map((a) => a.venue.id)).size;
-  return {
-    title: isDeposit
-      ? `Depositing into ${indexName}`
-      : `Withdrawing from ${indexName}`,
-    message: `${isDeposit ? "Splitting" : "Collecting"} ${formatUsd(panel.valueUsd)} across ${count} protocol${count === 1 ? "" : "s"} on Monad.`,
-  };
-}
-
 export function DepositFlowModal(props: DepositFlowModalProps) {
-  const { panel, allocations, balances } = props;
-  const context: FlowContext = {
-    ...props,
-    isDeposit: panel.action === "Deposit",
-    balance: balances.find((b) => b.tokenId === panel.tokenId)?.amount ?? 0,
-    availableUsd: allocations.reduce((sum, a) => sum + a.valueUsd, 0),
-  };
+  const { deposit, indexName } = props;
   return (
     <FlowModal
-      flow={panel}
-      label={panel.action}
+      flow={deposit}
+      label="Deposit"
       steps={{
-        confirming: <ConfirmStep {...context} />,
-        pending: <PendingStep {...pendingCopy(context)} />,
-        success: <SuccessStep {...context} />,
-        failed: <FailedStep {...context} />,
+        confirming: <ConfirmStep {...props} />,
+        pending: <ProgressStep deposit={deposit} />,
+        success: (
+          <ResultStep
+            tone="success"
+            title="Deposit complete"
+            message={`${formatUsd(deposit.valueUsd)} is now earning in ${indexName}.`}
+            actions={
+              <ActionButton
+                label="Done"
+                variant="primary"
+                onClick={deposit.finish}
+              />
+            }
+          />
+        ),
+        failed: (
+          <ResultStep
+            tone="failed"
+            title="Deposit did not finish"
+            message={
+              deposit.errorMessage ??
+              "Something went wrong. Your funds stay in your wallet."
+            }
+            actions={
+              <>
+                <ActionButton
+                  label="Close"
+                  variant="secondary"
+                  onClick={deposit.dismiss}
+                />
+                <ActionButton
+                  label="Try again"
+                  variant="primary"
+                  onClick={deposit.review}
+                />
+              </>
+            }
+          />
+        ),
       }}
     />
   );

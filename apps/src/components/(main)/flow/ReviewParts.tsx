@@ -71,9 +71,11 @@ export function SliceList({ slices }: { slices: RoutedAllocation[] }) {
 export function ReviewActions({
   onCancel,
   onConfirm,
+  confirmLabel = "Confirm",
 }: {
   onCancel: () => void;
   onConfirm: () => void;
+  confirmLabel?: string;
 }) {
   return (
     <div className="grid grid-cols-2 gap-2">
@@ -89,7 +91,7 @@ export function ReviewActions({
         onClick={onConfirm}
         className={buttonClassName("primary", "py-3 text-sm")}
       >
-        Confirm
+        {confirmLabel}
       </button>
     </div>
   );

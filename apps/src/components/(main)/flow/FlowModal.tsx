@@ -4,12 +4,12 @@ import { Loader2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { type ReactNode, useRef } from "react";
 import { Modal } from "@/components/ui";
-import type { FlowStatus, SubmitFlow } from "@/hooks/useSubmitFlow";
+import type { FlowStatus } from "@/hooks/useSubmitFlow";
 
 type FlowStep = Exclude<FlowStatus, "idle">;
 
 interface FlowModalProps {
-  flow: SubmitFlow;
+  flow: { status: FlowStatus; dismiss: () => void; finish: () => void };
   label: string;
   steps: Record<FlowStep, ReactNode>;
 }
