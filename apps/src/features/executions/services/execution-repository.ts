@@ -481,6 +481,7 @@ export async function recordWithdraw(input: {
 
 export type ActivityLedgerRow = typeof ledger.$inferSelect & {
   account: string | null;
+  originChain: string | null;
 };
 
 export async function indexLedger(
@@ -488,11 +489,20 @@ export async function indexLedger(
   limit: number,
 ): Promise<ActivityLedgerRow[]> {
   const rows = await db()
-    .select({ entry: ledger, account: users.walletAddress })
+    .select({
+      entry: ledger,
+      account: users.walletAddress,
+      originChain: executions.originChain,
+    })
     .from(ledger)
     .leftJoin(users, eq(users.id, ledger.userId))
+    .leftJoin(executions, eq(executions.id, ledger.executionId))
     .where(eq(ledger.indexId, indexId))
     .orderBy(desc(ledger.at), desc(ledger.id))
     .limit(limit);
-  return rows.map((row) => ({ ...row.entry, account: row.account }));
+  return rows.map((row) => ({
+    ...row.entry,
+    account: row.account,
+    originChain: row.originChain,
+  }));
 }

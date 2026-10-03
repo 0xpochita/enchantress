@@ -7,6 +7,7 @@ import { monadToken } from "@/features/chain/config/tokens";
 import { type ActivityRow, useIndexActivity } from "@/features/executions";
 import type { Venue } from "@/types/market";
 import { formatAmount, formatUsd, shortenAddress } from "@/utils/format";
+import { RouteCell } from "../flow/RouteCell";
 
 const HEAD =
   "px-3 py-3 text-left text-[0.7rem] font-medium tracking-wider text-ink-subtle uppercase first:pl-6 last:pr-6";
@@ -77,6 +78,9 @@ function ActivityTableRow({ row, venue }: { row: ActivityRow; venue?: Venue }) {
       <td className={CELL}>
         <AssetCell row={row} venue={venue} />
       </td>
+      <td className={CELL}>
+        <RouteCell viaAurora={row.viaAurora} />
+      </td>
       <td className={`${CELL} tabular-nums`}>{formatUsd(row.valueUsd)}</td>
       <td className={`${CELL} font-mono text-xs text-ink-muted`}>
         {row.account ? shortenAddress(row.account) : ""}
@@ -99,7 +103,7 @@ function TableHead() {
   return (
     <thead>
       <tr>
-        {["Activity", "Amount", "Value", "Account"].map((label) => (
+        {["Activity", "Amount", "Route", "Value", "Account"].map((label) => (
           <th key={label} scope="col" className={HEAD}>
             {label}
           </th>

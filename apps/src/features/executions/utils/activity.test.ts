@@ -12,6 +12,7 @@ const entry = {
   valueUsd: "2.50",
   txHash: "0xabc",
   account: "0x0000000000000000000000000000000000000001",
+  originChain: "base",
   at: new Date("2026-10-03T10:00:00Z"),
 };
 
@@ -32,6 +33,7 @@ test("toActivityRow survives a JSON round trip through the response schema", () 
     valueUsd: 2.5,
     account: entry.account,
     txHash: "0xabc",
+    viaAurora: true,
     at: "2026-10-03T10:00:00.000Z",
   });
 });

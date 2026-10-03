@@ -103,6 +103,7 @@ export const activityRowSchema = z.object({
   valueUsd: z.number(),
   account: z.string().nullable(),
   txHash: z.string(),
+  viaAurora: z.boolean(),
   at: z.iso.datetime({ offset: true }),
 });
 

@@ -12,6 +12,7 @@ export interface LedgerEntry {
   valueUsd: string;
   txHash: string;
   account: string | null;
+  originChain: string | null;
   at: Date;
 }
 
@@ -30,6 +31,7 @@ export function toActivityRow(entry: LedgerEntry): ActivityRow {
     valueUsd: Number(entry.valueUsd),
     account: entry.account,
     txHash: entry.txHash,
+    viaAurora: entry.originChain !== null,
     at: entry.at.toISOString(),
   };
 }

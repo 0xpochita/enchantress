@@ -15,8 +15,9 @@ import { Card, CryptoIcon, LocalDate } from "@/components/ui";
 import { originChainById } from "@/config/chains";
 import type { IndexIcon, PortfolioPurchase } from "@/features/portfolio";
 import { formatAmount, formatUsd } from "@/utils/format";
+import { RouteCell } from "../flow/RouteCell";
 import { ExecutionStatusModal } from "./ExecutionStatusModal";
-import { IndexLink, RouteCell } from "./IndexLink";
+import { IndexLink } from "./IndexLink";
 
 const HEAD =
   "px-3 py-3 text-left text-[0.7rem] font-medium tracking-wider text-ink-subtle uppercase first:pl-6 last:pr-6";
