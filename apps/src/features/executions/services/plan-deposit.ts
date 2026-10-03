@@ -23,7 +23,7 @@ export interface DepositPlan {
   steps: PlannedStep[];
 }
 
-async function assertSwappable(
+export async function assertSwappable(
   depositAsset: string,
   slices: PlanSlice[],
   amountBase: bigint,

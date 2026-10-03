@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { type DraftCatalog, type DraftState, deriveDraft } from "./draft.ts";
+import {
+  type DraftCatalog,
+  type DraftState,
+  deriveDraft,
+  toWeightBps,
+} from "./draft.ts";
 
 const CATALOG: DraftCatalog = {
   venues: [
@@ -68,4 +73,24 @@ test("deriveDraft rejects custom weights that do not add up", () => {
     customPercents: { USDC: 40 },
   });
   assert.deepEqual(draft.errors, ["Custom weights must add up to 100%."]);
+});
+
+test("deriveDraft allows creating without a deposit", () => {
+  const draft = deriveDraft(CATALOG, { ...STATE, amount: "" });
+  assert.deepEqual(draft.errors, []);
+  assert.deepEqual(draft.recipe, {
+    name: "core",
+    allocations: [{ assetSymbol: "USDC", weightBps: 10_000 }],
+  });
+});
+
+test("deriveDraft rejects names outside 3 to 40 characters", () => {
+  const draft = deriveDraft(CATALOG, { ...STATE, name: "ab" });
+  assert.deepEqual(draft.errors, ["Use 3 to 40 characters for the name."]);
+});
+
+test("toWeightBps gives rounding drift to the last slice", () => {
+  assert.deepEqual(toWeightBps([1 / 3, 1 / 3, 1 / 3]), [3333, 3333, 3334]);
+  assert.deepEqual(toWeightBps([0.6, 0.4]), [6000, 4000]);
+  assert.deepEqual(toWeightBps([]), []);
 });

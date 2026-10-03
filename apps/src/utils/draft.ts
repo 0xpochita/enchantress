@@ -31,6 +31,23 @@ export interface DraftState {
 }
 
 const PERCENT = 100;
+const BPS = 10_000;
+
+export const INDEX_NAME_MIN_LENGTH = 3;
+export const INDEX_NAME_MAX_LENGTH = 40;
+export const MAX_INDEX_ASSETS = 6;
+
+export interface IndexRecipe {
+  name: string;
+  allocations: { assetSymbol: string; weightBps: number }[];
+}
+
+export function toWeightBps(weights: number[]): number[] {
+  const bps = weights.map((weight) => Math.round(weight * BPS));
+  const drift = BPS - bps.reduce((sum, value) => sum + value, 0);
+  if (bps.length > 0) bps[bps.length - 1] += drift;
+  return bps;
+}
 
 function draftWeights(state: DraftState, assets: VaultAsset[]): number[] {
   if (state.weightMode === "equal") return equalWeights(assets.length);
@@ -51,19 +68,41 @@ function routeAssets(
   });
 }
 
-function draftErrors(
-  state: DraftState,
-  weights: number[],
-  depositUsd: number,
-): string[] {
+function nameError(name: string): string {
+  const length = name.trim().length;
+  if (length === 0) return "Give your index a name.";
+  if (length < INDEX_NAME_MIN_LENGTH || length > INDEX_NAME_MAX_LENGTH)
+    return `Use ${INDEX_NAME_MIN_LENGTH} to ${INDEX_NAME_MAX_LENGTH} characters for the name.`;
+  return "";
+}
+
+function draftErrors(state: DraftState, weights: number[]): string[] {
+  const hasBadAmount = state.amount !== "" && !(Number(state.amount) > 0);
   return [
-    state.name.trim() === "" ? "Give your index a name." : "",
+    nameError(state.name),
     weights.length === 0 ? "Pick at least one asset." : "",
-    depositUsd <= 0 ? "Enter a deposit amount." : "",
+    weights.length > MAX_INDEX_ASSETS
+      ? `Pick at most ${MAX_INDEX_ASSETS} assets.`
+      : "",
+    hasBadAmount ? "Enter a valid deposit amount." : "",
     weights.length > 0 && !areWeightsComplete(weights)
       ? "Custom weights must add up to 100%."
       : "",
   ].filter(Boolean);
+}
+
+function draftRecipe(
+  state: DraftState,
+  allocations: RoutedAllocation[],
+): IndexRecipe {
+  const bps = toWeightBps(allocations.map((a) => a.weight));
+  return {
+    name: state.name.trim(),
+    allocations: allocations.map((a, position) => ({
+      assetSymbol: a.asset.symbol,
+      weightBps: bps[position] ?? 0,
+    })),
+  };
 }
 
 export function deriveDraft(catalog: DraftCatalog, state: DraftState) {
@@ -83,7 +122,7 @@ export function deriveDraft(catalog: DraftCatalog, state: DraftState) {
   const allocations = routeAssets(assets, weights, { venues, depositUsd });
   const apy = blendedApy(allocations);
   const rewardsUsd = yearlyRewardsUsd(depositUsd, apy);
-  const errors = draftErrors(state, weights, depositUsd);
+  const errors = draftErrors(state, weights);
   return {
     availableAssets,
     allocations,
@@ -92,5 +131,6 @@ export function deriveDraft(catalog: DraftCatalog, state: DraftState) {
     apy,
     rewardsUsd,
     errors,
+    recipe: draftRecipe(state, allocations),
   };
 }
