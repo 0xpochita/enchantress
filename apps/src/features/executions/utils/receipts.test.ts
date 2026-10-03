@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { encodeEventTopics, erc20Abi, type Log, toHex } from "viem";
-import { mintedShares, receivedAmount } from "./receipts.ts";
+import { receivedAmount } from "./receipts.ts";
 
 const TOKEN = "0x00000000000000000000000000000000000000aa";
 const OTHER = "0x00000000000000000000000000000000000000bb";
@@ -41,11 +41,4 @@ test("receivedAmount sums only transfers of the token to the recipient", () => {
   ];
   assert.equal(receivedAmount(logs, TOKEN, USER), 100n);
   assert.equal(receivedAmount(logs, OTHER, POOL), 0n);
-});
-
-test("mintedShares ignores unrelated logs", () => {
-  assert.equal(
-    mintedShares([transferLog(TOKEN, POOL, USER, 1n)], TOKEN, USER),
-    0n,
-  );
 });

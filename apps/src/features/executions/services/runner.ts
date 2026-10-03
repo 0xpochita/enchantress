@@ -10,26 +10,19 @@ import {
 } from "@/features/chain/config/tokens";
 import { monadClient } from "@/features/chain/services/public-client";
 import {
-  VENUE_CONFIGS,
-  type VenueConfig,
-} from "@/features/vaults/config/venues";
-import {
   createAdapter,
   getVenueSnapshot,
 } from "@/features/vaults/services/venue-snapshot";
+import type { UnitsChange, VaultAdapter } from "@/features/vaults/types";
 import { findUserById } from "@/features/wallet/server";
 import type { ExecutionRow, ExecutionStepRow } from "@/lib/db/schema";
 import { ExecutionRequestError } from "../types";
 import {
-  aaveSupplyCalldata,
-  aaveWithdrawCalldata,
   approveCalldata,
-  erc4626DepositCalldata,
-  erc4626RedeemCalldata,
   minimumOut,
   uniswapSwapCalldata,
 } from "../utils/calldata";
-import { mintedShares, receivedAmount } from "../utils/receipts";
+import { receivedAmount } from "../utils/receipts";
 import {
   acquireLease,
   finishExecution,
@@ -74,22 +67,11 @@ function token(symbol: string): ChainToken {
   return MONAD_TOKENS[symbol as MonadTokenSymbol];
 }
 
-function venueOf(venueId: string): VenueConfig {
-  const venue = VENUE_CONFIGS.find((v) => v.id === venueId);
-  if (!venue)
+function adapterOf(venueId: string): VaultAdapter {
+  const adapter = createAdapter(venueId);
+  if (!adapter)
     throw new ExecutionStepError("UNKNOWN_VENUE", `Unknown venue ${venueId}`);
-  return venue;
-}
-
-function venueTarget(venue: VenueConfig, assetSymbol: string): Address {
-  if (venue.kind === "aave-pool") return venue.pool;
-  const vault = venue.vaults[assetSymbol as MonadTokenSymbol];
-  if (!vault)
-    throw new ExecutionStepError(
-      "NO_VAULT",
-      `${venue.name} has no ${assetSymbol} vault`,
-    );
-  return vault;
+  return adapter;
 }
 
 function resolveAmount(
@@ -164,67 +146,15 @@ function approveTransaction(
   const spender =
     step.spender === "router"
       ? UNISWAP_MONAD.swapRouter02
-      : venueTarget(venueOf(step.venueId), step.assetSymbol);
+      : adapterOf(step.venueId).callTarget(step.assetSymbol);
   return {
     to: token(step.assetSymbol).address,
     data: approveCalldata(spender, amount),
   };
 }
 
-function supplyTransaction(
-  step: ExecutionStepRow,
-  amount: bigint,
-  wallet: Wallet,
-): Transaction {
-  const venue = venueOf(step.venueId);
-  const target = venueTarget(venue, step.assetSymbol);
-  const data =
-    venue.kind === "aave-pool"
-      ? aaveSupplyCalldata(
-          token(step.assetSymbol).address,
-          amount,
-          wallet.address,
-        )
-      : erc4626DepositCalldata(amount, wallet.address);
-  return { to: target, data };
-}
-
-function exitTransaction(
-  step: ExecutionStepRow,
-  amount: bigint,
-  wallet: Wallet,
-): Transaction {
-  const venue = venueOf(step.venueId);
-  const data =
-    venue.kind === "aave-pool"
-      ? aaveWithdrawCalldata(
-          token(step.assetSymbol).address,
-          amount,
-          wallet.address,
-        )
-      : erc4626RedeemCalldata(amount, wallet.address);
-  return { to: venueTarget(venue, step.assetSymbol), data };
-}
-
 function isExit(step: ExecutionStepRow): boolean {
   return step.kind === "withdraw" || step.kind === "redeem";
-}
-
-function tracksUnits(step: ExecutionStepRow): boolean {
-  return step.kind === "supply" || step.kind === "withdraw";
-}
-
-async function unitsHeld(
-  step: ExecutionStepRow,
-  wallet: Wallet,
-): Promise<bigint> {
-  const adapter = createAdapter(step.venueId, () => undefined);
-  if (!adapter)
-    throw new ExecutionStepError(
-      "UNKNOWN_VENUE",
-      `Unknown venue ${step.venueId}`,
-    );
-  return (await adapter.readPosition(wallet.address, step.assetSymbol)).units;
 }
 
 async function buildTransaction(
@@ -236,8 +166,10 @@ async function buildTransaction(
   if (step.kind === "swap")
     return swapTransaction(loaded.execution, step, amount, wallet);
   if (step.kind === "approve") return approveTransaction(step, amount);
-  if (isExit(step)) return exitTransaction(step, amount, wallet);
-  return supplyTransaction(step, amount, wallet);
+  const adapter = adapterOf(step.venueId);
+  if (isExit(step))
+    return adapter.exitTransaction(step.assetSymbol, amount, wallet.address);
+  return adapter.supplyTransaction(step.assetSymbol, amount, wallet.address);
 }
 
 async function sendStep(
@@ -246,9 +178,13 @@ async function sendStep(
   wallet: Wallet,
 ) {
   const transaction = await buildTransaction(loaded, step, wallet);
-  const unitsBefore = tracksUnits(step)
-    ? (await unitsHeld(step, wallet)).toString()
-    : null;
+  const unitsBefore =
+    step.kind === "supply" || isExit(step)
+      ? await adapterOf(step.venueId).unitsBefore(
+          wallet.address,
+          step.assetSymbol,
+        )
+      : null;
   const attempts = step.attempts + 1;
   const sent = await sendMonadTransaction({
     walletId: wallet.id,
@@ -258,7 +194,7 @@ async function sendStep(
   await updateStep(step.id, {
     status: "sent",
     attempts,
-    unitsBefore,
+    unitsBefore: unitsBefore?.toString() ?? null,
     privyTransactionId: sent.transactionId,
     txHash: sent.hash,
     lastError: null,
@@ -280,29 +216,18 @@ async function successfulReceipt(hash: Hex): Promise<TransactionReceipt> {
   return receipt;
 }
 
-async function suppliedUnits(
+function unitsChange(
   step: ExecutionStepRow,
   receipt: TransactionReceipt,
   wallet: Wallet,
-): Promise<bigint> {
-  const venue = venueOf(step.venueId);
-  if (venue.kind === "erc4626")
-    return mintedShares(
-      receipt.logs,
-      venueTarget(venue, step.assetSymbol),
-      wallet.address,
-    );
-  const after = await unitsHeld(step, wallet);
-  return after - BigInt(step.unitsBefore ?? "0");
-}
-
-async function burnedUnits(
-  step: ExecutionStepRow,
-  wallet: Wallet,
-): Promise<bigint> {
-  if (step.kind === "redeem") return BigInt(step.amountBase ?? "0");
-  const after = await unitsHeld(step, wallet);
-  return BigInt(step.unitsBefore ?? "0") - after;
+): UnitsChange {
+  return {
+    assetSymbol: step.assetSymbol,
+    owner: wallet.address,
+    receipt,
+    unitsBefore: step.unitsBefore === null ? null : BigInt(step.unitsBefore),
+    amount: BigInt(step.amountBase ?? "0"),
+  };
 }
 
 async function confirmedOutputs(
@@ -318,13 +243,17 @@ async function confirmedOutputs(
       wallet.address,
     );
   if (step.kind === "swap") return { amountOut: received(), units: null };
+  const change = () => unitsChange(step, receipt, wallet);
   if (step.kind === "supply")
     return {
       amountOut: null,
-      units: await suppliedUnits(step, receipt, wallet),
+      units: await adapterOf(step.venueId).suppliedUnits(change()),
     };
   if (isExit(step))
-    return { amountOut: received(), units: await burnedUnits(step, wallet) };
+    return {
+      amountOut: received(),
+      units: await adapterOf(step.venueId).burnedUnits(change()),
+    };
   return { amountOut: null, units: null };
 }
 

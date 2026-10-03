@@ -1,21 +1,11 @@
 import "server-only";
-import { parseAbi } from "viem";
-import { erc4626Abi } from "@/features/chain/abis/erc4626";
+import { monadToken } from "@/features/chain/config/tokens";
 import {
-  type MonadTokenSymbol,
-  monadToken,
-} from "@/features/chain/config/tokens";
-import { monadClient } from "@/features/chain/services/public-client";
-import { VENUE_CONFIGS } from "@/features/vaults/config/venues";
-import {
+  createAdapter,
   getVenueSnapshot,
   type VenueSnapshot,
 } from "@/features/vaults/services/venue-snapshot";
-import { type MarketQuote, marketKey, RAY } from "../utils/lots";
-
-const normalizedIncomeAbi = parseAbi([
-  "function getReserveNormalizedIncome(address asset) view returns (uint256)",
-]);
+import { type MarketQuote, marketKey } from "../utils/lots";
 
 interface MarketPair {
   venueId: string;
@@ -23,24 +13,9 @@ interface MarketPair {
 }
 
 async function readRate(pair: MarketPair): Promise<bigint | undefined> {
-  const config = VENUE_CONFIGS.find((c) => c.id === pair.venueId);
-  const token = monadToken(pair.assetSymbol);
-  if (!config || !token) return undefined;
-  if (config.kind === "aave-pool")
-    return monadClient().readContract({
-      address: config.pool,
-      abi: normalizedIncomeAbi,
-      functionName: "getReserveNormalizedIncome",
-      args: [token.address],
-    });
-  const vault = config.vaults[pair.assetSymbol as MonadTokenSymbol];
-  if (!vault) return undefined;
-  return monadClient().readContract({
-    address: vault,
-    abi: erc4626Abi,
-    functionName: "convertToAssets",
-    args: [RAY],
-  });
+  const adapter = createAdapter(pair.venueId);
+  if (!adapter || !monadToken(pair.assetSymbol)) return undefined;
+  return adapter.rate(pair.assetSymbol);
 }
 
 async function quoteMarket(

@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { maxUint256 } from "viem";
 import {
+  venueCalls,
+  venueConfig,
+} from "../../vaults/services/vault-adapters.ts";
+import { RAY } from "../../vaults/utils/aave-math.ts";
+import {
   fractionToPpm,
   planWithdrawLegs,
   reduceLots,
@@ -9,24 +14,28 @@ import {
   withdrawSteps,
 } from "./withdraw.ts";
 
-const RAY = 10n ** 27n;
+function exitOf(venueId: string) {
+  const venue = venueConfig(venueId);
+  assert.ok(venue);
+  return venueCalls(venue);
+}
 
 const aave: WithdrawHolding = {
   venueId: "aave-v3",
   assetSymbol: "USDC",
-  venueKind: "aave-pool",
   units: 1_000_000n,
   otherUnits: 0n,
-  liquidityIndex: (RAY * 105n) / 100n,
+  rateRay: (RAY * 105n) / 100n,
+  exit: exitOf("aave-v3"),
 };
 
 const morpho: WithdrawHolding = {
   venueId: "morpho",
   assetSymbol: "USDT0",
-  venueKind: "erc4626",
   units: 999n,
   otherUnits: 0n,
-  liquidityIndex: 0n,
+  rateRay: RAY,
+  exit: exitOf("morpho"),
 };
 
 test("fractionToPpm rounds to parts per million", () => {

@@ -1,4 +1,4 @@
-export const RAY = 10n ** 27n;
+import { RAY } from "../../vaults/utils/aave-math.ts";
 
 export interface Lot {
   indexId: string;

@@ -1,10 +1,10 @@
 import type { Abi } from "viem";
 import { erc20Abi } from "viem";
-import { aavePoolAbi } from "../../chain/abis/aave.ts";
-import { erc4626Abi } from "../../chain/abis/erc4626.ts";
 import { UNISWAP_MONAD, uniswapRouterAbi } from "../../chain/abis/uniswap.ts";
 import { MONAD_TOKEN_LIST } from "../../chain/config/tokens.ts";
 import { VENUE_CONFIGS } from "../../vaults/config/venues.ts";
+import { venueCalls } from "../../vaults/services/vault-adapters.ts";
+import type { PolicyCall } from "../../vaults/types.ts";
 
 const MONAD_CHAIN_ID = "143";
 const WALLET = "{{wallet.address}}";
@@ -84,19 +84,35 @@ function rule(name: string, conditions: PolicyCondition[]): PolicyRule {
 }
 
 export function vaultSpenders(): string[] {
-  return VENUE_CONFIGS.flatMap((venue) =>
-    venue.kind === "aave-pool" ? [venue.pool] : Object.values(venue.vaults),
-  );
+  return VENUE_CONFIGS.flatMap((venue) => venueCalls(venue).callTargets());
+}
+
+interface VenueRule {
+  call: PolicyCall;
+  targets: string[];
+}
+
+function groupVenueCalls(): VenueRule[] {
+  const groups = new Map<string, VenueRule>();
+  for (const calls of VENUE_CONFIGS.map(venueCalls))
+    for (const call of calls.policyCalls()) {
+      const group = groups.get(call.rule) ?? { call, targets: [] };
+      group.targets.push(...calls.callTargets());
+      groups.set(call.rule, group);
+    }
+  return [...groups.values()];
+}
+
+function venueRule({ call, targets }: VenueRule): PolicyRule {
+  return rule(call.rule, [
+    toAddresses(targets),
+    calldata("function_name", call.abi, call.functionName),
+    ...call.selfFields.map((field) => calldata(field, call.abi, WALLET)),
+  ]);
 }
 
 export function buildVaultPolicyRules(): PolicyRule[] {
   const tokens = MONAD_TOKEN_LIST.map((token) => token.address);
-  const pools = VENUE_CONFIGS.flatMap((v) =>
-    v.kind === "aave-pool" ? [v.pool] : [],
-  );
-  const vaults = VENUE_CONFIGS.flatMap((v) =>
-    v.kind === "erc4626" ? Object.values(v.vaults) : [],
-  );
   const spenders = [...vaultSpenders(), UNISWAP_MONAD.swapRouter02];
   return [
     rule("Approve allowlisted spenders", [
@@ -104,27 +120,7 @@ export function buildVaultPolicyRules(): PolicyRule[] {
       calldata("function_name", erc20Abi, "approve"),
       calldata("approve.spender", erc20Abi, spenders),
     ]),
-    rule("Aave supply to self", [
-      toAddresses(pools),
-      calldata("function_name", aavePoolAbi, "supply"),
-      calldata("supply.onBehalfOf", aavePoolAbi, WALLET),
-    ]),
-    rule("Aave withdraw to self", [
-      toAddresses(pools),
-      calldata("function_name", aavePoolAbi, "withdraw"),
-      calldata("withdraw.to", aavePoolAbi, WALLET),
-    ]),
-    rule("Vault deposit to self", [
-      toAddresses(vaults),
-      calldata("function_name", erc4626Abi, "deposit"),
-      calldata("deposit.receiver", erc4626Abi, WALLET),
-    ]),
-    rule("Vault redeem to self", [
-      toAddresses(vaults),
-      calldata("function_name", erc4626Abi, "redeem"),
-      calldata("redeem.receiver", erc4626Abi, WALLET),
-      calldata("redeem.owner", erc4626Abi, WALLET),
-    ]),
+    ...groupVenueCalls().map(venueRule),
     rule("Uniswap swap to self", [
       toAddresses([UNISWAP_MONAD.swapRouter02]),
       calldata("function_name", uniswapRouterAbi, "exactInputSingle"),

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { RAY } from "../../vaults/utils/aave-math.ts";
 import {
   aggregateLots,
   marketKey,
-  RAY,
   sumByIndex,
   unitsToAssets,
   valueHoldings,

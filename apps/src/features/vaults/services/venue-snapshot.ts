@@ -1,15 +1,15 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { MONAD_TOKEN_LIST } from "@/features/chain/config/tokens";
+import { monadClient } from "@/features/chain/services/public-client";
 import type { VaultAsset, Venue } from "@/types/market";
 import {
   VAULT_CHAIN_ID,
   VENUE_CONFIGS,
   type VenueConfig,
 } from "../config/venues";
-import type { MarketRead, VaultAdapter } from "../types";
-import { AavePoolAdapter } from "./aave-pool-adapter";
-import { Erc4626Adapter } from "./erc4626-adapter";
+import type { MarketRead, PriceOf, VaultAdapter } from "../types";
+import { vaultAdapter, venueConfig } from "./vault-adapters";
 
 const SNAPSHOT_REVALIDATE_SECONDS = 60;
 
@@ -33,13 +33,11 @@ function toVenue(config: VenueConfig, markets: MarketRead[]): Venue {
   };
 }
 
-function collectPrices(reads: MarketRead[][]): Map<string, number> {
-  const prices = new Map<string, number>();
+function collectPrices(reads: MarketRead[][], prices: Map<string, number>) {
   for (const market of reads.flat()) {
     if (!prices.has(market.assetSymbol))
       prices.set(market.assetSymbol, market.priceUsd);
   }
-  return prices;
 }
 
 function pricedAssets(prices: Map<string, number>): VaultAsset[] {
@@ -57,18 +55,22 @@ function pricedAssets(prices: Map<string, number>): VaultAsset[] {
   });
 }
 
-async function readVenueSnapshot(): Promise<VenueSnapshot> {
-  const poolConfigs = VENUE_CONFIGS.filter((c) => c.kind === "aave-pool");
-  const poolReads = await Promise.all(
-    poolConfigs.map((config) => new AavePoolAdapter(config).readMarkets()),
-  );
-  const prices = collectPrices(poolReads);
-  const vaultConfigs = VENUE_CONFIGS.filter((c) => c.kind === "erc4626");
-  const vaultReads = await Promise.all(
-    vaultConfigs.map((config) =>
-      new Erc4626Adapter(config, (symbol) => prices.get(symbol)).readMarkets(),
+function readMarkets(configs: VenueConfig[], priceUsd: PriceOf) {
+  return Promise.all(
+    configs.map((config) =>
+      vaultAdapter(config, monadClient()).readMarkets(priceUsd),
     ),
   );
+}
+
+async function readVenueSnapshot(): Promise<VenueSnapshot> {
+  const prices = new Map<string, number>();
+  const priceUsd: PriceOf = (symbol) => prices.get(symbol);
+  const poolConfigs = VENUE_CONFIGS.filter((c) => c.kind === "aave-pool");
+  const poolReads = await readMarkets(poolConfigs, priceUsd);
+  collectPrices(poolReads, prices);
+  const vaultConfigs = VENUE_CONFIGS.filter((c) => c.kind === "erc4626");
+  const vaultReads = await readMarkets(vaultConfigs, priceUsd);
   const byId = new Map<string, MarketRead[]>([
     ...poolConfigs.map((config, i) => [config.id, poolReads[i]] as const),
     ...vaultConfigs.map((config, i) => [config.id, vaultReads[i]] as const),
@@ -87,13 +89,7 @@ export const getVenueSnapshot = unstable_cache(
   { revalidate: SNAPSHOT_REVALIDATE_SECONDS, tags: ["vaults"] },
 );
 
-export function createAdapter(
-  venueId: string,
-  priceUsd: (symbol: string) => number | undefined,
-): VaultAdapter | undefined {
-  const config = VENUE_CONFIGS.find((c) => c.id === venueId);
-  if (!config) return undefined;
-  return config.kind === "aave-pool"
-    ? new AavePoolAdapter(config)
-    : new Erc4626Adapter(config, priceUsd);
+export function createAdapter(venueId: string): VaultAdapter | undefined {
+  const config = venueConfig(venueId);
+  return config ? vaultAdapter(config, monadClient()) : undefined;
 }

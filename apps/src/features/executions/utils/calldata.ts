@@ -1,6 +1,4 @@
 import { type Address, encodeFunctionData, erc20Abi, type Hex } from "viem";
-import { aavePoolAbi } from "../../chain/abis/aave.ts";
-import { erc4626Abi } from "../../chain/abis/erc4626.ts";
 import { uniswapRouterAbi } from "../../chain/abis/uniswap.ts";
 
 export interface SwapParams {
@@ -17,46 +15,6 @@ export function approveCalldata(spender: Address, amount: bigint): Hex {
     abi: erc20Abi,
     functionName: "approve",
     args: [spender, amount],
-  });
-}
-
-export function aaveSupplyCalldata(
-  asset: Address,
-  amount: bigint,
-  onBehalfOf: Address,
-): Hex {
-  return encodeFunctionData({
-    abi: aavePoolAbi,
-    functionName: "supply",
-    args: [asset, amount, onBehalfOf, 0],
-  });
-}
-
-export function erc4626DepositCalldata(amount: bigint, receiver: Address): Hex {
-  return encodeFunctionData({
-    abi: erc4626Abi,
-    functionName: "deposit",
-    args: [amount, receiver],
-  });
-}
-
-export function aaveWithdrawCalldata(
-  asset: Address,
-  amount: bigint,
-  to: Address,
-): Hex {
-  return encodeFunctionData({
-    abi: aavePoolAbi,
-    functionName: "withdraw",
-    args: [asset, amount, to],
-  });
-}
-
-export function erc4626RedeemCalldata(shares: bigint, owner: Address): Hex {
-  return encodeFunctionData({
-    abi: erc4626Abi,
-    functionName: "redeem",
-    args: [shares, owner, owner],
   });
 }
 
