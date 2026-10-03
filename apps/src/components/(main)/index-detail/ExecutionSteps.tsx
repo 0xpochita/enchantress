@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, CircleDashed, Loader2, X } from "lucide-react";
+import { Check, CircleDashed, ExternalLink, Loader2, X } from "lucide-react";
+import { TX_EXPLORER_URL } from "@/config/explorer";
 import type { ExecutionView } from "@/features/executions";
 import { StepLabel } from "../flow/StepLabel";
 
@@ -34,6 +35,18 @@ export function ExecutionSteps({
               depositAsset={execution?.depositAsset ?? fallbackAsset}
             />
           </span>
+          {step.txHash && (
+            <a
+              href={`${TX_EXPLORER_URL}${step.txHash}`}
+              target="_blank"
+              rel="noreferrer"
+              className="ml-auto inline-flex items-center gap-1 font-mono text-xs text-brand hover:underline"
+            >
+              {step.txHash.slice(0, 8)}…
+              <ExternalLink aria-hidden className="size-3" />
+              <span className="sr-only">(opens in a new tab)</span>
+            </a>
+          )}
         </li>
       ))}
     </ol>

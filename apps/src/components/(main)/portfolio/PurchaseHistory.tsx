@@ -1,16 +1,21 @@
+"use client";
+
 import {
   ArrowDownLeft,
   ArrowUpRight,
   Check,
+  ChevronRight,
   ExternalLink,
   Loader2,
   type LucideIcon,
   X,
 } from "lucide-react";
-import { Card, CryptoIcon } from "@/components/ui";
+import { useState } from "react";
+import { Card, CryptoIcon, LocalDate } from "@/components/ui";
 import { originChainById } from "@/config/chains";
 import type { IndexIcon, PortfolioPurchase } from "@/features/portfolio";
-import { formatAmount, formatShortDate, formatUsd } from "@/utils/format";
+import { formatAmount, formatUsd } from "@/utils/format";
+import { ExecutionStatusModal } from "./ExecutionStatusModal";
 import { IndexLink, RouteCell } from "./IndexLink";
 
 const HEAD =
@@ -26,16 +31,31 @@ const STATUS_STYLE: Record<string, { icon: LucideIcon; tone: string }> = {
 };
 const RUNNING = { icon: Loader2, tone: "text-brand" };
 
-function StatusCell({ status }: { status: string }) {
+function StatusCell({
+  status,
+  onOpen,
+}: {
+  status: string;
+  onOpen: () => void;
+}) {
   const { icon: Icon, tone } = STATUS_STYLE[status] ?? RUNNING;
   return (
-    <span className="flex items-center gap-2 capitalize">
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`${status}, view details`}
+      className="group flex items-center gap-2 rounded-full border border-line py-1 pr-2 pl-2.5 capitalize transition-colors duration-200 hover:border-ink-subtle hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-accent"
+    >
       <Icon
         aria-hidden
         className={`size-4 ${tone} ${Icon === Loader2 ? "animate-spin" : ""}`}
       />
       {status}
-    </span>
+      <ChevronRight
+        aria-hidden
+        className="size-3.5 text-ink-subtle transition-transform duration-200 group-hover:translate-x-0.5"
+      />
+    </button>
   );
 }
 
@@ -65,9 +85,11 @@ function PaidCell({ row }: { row: PortfolioPurchase }) {
 function PurchaseRow({
   row,
   icons,
+  onOpen,
 }: {
   row: PortfolioPurchase;
   icons: IndexIcon[];
+  onOpen: () => void;
 }) {
   const Icon = row.kind === "deposit" ? ArrowDownLeft : ArrowUpRight;
   return (
@@ -91,7 +113,7 @@ function PurchaseRow({
       </td>
       <td className={`${CELL} tabular-nums`}>{formatUsd(row.valueUsd)}</td>
       <td className={CELL}>
-        <StatusCell status={row.status} />
+        <StatusCell status={row.status} onOpen={onOpen} />
       </td>
       <td className={`${CELL} text-right`}>
         {row.txHash && (
@@ -107,7 +129,7 @@ function PurchaseRow({
           </a>
         )}
         <span className="block text-xs text-ink-subtle">
-          {formatShortDate(row.at)}
+          <LocalDate iso={row.at} />
         </span>
       </td>
     </tr>
@@ -121,6 +143,8 @@ export function PurchaseHistory({
   rows: PortfolioPurchase[];
   indexIcons: Record<string, IndexIcon[]>;
 }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = rows.find((row) => row.id === openId) ?? null;
   return (
     <Card className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -145,6 +169,7 @@ export function PurchaseHistory({
               key={row.id}
               row={row}
               icons={indexIcons[row.indexId] ?? []}
+              onOpen={() => setOpenId(row.id)}
             />
           ))}
         </tbody>
@@ -154,6 +179,7 @@ export function PurchaseHistory({
           No purchases yet. Every index you buy or sell shows up here.
         </p>
       )}
+      <ExecutionStatusModal purchase={open} onClose={() => setOpenId(null)} />
     </Card>
   );
 }

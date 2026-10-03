@@ -8,6 +8,7 @@ import type { DepositRoutes } from "@/hooks/useDepositRoutes";
 import type { IndexQuote } from "@/types/market";
 import { formatAmount, formatPercent, formatUsd } from "@/utils/format";
 import { AuroraIntents } from "../flow/AuroraIntents";
+import { AURORA_HINTS } from "../flow/aurora-status";
 import { ElapsedTime } from "../flow/ElapsedTime";
 import { FlowModal } from "../flow/FlowModal";
 import { ActionButton, ActionLink, ResultStep } from "../flow/ResultStep";
@@ -27,9 +28,9 @@ interface RouteFlowModalProps {
   preview?: QuotePreview;
 }
 
-type Tone = "done" | "active" | "todo" | "failed";
+export type Tone = "done" | "active" | "todo" | "failed";
 
-function StageIcon({ tone }: { tone: Tone }) {
+export function StageIcon({ tone }: { tone: Tone }) {
   if (tone === "done")
     return <Check aria-hidden className="size-4 text-positive" />;
   if (tone === "failed")
@@ -164,7 +165,7 @@ function stageTone(
   return targetIndex === currentIndex ? "active" : "todo";
 }
 
-function MonadLabel() {
+export function MonadLabel() {
   return (
     <span className="inline-flex items-center gap-1.5">
       <CryptoIcon iconKey="monad" label="" size={14} />
@@ -178,13 +179,6 @@ const SECONDS_PER_MINUTE = 60;
 function etaLabel(seconds: number): string {
   return `~${Math.max(1, Math.ceil(seconds / SECONDS_PER_MINUTE))} min`;
 }
-
-const AURORA_HINTS: Record<string, string> = {
-  PENDING_DEPOSIT: "Waiting for transfer",
-  KNOWN_DEPOSIT_TX: "Transfer seen",
-  PROCESSING: "Processing",
-  SUCCESS: "Arrived",
-};
 
 export function ProgressStep({
   bridge,
