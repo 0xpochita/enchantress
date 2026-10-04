@@ -25,7 +25,12 @@ import type {
   VenueCalls,
   VenueHolding,
 } from "../types.ts";
-import { baseUnitsToUsd, RAY, rayRateToApy } from "../utils/aave-math.ts";
+import {
+  baseUnitsToUsd,
+  oraclePriceUsd,
+  RAY,
+  rayRateToApy,
+} from "../utils/aave-math.ts";
 
 const normalizedIncomeAbi = parseAbi([
   "function getReserveNormalizedIncome(address asset) view returns (uint256)",
@@ -131,7 +136,7 @@ function toMarketRead(
     apy: rayRateToApy(totals.rate),
     tvlUsd: baseUnitsToUsd(totals.supplied, decimals, totals.priceE8),
     liquidityUsd: baseUnitsToUsd(totals.available, decimals, totals.priceE8),
-    priceUsd: baseUnitsToUsd(10n ** BigInt(decimals), decimals, totals.priceE8),
+    priceUsd: oraclePriceUsd(totals.priceE8),
   };
 }
 

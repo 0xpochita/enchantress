@@ -17,3 +17,7 @@ export function baseUnitsToUsd(
   const cents = (amount * priceE8 * 100n) / scale;
   return Number(cents) / PERCENT;
 }
+
+export function oraclePriceUsd(priceE8: bigint): number {
+  return Number(priceE8) / 10 ** ORACLE_DECIMALS;
+}
