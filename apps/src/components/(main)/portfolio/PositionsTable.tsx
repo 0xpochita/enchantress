@@ -1,9 +1,9 @@
-import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { buttonClassName, Card, CryptoIcon, TokenStack } from "@/components/ui";
+import { Card, CryptoIcon, TokenStack } from "@/components/ui";
 import type { PortfolioHolding, PortfolioPosition } from "@/features/portfolio";
 import { formatSignedUsd } from "@/features/portfolio/utils/signed-usd";
 import { formatPercent, formatUsd } from "@/utils/format";
+import { RowMenu } from "./RowMenu";
 
 const PERCENT = 100;
 const HEAD =
@@ -41,35 +41,6 @@ function IndexCell({ position }: { position: PortfolioPosition }) {
   );
 }
 
-function RowActions({
-  indexId,
-  indexName,
-}: {
-  indexId: string;
-  indexName: string;
-}) {
-  const href = (action: string) =>
-    `/indexes/${indexId}?action=${action}#deposit-panel`;
-  return (
-    <span className="flex gap-2">
-      <Link
-        href={href("deposit")}
-        aria-label={`Deposit into ${indexName}`}
-        className={buttonClassName("primary", "px-3 py-1.5 text-xs")}
-      >
-        Deposit
-      </Link>
-      <Link
-        href={href("withdraw")}
-        aria-label={`Withdraw from ${indexName}`}
-        className={buttonClassName("secondary", "px-3 py-1.5 text-xs")}
-      >
-        Withdraw
-      </Link>
-    </span>
-  );
-}
-
 function PositionRow({
   row,
   totalUsd,
@@ -82,7 +53,10 @@ function PositionRow({
   return (
     <tr className="border-t border-line transition-colors duration-200 hover:bg-surface-raised/60">
       <td className={CELL}>
-        <CryptoIcon iconKey="monad" label="Monad" size={20} />
+        <span className="flex items-center gap-2 whitespace-nowrap">
+          <CryptoIcon iconKey="monad" label="" size={20} />
+          Monad
+        </span>
       </td>
       <td className={CELL}>
         <IndexCell position={row} />
@@ -110,21 +84,8 @@ function PositionRow({
           {formatSignedUsd(row.earnedUsd)}
         </span>
       </td>
-      <td className={CELL}>
-        <RowActions indexId={row.indexId} indexName={row.indexName} />
-      </td>
-      <td className={`${CELL} text-right`}>
-        <Link
-          href={`/indexes/${row.indexId}`}
-          aria-label={`View ${row.indexName} details`}
-          className="group inline-flex items-center gap-1 text-sm whitespace-nowrap text-ink-muted transition-colors duration-200 hover:text-ink"
-        >
-          View detail
-          <ChevronRight
-            aria-hidden
-            className="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
-          />
-        </Link>
+      <td className={`${CELL} text-center`}>
+        <RowMenu indexId={row.indexId} indexName={row.indexName} />
       </td>
     </tr>
   );
@@ -137,7 +98,6 @@ const COLUMNS = [
   "Exposure",
   "APY",
   "Earned interest",
-  "Actions",
 ];
 
 export function PositionsTable({
@@ -157,8 +117,11 @@ export function PositionsTable({
                 {column}
               </th>
             ))}
-            <th scope="col" className={HEAD}>
-              <span className="sr-only">Open</span>
+            <th
+              scope="col"
+              className={HEAD.replace("text-left", "text-center")}
+            >
+              Actions
             </th>
           </tr>
         </thead>
