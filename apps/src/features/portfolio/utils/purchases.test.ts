@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   type ExecutionRecord,
+  markCreations,
   type PurchaseLookups,
   toPurchase,
 } from "./purchases.ts";
@@ -73,4 +74,22 @@ test("a withdrawal has no single paid amount", () => {
   assert.equal(p.kind, "withdraw");
   assert.equal(p.paidAmount, null);
   assert.equal(p.paidSymbol, "WMON,USDC");
+});
+
+test("the first deposit into an index the user created reads as a creation", () => {
+  const first = toPurchase(
+    record({ id: "a", createdAt: new Date("2026-10-04T10:00:00Z") }),
+    lookups,
+  );
+  const later = toPurchase(
+    record({ id: "b", createdAt: new Date("2026-10-04T11:00:00Z") }),
+    lookups,
+  );
+  const [laterMarked, firstMarked] = markCreations(
+    [later, first],
+    new Set(["mon-maxi"]),
+  );
+  assert.equal(firstMarked.kind, "create");
+  assert.equal(laterMarked.kind, "deposit");
+  assert.equal(markCreations([first], new Set())[0].kind, "deposit");
 });

@@ -41,7 +41,7 @@ const purchaseSchema = z.object({
   id: z.string(),
   indexId: z.string(),
   indexName: z.string(),
-  kind: z.enum(["deposit", "withdraw"]),
+  kind: z.enum(["create", "deposit", "withdraw"]),
   status: z.string(),
   paidSymbol: z.string(),
   paidIconKey: z.string(),

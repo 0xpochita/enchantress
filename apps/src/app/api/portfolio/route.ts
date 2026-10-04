@@ -6,7 +6,7 @@ import { apiErrorResponse } from "@/lib/api-error";
 export async function GET(request: Request) {
   try {
     const user = await requireUser(request);
-    return NextResponse.json(await getPortfolio(user.id), {
+    return NextResponse.json(await getPortfolio(user.id, user.walletAddress), {
       headers: { "cache-control": "no-store" },
     });
   } catch (error) {

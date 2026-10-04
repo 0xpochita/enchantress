@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Loader2,
   type LucideIcon,
+  Plus,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -30,6 +31,15 @@ const STATUS_STYLE: Record<string, { icon: LucideIcon; tone: string }> = {
   refunded: { icon: X, tone: "text-negative" },
   cancelled: { icon: X, tone: "text-ink-subtle" },
 };
+const KIND_LABEL: Record<
+  PortfolioPurchase["kind"],
+  { icon: LucideIcon; label: string }
+> = {
+  create: { icon: Plus, label: "Created" },
+  deposit: { icon: ArrowDownLeft, label: "Bought" },
+  withdraw: { icon: ArrowUpRight, label: "Sold" },
+};
+
 const RUNNING = { icon: Loader2, tone: "text-brand" };
 
 function StatusCell({
@@ -92,13 +102,13 @@ function PurchaseRow({
   icons: IndexIcon[];
   onOpen: () => void;
 }) {
-  const Icon = row.kind === "deposit" ? ArrowDownLeft : ArrowUpRight;
+  const { icon: Icon, label } = KIND_LABEL[row.kind];
   return (
     <tr className="border-t border-line">
       <td className={CELL}>
         <span className="flex items-center gap-2 whitespace-nowrap">
           <Icon aria-hidden className="size-4 text-ink-subtle" />
-          {row.kind === "deposit" ? "Bought" : "Sold"}
+          {label}
           <IndexLink
             indexId={row.indexId}
             indexName={row.indexName}

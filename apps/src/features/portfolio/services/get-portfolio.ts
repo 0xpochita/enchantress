@@ -17,7 +17,11 @@ import {
   type IndexPosition,
   netInvestedByIndex,
 } from "../utils/positions";
-import { type PurchaseLookups, toPurchase } from "../utils/purchases";
+import {
+  markCreations,
+  type PurchaseLookups,
+  toPurchase,
+} from "../utils/purchases";
 import { historySeries } from "../utils/snapshots";
 import {
   userExecutions,
@@ -87,6 +91,18 @@ function indexIcons(indexes: Indexes): Portfolio["indexIcons"] {
   );
 }
 
+function ownIndexIds(
+  indexes: Indexes,
+  walletAddress: string | null,
+): Set<string> {
+  const wallet = walletAddress?.toLowerCase();
+  return new Set(
+    indexes
+      .filter((index) => wallet && index.creator.toLowerCase() === wallet)
+      .map((index) => index.id),
+  );
+}
+
 type BridgeSource = Awaited<ReturnType<typeof getBridgeSource>>;
 
 function purchaseLookups(
@@ -118,7 +134,10 @@ function buildTotals(positions: IndexPosition[]): Portfolio["totals"] {
   };
 }
 
-export async function getPortfolio(userId: string): Promise<Portfolio> {
+export async function getPortfolio(
+  userId: string,
+  walletAddress: string | null,
+): Promise<Portfolio> {
   const [lots, ledgerRows, snapshots, indexes, venues, runs, source] =
     await Promise.all([
       userLots(userId),
@@ -144,8 +163,9 @@ export async function getPortfolio(userId: string): Promise<Portfolio> {
       valueUsd: totals.valueUsd,
     }),
     activity: flows,
-    purchases: runs.map((run) =>
-      toPurchase(run, purchaseLookups(names, source)),
+    purchases: markCreations(
+      runs.map((run) => toPurchase(run, purchaseLookups(names, source))),
+      ownIndexIds(indexes, walletAddress),
     ),
     indexIcons: indexIcons(indexes),
     prices: Object.fromEntries(

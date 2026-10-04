@@ -30,7 +30,7 @@ export interface Purchase {
   id: string;
   indexId: string;
   indexName: string;
-  kind: "deposit" | "withdraw";
+  kind: "create" | "deposit" | "withdraw";
   status: string;
   paidSymbol: string;
   paidIconKey: string;
@@ -83,4 +83,26 @@ export function toPurchase(
     txHash: record.originTxHash ?? record.firstTxHash,
     at: record.createdAt.toISOString(),
   };
+}
+
+function firstDepositPerIndex(purchases: Purchase[]): Map<string, string> {
+  const firsts = new Map<string, string>();
+  const oldestFirst = [...purchases].sort((a, b) => a.at.localeCompare(b.at));
+  for (const purchase of oldestFirst)
+    if (purchase.kind === "deposit" && !firsts.has(purchase.indexId))
+      firsts.set(purchase.indexId, purchase.id);
+  return firsts;
+}
+
+export function markCreations(
+  purchases: Purchase[],
+  ownIndexIds: Set<string>,
+): Purchase[] {
+  const firsts = firstDepositPerIndex(purchases);
+  return purchases.map((purchase) =>
+    ownIndexIds.has(purchase.indexId) &&
+    firsts.get(purchase.indexId) === purchase.id
+      ? { ...purchase, kind: "create" }
+      : purchase,
+  );
 }
