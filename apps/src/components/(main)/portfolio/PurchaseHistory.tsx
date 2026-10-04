@@ -23,7 +23,7 @@ import { IndexLink } from "./IndexLink";
 const HEAD =
   "px-3 py-3 text-left text-[0.7rem] font-medium tracking-wider text-ink-subtle uppercase first:pl-6 last:pr-6";
 const CELL = "px-3 py-4 first:pl-6 last:pr-6";
-const COLUMNS = ["Index", "Paid with", "Route", "Value", "Status"];
+const COLUMNS = ["Type", "Index", "Paid with", "Route", "Value", "Status"];
 
 const STATUS_STYLE: Record<string, { icon: LucideIcon; tone: string }> = {
   succeeded: { icon: Check, tone: "text-positive" },
@@ -109,12 +109,14 @@ function PurchaseRow({
         <span className="flex items-center gap-2 whitespace-nowrap">
           <Icon aria-hidden className="size-4 text-ink-subtle" />
           {label}
-          <IndexLink
-            indexId={row.indexId}
-            indexName={row.indexName}
-            icons={icons}
-          />
         </span>
+      </td>
+      <td className={CELL}>
+        <IndexLink
+          indexId={row.indexId}
+          indexName={row.indexName}
+          icons={icons}
+        />
       </td>
       <td className={CELL}>
         <PaidCell row={row} />
