@@ -66,15 +66,11 @@ function FailedStep({ draft }: { draft: IndexDraft }) {
             variant="secondary"
             onClick={draft.flow.dismiss}
           />
-          {isIndexCreated ? (
-            <ActionLink href={indexHref(draft)} label="View index" />
-          ) : (
-            <ActionButton
-              label="Try again"
-              variant="primary"
-              onClick={draft.flow.review}
-            />
-          )}
+          <ActionButton
+            label={isIndexCreated ? "Try deposit again" : "Try again"}
+            variant="primary"
+            onClick={draft.flow.review}
+          />
         </>
       }
     />

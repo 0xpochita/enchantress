@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   type BridgeStartStage,
   bridgeStage,
@@ -17,26 +17,56 @@ interface CreateIndexInput {
   onReset: () => void;
 }
 
+interface CreatedIndex {
+  id: string;
+  recipeKey: string;
+}
+
+function useCreatedIndex(recipe: IndexRecipe) {
+  const created = useRef<CreatedIndex | null>(null);
+  const recipeKey = JSON.stringify(recipe);
+  const reusable = () =>
+    created.current?.recipeKey === recipeKey ? created.current.id : null;
+  const remember = (id: string) => {
+    created.current = { id, recipeKey };
+  };
+  const forget = () => {
+    created.current = null;
+  };
+  return { reusable, remember, forget };
+}
+
 function useCreateFlow(input: CreateIndexInput, hasDeposit: boolean) {
   const [indexId, setIndexId] = useState<string | null>(null);
+  const created = useCreatedIndex(input.recipe);
   const startDeposit = useStartBridgeDeposit();
   const flow = useExecutionFlow<BridgeStartStage>(async (context) => {
-    const { id } = await context.api.post(
-      "/api/indexes",
-      input.recipe,
-      createIndexResponseSchema,
-    );
+    const id =
+      created.reusable() ??
+      (
+        await context.api.post(
+          "/api/indexes",
+          input.recipe,
+          createIndexResponseSchema,
+        )
+      ).id;
+    created.remember(id);
     setIndexId(id);
     if (!hasDeposit) return null;
     const { originTokenId, amount } = input;
     return startDeposit(context, { indexId: id, originTokenId, amount });
   });
-  return { flow, indexId, clear: () => setIndexId(null) };
+  return {
+    flow,
+    indexId,
+    clear: () => setIndexId(null),
+    forget: created.forget,
+  };
 }
 
 export function useCreateIndex(input: CreateIndexInput) {
   const hasDeposit = Number(input.amount) > 0;
-  const { flow, indexId, clear } = useCreateFlow(input, hasDeposit);
+  const { flow, indexId, clear, forget } = useCreateFlow(input, hasDeposit);
   return {
     status: flow.status,
     indexId,
@@ -56,6 +86,7 @@ export function useCreateIndex(input: CreateIndexInput) {
     },
     finish: () => {
       clear();
+      forget();
       flow.finish();
       input.onReset();
     },
