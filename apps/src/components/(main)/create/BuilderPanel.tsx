@@ -12,6 +12,7 @@ interface BuilderPanelProps {
   draft: IndexDraft;
   errors: string[];
   venues: Venue[];
+  allVenues: Venue[];
   chain?: Chain;
   onPickToken: () => void;
 }
@@ -82,6 +83,7 @@ export function BuilderPanel({
   draft,
   errors,
   venues,
+  allVenues,
   chain,
   onPickToken,
 }: BuilderPanelProps) {
@@ -106,6 +108,7 @@ export function BuilderPanel({
         <AssetPicker
           assets={draft.availableAssets}
           venues={venues}
+          allVenues={allVenues}
           selectedSymbols={draft.assetSymbols}
           matches={matches}
           onToggle={draft.toggleAsset}

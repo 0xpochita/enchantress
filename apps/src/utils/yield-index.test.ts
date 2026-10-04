@@ -6,6 +6,7 @@ import {
   blendedApy,
   equalWeights,
   findBestMarket,
+  findMarket,
   yearlyRewardsUsd,
 } from "./yield-index.ts";
 
@@ -52,4 +53,18 @@ test("areWeightsComplete requires weights summing to one", () => {
   assert.equal(areWeightsComplete(equalWeights(3)), true);
   assert.equal(areWeightsComplete([0.5, 0.4]), false);
   assert.equal(areWeightsComplete([]), false);
+});
+
+test("findMarket honors a pin to a small venue but never picks it on its own", () => {
+  const [eligible, small] = VENUES;
+  assert.equal(
+    findMarket([eligible], "USDC", "high", VENUES)?.venue.id,
+    "high",
+  );
+  assert.equal(
+    findMarket([eligible], "USDC", undefined, VENUES)?.venue.id,
+    "low",
+  );
+  assert.equal(findMarket([eligible], "USDC", "high")?.venue.id, "low");
+  assert.equal(small.id, "high");
 });

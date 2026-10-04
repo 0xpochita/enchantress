@@ -22,6 +22,7 @@ export async function getMarketCatalog(): Promise<MarketCatalog> {
   const snapshot = await getVenueSnapshot();
   return {
     venues: eligibleVenues(snapshot.venues, serverEnv().VENUE_MIN_TVL_USD),
+    allVenues: snapshot.venues,
     assets: snapshot.assets,
   };
 }

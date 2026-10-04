@@ -9,6 +9,7 @@ import { AssetSelectModal } from "./AssetSelectModal";
 interface AssetPickerProps {
   assets: VaultAsset[];
   venues: Venue[];
+  allVenues: Venue[];
   selectedSymbols: string[];
   matches: Record<string, Venue>;
   onToggle: (symbol: string) => void;
@@ -92,6 +93,7 @@ function SelectAssetsTile({
 export function AssetPicker({
   assets,
   venues,
+  allVenues,
   selectedSymbols,
   matches,
   onToggle,
@@ -133,6 +135,7 @@ export function AssetPicker({
         onClose={() => setIsOpen(false)}
         assets={assets}
         venues={venues}
+        allVenues={allVenues}
         selectedSymbols={selectedSymbols}
         matches={matches}
         onToggle={onToggle}

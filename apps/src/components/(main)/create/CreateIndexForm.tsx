@@ -80,6 +80,7 @@ export function CreateIndexForm({
             draft={draft}
             errors={errors}
             venues={catalog.venues}
+            allVenues={catalog.allVenues ?? catalog.venues}
             chain={chain}
             onPickToken={() => setIsPickerOpen(true)}
           />

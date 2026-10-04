@@ -10,6 +10,7 @@ const BPS = 10_000;
 
 export interface MarketCatalog {
   venues: Venue[];
+  allVenues?: Venue[];
   assets: VaultAsset[];
 }
 
@@ -46,6 +47,7 @@ export function routeIndex(
       catalog.venues,
       allocation.assetSymbol,
       allocation.venueId,
+      catalog.allVenues,
     );
     if (!asset || !best) return [];
     return [
@@ -75,7 +77,12 @@ export function routeSlices(
   const slices: RoutedSlice[] = [];
   for (const allocation of allocations) {
     const { assetSymbol, venueId } = allocation;
-    const best = findMarket(catalog.venues, assetSymbol, venueId);
+    const best = findMarket(
+      catalog.venues,
+      assetSymbol,
+      venueId,
+      catalog.allVenues,
+    );
     const isPriced = catalog.assets.some((a) => a.symbol === assetSymbol);
     if (!best || !isPriced) return { ok: false, unroutableAsset: assetSymbol };
     slices.push({ ...allocation, venueId: best.venue.id });

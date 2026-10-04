@@ -5,6 +5,7 @@ const WEIGHT_TOLERANCE = 0.0001;
 export interface BestMarket {
   venue: Venue;
   apy: number;
+  tvlUsd: number;
 }
 
 export interface WeightedApy {
@@ -19,7 +20,7 @@ export function assetMarkets(
   return venues
     .flatMap((venue) => {
       const market = venue.markets.find((m) => m.assetSymbol === assetSymbol);
-      return market ? [{ venue, apy: market.apy }] : [];
+      return market ? [{ venue, apy: market.apy, tvlUsd: market.tvlUsd }] : [];
     })
     .sort((a, b) => b.apy - a.apy);
 }
@@ -35,9 +36,12 @@ export function findMarket(
   venues: Venue[],
   assetSymbol: string,
   venueId?: string,
+  pinnable: Venue[] = venues,
 ): BestMarket | undefined {
-  const markets = assetMarkets(venues, assetSymbol);
-  return markets.find((m) => m.venue.id === venueId) ?? markets[0];
+  const pinned = venueId
+    ? assetMarkets(pinnable, assetSymbol).find((m) => m.venue.id === venueId)
+    : undefined;
+  return pinned ?? assetMarkets(venues, assetSymbol)[0];
 }
 
 export function equalWeights(count: number): number[] {

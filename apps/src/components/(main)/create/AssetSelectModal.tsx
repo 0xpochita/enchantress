@@ -4,7 +4,7 @@ import { Check, X } from "lucide-react";
 import { useState } from "react";
 import { buttonClassName, CryptoIcon, Modal } from "@/components/ui";
 import type { VaultAsset, Venue } from "@/types/market";
-import { formatPercent } from "@/utils/format";
+import { formatCompactUsd, formatPercent } from "@/utils/format";
 import { assetMarkets, type BestMarket } from "@/utils/yield-index";
 import { SearchInput } from "../token-select/SearchInput";
 
@@ -13,6 +13,7 @@ interface AssetSelectModalProps {
   onClose: () => void;
   assets: VaultAsset[];
   venues: Venue[];
+  allVenues: Venue[];
   selectedSymbols: string[];
   matches: Record<string, Venue>;
   onToggle: (symbol: string) => void;
@@ -66,17 +67,19 @@ function VenueOption({
   symbol,
   market,
   isBest,
+  smallTvlUsd,
   isChecked,
   onPick,
 }: {
   symbol: string;
   market: BestMarket;
   isBest: boolean;
+  smallTvlUsd: number | null;
   isChecked: boolean;
   onPick: () => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface py-1 pr-2.5 pl-1 text-xs text-ink-muted transition-colors duration-200 hover:border-ink-subtle has-checked:border-accent has-checked:text-ink has-focus-visible:outline-2 has-focus-visible:outline-accent">
+    <label className="flex cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface py-1 pr-2.5 pl-1 text-xs text-ink-muted transition-colors duration-200 hover:border-ink-subtle has-checked:border-ink-subtle has-checked:bg-surface-raised has-checked:text-ink has-focus-visible:outline-2 has-focus-visible:outline-accent">
       <input
         type="radio"
         name={`venue-${symbol}`}
@@ -89,6 +92,11 @@ function VenueOption({
       {market.venue.name}
       <span className="text-positive">{formatPercent(market.apy)}</span>
       {isBest && <span className="text-ink-subtle">Best</span>}
+      {smallTvlUsd !== null && (
+        <span className="text-ink-subtle">
+          TVL {formatCompactUsd(smallTvlUsd)}
+        </span>
+      )}
     </label>
   );
 }
@@ -96,25 +104,30 @@ function VenueOption({
 function VenueOptions({
   asset,
   venues,
+  allVenues,
   checkedVenueId,
   onPick,
 }: {
   asset: VaultAsset;
   venues: Venue[];
+  allVenues: Venue[];
   checkedVenueId?: string;
   onPick: (venueId: string) => void;
 }) {
-  const markets = assetMarkets(venues, asset.symbol);
-  const checked = checkedVenueId ?? markets[0]?.venue.id;
+  const eligible = assetMarkets(venues, asset.symbol);
+  const isEligible = (id: string) => eligible.some((m) => m.venue.id === id);
+  const bestId = eligible[0]?.venue.id;
+  const checked = checkedVenueId ?? bestId;
   return (
     <fieldset className="flex flex-wrap gap-1.5 pr-3 pb-2.5 pl-15">
       <legend className="sr-only">Protocol for {asset.symbol}</legend>
-      {markets.map((market, position) => (
+      {assetMarkets(allVenues, asset.symbol).map((market) => (
         <VenueOption
           key={market.venue.id}
           symbol={asset.symbol}
           market={market}
-          isBest={position === 0}
+          isBest={market.venue.id === bestId}
+          smallTvlUsd={isEligible(market.venue.id) ? null : market.tvlUsd}
           isChecked={market.venue.id === checked}
           onPick={() => onPick(market.venue.id)}
         />
@@ -130,6 +143,7 @@ function AssetRow({
 }: {
   asset: VaultAsset;
   venues: Venue[];
+  allVenues: Venue[];
   isSelected: boolean;
   checkedVenueId?: string;
   onToggle: () => void;
@@ -152,6 +166,7 @@ export function AssetSelectModal({
   onClose,
   assets,
   venues,
+  allVenues,
   selectedSymbols,
   matches: routedVenues,
   onToggle,
@@ -190,6 +205,7 @@ export function AssetSelectModal({
                 key={asset.symbol}
                 asset={asset}
                 venues={venues}
+                allVenues={allVenues}
                 isSelected={selectedSymbols.includes(asset.symbol)}
                 checkedVenueId={routedVenues[asset.symbol]?.id}
                 onToggle={() => onToggle(asset.symbol)}

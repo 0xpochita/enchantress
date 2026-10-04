@@ -13,6 +13,7 @@ export async function CreateIndexView() {
   ]);
   const catalog = {
     venues: market.venues,
+    allVenues: market.allVenues,
     vaultAssets: market.assets.filter((a) => isOfferedForNewIndex(a.symbol)),
     tokens: source.catalog.tokens,
     defaultDepositTokenId: MONAD_USDC_ASSET_ID,

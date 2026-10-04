@@ -17,6 +17,7 @@ export type WeightMode = "equal" | "custom";
 
 export interface DraftCatalog {
   venues: Venue[];
+  allVenues?: Venue[];
   vaultAssets: VaultAsset[];
   tokens: Token[];
   defaultDepositTokenId: string;
@@ -61,13 +62,19 @@ function routeAssets(
   weights: number[],
   context: {
     venues: Venue[];
+    allVenues?: Venue[];
     venueIds: Record<string, string>;
     depositUsd: number;
   },
 ): RoutedAllocation[] {
   return assets.flatMap((asset, position) => {
     const venueId = context.venueIds[asset.symbol];
-    const best = findMarket(context.venues, asset.symbol, venueId);
+    const best = findMarket(
+      context.venues,
+      asset.symbol,
+      venueId,
+      context.allVenues,
+    );
     if (!best) return [];
     const weight = weights[position] ?? 0;
     const valueUsd = context.depositUsd * weight;
@@ -131,6 +138,7 @@ export function deriveDraft(catalog: DraftCatalog, state: DraftState) {
     (Number(state.amount) || 0) * (depositToken?.priceUsd ?? 0);
   const allocations = routeAssets(assets, weights, {
     venues,
+    allVenues: catalog.allVenues,
     venueIds: state.venueIds,
     depositUsd,
   });
