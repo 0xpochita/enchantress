@@ -55,6 +55,7 @@ export const executionViewSchema = z.object({
   auroraStatus: z.string().nullable(),
   errorMessage: z.string().nullable(),
   createdAt: z.string(),
+  canResume: z.boolean(),
   steps: z.array(executionStepViewSchema),
 });
 

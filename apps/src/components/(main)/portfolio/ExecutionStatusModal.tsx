@@ -3,7 +3,11 @@
 import type { ReactNode } from "react";
 import { Modal } from "@/components/ui";
 import { originChainById } from "@/config/chains";
-import { type ExecutionView, useExecution } from "@/features/executions";
+import {
+  type ExecutionView,
+  useExecution,
+  useResumeExecution,
+} from "@/features/executions";
 import type { PortfolioPurchase } from "@/features/portfolio";
 import { formatAmount } from "@/utils/format";
 import {
@@ -115,6 +119,34 @@ function Stages({
   );
 }
 
+function ResumeActions({
+  execution,
+  onClose,
+}: {
+  execution: ExecutionView;
+  onClose: () => void;
+}) {
+  const resume = useResumeExecution(execution.id);
+  return (
+    <div className="flex flex-col gap-3">
+      {resume.error && (
+        <p role="alert" className="text-sm text-negative">
+          {resume.error.message}
+        </p>
+      )}
+      <div className="grid grid-cols-2 gap-3">
+        <ActionButton label="Close" variant="secondary" onClick={onClose} />
+        <ActionButton
+          label={resume.isPending ? "Resuming..." : "Resume"}
+          variant="primary"
+          onClick={() => resume.mutate()}
+          disabled={resume.isPending}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function ExecutionStatusModal({
   purchase,
   onClose,
@@ -158,7 +190,15 @@ export function ExecutionStatusModal({
         {execution?.errorMessage && (
           <p className="text-sm text-negative">{execution.errorMessage}</p>
         )}
-        <ActionButton label="Close" variant="secondary" onClick={onClose} />
+        {execution?.canResume ? (
+          <ResumeActions
+            key={execution.id}
+            execution={execution}
+            onClose={onClose}
+          />
+        ) : (
+          <ActionButton label="Close" variant="secondary" onClick={onClose} />
+        )}
       </div>
     </Modal>
   );

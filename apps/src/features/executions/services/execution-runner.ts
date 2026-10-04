@@ -1,9 +1,14 @@
-import type { Hex } from "viem";
+import {
+  type Hex,
+  type TransactionReceipt,
+  TransactionReceiptNotFoundError,
+} from "viem";
 import type { ExecutionStepRow } from "@/lib/db/schema";
 import {
   ExecutionStepError,
   failureOf,
   isTransient,
+  RetryableStepError,
   retryNote,
 } from "../utils/failures.ts";
 import type { LoadedExecution } from "./execution-repository.ts";
@@ -70,24 +75,75 @@ function isLastStep(loaded: LoadedExecution, step: ExecutionStepRow) {
   );
 }
 
-async function settleStep(ctx: StepContext) {
+async function completeStep(ctx: StepContext, receipt: TransactionReceipt) {
   const { ports, loaded, step } = ctx;
+  const amountOut = await stepEntry(step).settle(ctx, receipt);
+  await ports.store.updateStep(step.id, {
+    status: "confirmed",
+    txHash: receipt.transactionHash,
+    amountOutBase: amountOut?.toString() ?? null,
+  });
+  if (isLastStep(loaded, step))
+    await ports.store.finish(loaded.execution.id, "succeeded");
+}
+
+async function settleStep(ctx: StepContext) {
   const hash = await confirmedHash(ctx);
   if (!hash) return;
-  const receipt = await ports.chain.receipt(hash);
+  const receipt = await ctx.ports.chain.receipt(hash);
   if (receipt.status !== "success")
     throw new ExecutionStepError(
       "REVERTED",
       "The transaction reverted on Monad.",
     );
-  const amountOut = await stepEntry(step).settle(ctx, receipt);
-  await ports.store.updateStep(step.id, {
-    status: "confirmed",
-    txHash: hash,
-    amountOutBase: amountOut?.toString() ?? null,
-  });
-  if (isLastStep(loaded, step))
-    await ports.store.finish(loaded.execution.id, "succeeded");
+  await completeStep(ctx, receipt);
+}
+
+async function receiptOrNull(
+  ctx: StepContext,
+  hash: Hex,
+): Promise<TransactionReceipt | null> {
+  try {
+    return await ctx.ports.chain.receipt(hash);
+  } catch (error) {
+    if (error instanceof TransactionReceiptNotFoundError) return null;
+    throw error;
+  }
+}
+
+function stillPending(): RetryableStepError {
+  return new RetryableStepError("The previous transaction is still pending.");
+}
+
+async function trackedHash(ctx: StepContext): Promise<Hex | null> {
+  if (!ctx.step.privyTransactionId) return null;
+  const state = await ctx.ports.sender.state(ctx.step.privyTransactionId);
+  if (SETTLED_FAILURES.has(state.status)) return null;
+  if (state.status !== "confirmed" || !state.hash) throw stillPending();
+  return state.hash as Hex;
+}
+
+async function earlierReceipt(
+  ctx: StepContext,
+): Promise<TransactionReceipt | null> {
+  const recorded = ctx.step.txHash
+    ? await receiptOrNull(ctx, ctx.step.txHash as Hex)
+    : null;
+  if (recorded) return recorded;
+  const hash = await trackedHash(ctx);
+  if (!hash) return null;
+  const receipt = await receiptOrNull(ctx, hash);
+  if (!receipt) throw stillPending();
+  return receipt;
+}
+
+async function startStep(ctx: StepContext) {
+  const { step } = ctx;
+  if (step.txHash === null && step.privyTransactionId === null)
+    return sendStep(ctx);
+  const receipt = await earlierReceipt(ctx);
+  if (receipt?.status === "success") return completeStep(ctx, receipt);
+  await sendStep({ ...ctx, step: { ...step, unitsBefore: null } });
 }
 
 async function walletOf(ports: RunnerPorts, userId: string): Promise<Wallet> {
@@ -107,7 +163,7 @@ async function runStep(
 ) {
   const wallet = await walletOf(ports, loaded.execution.userId);
   const ctx = { ports, loaded, step, wallet };
-  if (step.status === "pending") await sendStep(ctx);
+  if (step.status === "pending") await startStep(ctx);
   else if (step.status === "sent") await settleStep(ctx);
 }
 

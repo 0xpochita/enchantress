@@ -29,7 +29,7 @@ import {
   type ExecutionView,
 } from "../types";
 import type { PlannedStep } from "../utils/plan";
-import { statusesLeadingTo } from "../utils/transitions";
+import { isResumable, statusesLeadingTo } from "../utils/transitions";
 import { reduceLots } from "../utils/withdraw";
 
 const LEASE_SECONDS = 60;
@@ -261,11 +261,40 @@ export function landBridgedExecution(input: {
         depositAmountBase: input.landedBase.toString(),
         auroraStatus: "SUCCESS",
       },
+      condition: eq(executions.status, "bridging"),
       executor: tx,
     });
     if (landed) await insertPlannedSteps(tx, input.id, input.steps);
     return landed;
   });
+}
+
+export function resumeFailedExecution(
+  userId: string,
+  id: string,
+): Promise<boolean> {
+  return insertActiveExecution(userId, () =>
+    db().transaction(async (tx) => {
+      const resumed = await transitionExecution({
+        id,
+        to: "executing",
+        patch: { errorCode: null, errorMessage: null, leaseUntil: null },
+        condition: eq(executions.status, "failed"),
+        executor: tx,
+      });
+      if (resumed)
+        await tx
+          .update(executionSteps)
+          .set({ status: "pending", lastError: null, updatedAt: new Date() })
+          .where(
+            and(
+              eq(executionSteps.executionId, id),
+              eq(executionSteps.status, "failed"),
+            ),
+          );
+      return resumed;
+    }),
+  );
 }
 
 export async function recordDeposit(input: {
@@ -343,6 +372,7 @@ export function toExecutionView(loaded: LoadedExecution): ExecutionView {
     auroraStatus: execution.auroraStatus,
     errorMessage: execution.errorMessage,
     createdAt: execution.createdAt.toISOString(),
+    canResume: isResumable(execution, steps),
     steps: steps.map((step) => ({
       position: step.position,
       kind: step.kind as ExecutionView["steps"][number]["kind"],

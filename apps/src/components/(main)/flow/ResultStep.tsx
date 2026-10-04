@@ -75,15 +75,18 @@ export function ActionButton({
   label,
   variant,
   onClick,
+  disabled,
 }: {
   label: string;
   variant: "primary" | "secondary";
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={buttonClassName(variant, "py-3 text-sm")}
     >
       {label}

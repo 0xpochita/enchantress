@@ -17,6 +17,7 @@ import {
   ExecutionRequestError,
   type ExecutionView,
 } from "../types";
+import { isResumable } from "../utils/transitions";
 import { prepareDeposit } from "./create-deposit";
 import { prepareWithdraw } from "./create-withdraw";
 import {
@@ -30,6 +31,7 @@ import {
   loadExecution,
   type NewExecution,
   recordOriginTx,
+  resumeFailedExecution,
   toExecutionView,
 } from "./execution-repository";
 import { isMonadSponsored } from "./privy-sender";
@@ -179,6 +181,26 @@ export async function cancelExecution(
       "SENT",
       "The transfer was already sent and cannot be cancelled.",
     );
+  return viewOf(id);
+}
+
+function notResumable(): ExecutionRequestError {
+  return new ExecutionRequestError(
+    409,
+    "STATE",
+    "This execution can no longer be resumed.",
+  );
+}
+
+export async function resumeExecution(
+  user: UserRow,
+  id: string,
+): Promise<ExecutionView> {
+  const { execution, steps } = await ownedExecution(user, id);
+  if (!isResumable(execution, steps)) throw notResumable();
+  await readyWallet(user);
+  if (!(await resumeFailedExecution(user.id, id))) throw notResumable();
+  wakeRunner(id);
   return viewOf(id);
 }
 

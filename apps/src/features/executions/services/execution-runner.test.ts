@@ -11,6 +11,7 @@ import {
   maxUint256,
   numberToHex,
   type TransactionReceipt,
+  TransactionReceiptNotFoundError,
   toHex,
 } from "viem";
 import type { ExecutionRow, ExecutionStepRow } from "@/lib/db/schema";
@@ -25,6 +26,7 @@ import {
 } from "../../vaults/testing/memory-adapter.ts";
 import type { VaultAdapter } from "../../vaults/types.ts";
 import { RAY } from "../../vaults/utils/aave-math.ts";
+import { ExecutionStepError } from "../utils/failures.ts";
 import { type PlannedStep, planDeposit } from "../utils/plan.ts";
 import {
   indexLotGroups,
@@ -318,6 +320,8 @@ type FakeChain = ReturnType<typeof fakeChain>;
 interface Faults {
   receipt: Error[];
   state: Error[];
+  status: string[];
+  quote: Error[];
 }
 
 function fakeSender(chain: FakeChain, faults: Faults): TransactionSender {
@@ -326,7 +330,7 @@ function fakeSender(chain: FakeChain, faults: Faults): TransactionSender {
     state: async (id) => {
       const fault = faults.state.shift();
       if (fault) throw fault;
-      return { status: "confirmed", hash: id };
+      return { status: faults.status.shift() ?? "confirmed", hash: id };
     },
   };
 }
@@ -341,7 +345,7 @@ function fakeReader(
       const fault = faults.receipt.shift();
       if (fault) throw fault;
       const receipt = chain.receipts.get(hash);
-      if (!receipt) throw new Error("missing receipt");
+      if (!receipt) throw new TransactionReceiptNotFoundError({ hash });
       return receipt;
     },
     adapter: (venueId) => (venueId === VENUE.id ? adapter : undefined),
@@ -372,14 +376,18 @@ function createWorld() {
     leased: new Set(),
   };
   const chain = fakeChain(markets);
-  const faults: Faults = { receipt: [], state: [] };
+  const faults: Faults = { receipt: [], state: [], status: [], quote: [] };
   const ports: RunnerPorts = {
     store: memoryStore(state),
     sender: fakeSender(chain, faults),
     chain: fakeReader(chain, faults, adapter),
     prices: fakePrices,
     swaps: {
-      quote: async (request) => ({ fee: 3000, amountOut: request.expectedOut }),
+      quote: async (request) => {
+        const fault = faults.quote.shift();
+        if (fault) throw fault;
+        return { fee: 3000, amountOut: request.expectedOut };
+      },
       slippageBps: () => 50,
     },
     advanceBridging: async () => {},
@@ -546,4 +554,114 @@ test("a reverted transaction fails the execution", async () => {
   assert.equal(statusOf(world, "dep"), "failed");
   assert.equal(world.executions.get("dep")?.steps[0]?.status, "failed");
   assert.equal(world.lots.length, 0);
+});
+
+function stepsOf(world: World, id: string) {
+  return world.executions.get(id)?.steps ?? [];
+}
+
+function resume(world: World, id: string) {
+  const loaded = world.executions.get(id);
+  if (!loaded) throw new Error(`No execution ${id}`);
+  loaded.execution.status = "executing";
+  for (const step of loaded.steps)
+    if (step.status === "failed")
+      Object.assign(step, { status: "pending", lastError: null });
+}
+
+const WETH_OUT = (25n * 10n ** 15n * 9950n) / 10000n;
+
+test("resuming after a failed swap quote keeps confirmed steps and finishes", async () => {
+  const world = createWorld();
+  addExecution(world, "dep", "deposit", depositPlan(100_000_000n));
+  world.faults.quote.push(new ExecutionStepError("NO_ROUTE", "No quote."));
+  await drive(world, "dep");
+  assert.equal(statusOf(world, "dep"), "failed");
+  assert.deepEqual(
+    stepsOf(world, "dep").map((step) => step.status),
+    ["confirmed", "confirmed", "confirmed", "failed", "pending", "pending"],
+  );
+  assert.equal(world.chain.sent.length, 3);
+  resume(world, "dep");
+  await drive(world, "dep");
+  assert.equal(statusOf(world, "dep"), "succeeded");
+  assert.equal(world.chain.sent.length, 6);
+  assert.deepEqual(
+    world.ledger.map((row) => [row.assetSymbol, row.amountBase]),
+    [
+      ["USDC", 50_000_000n],
+      ["WETH", WETH_OUT],
+    ],
+  );
+});
+
+async function sendLastStep(world: World, id: string) {
+  for (let tick = 0; tick < 11; tick++) await advanceWith(world.ports, id);
+  const last = stepsOf(world, id)[5];
+  assert.equal(last?.status, "sent");
+  return last;
+}
+
+test("resuming a step whose transaction actually landed settles it without resending", async () => {
+  const world = createWorld();
+  addExecution(world, "dep", "deposit", depositPlan(100_000_000n));
+  const supply = await sendLastStep(world, "dep");
+  world.faults.status.push("provider_error");
+  await advanceWith(world.ports, "dep");
+  assert.equal(statusOf(world, "dep"), "failed");
+  assert.equal(supply?.status, "failed");
+  Object.assign(supply ?? {}, {
+    txHash: supply?.privyTransactionId,
+    privyTransactionId: null,
+  });
+  const sentBefore = world.chain.sent.length;
+  resume(world, "dep");
+  await drive(world, "dep");
+  assert.equal(statusOf(world, "dep"), "succeeded");
+  assert.equal(world.chain.sent.length, sentBefore);
+  assert.equal(world.ledger.length, 2);
+  assert.equal(world.ledger[1]?.amountBase, WETH_OUT);
+  assert.equal(world.lots.length, 2);
+});
+
+test("resuming a reverted step rebuilds it from the confirmed swap output", async () => {
+  const world = createWorld();
+  addExecution(world, "dep", "deposit", depositPlan(100_000_000n));
+  for (let tick = 0; tick < 10; tick++) await advanceWith(world.ports, "dep");
+  world.chain.revertNext = true;
+  await drive(world, "dep");
+  assert.equal(statusOf(world, "dep"), "failed");
+  assert.equal(stepsOf(world, "dep")[5]?.status, "failed");
+  resume(world, "dep");
+  await drive(world, "dep");
+  assert.equal(statusOf(world, "dep"), "succeeded");
+  assert.equal(world.chain.sent.length, 7);
+  assert.deepEqual(
+    world.chain.sent.map((tx) => tx.to === UNISWAP_MONAD.swapRouter02),
+    [false, false, false, true, false, false, false],
+  );
+  assert.equal(world.ledger[1]?.amountBase, WETH_OUT);
+});
+
+test("resuming waits while the earlier transaction is unmined, then rebuilds once it failed", async () => {
+  const world = createWorld();
+  addExecution(world, "dep", "deposit", depositPlan(100_000_000n));
+  const last = await sendLastStep(world, "dep");
+  const unmined = [...world.chain.receipts.keys()].at(-1);
+  if (unmined) world.chain.receipts.delete(unmined);
+  Object.assign(last ?? {}, { status: "failed" });
+  const loaded = world.executions.get("dep");
+  if (loaded) loaded.execution.status = "failed";
+  resume(world, "dep");
+  world.faults.status.push("pending");
+  await advanceWith(world.ports, "dep");
+  assert.equal(statusOf(world, "dep"), "executing");
+  assert.equal(last?.status, "pending");
+  assert.match(last?.lastError ?? "", /still pending/);
+  assert.equal(world.chain.sent.length, 6);
+  world.faults.status.push("failed");
+  await drive(world, "dep");
+  assert.equal(statusOf(world, "dep"), "succeeded");
+  assert.equal(world.chain.sent.length, 7);
+  assert.equal(world.ledger.length, 2);
 });

@@ -11,6 +11,7 @@ export {
   WITHDRAW_CHOICES,
   type WithdrawChoice,
 } from "./hooks/useIndexWithdraw";
+export { useResumeExecution } from "./hooks/useResumeExecution";
 export {
   type ActivityRow,
   type ExecutionView,
