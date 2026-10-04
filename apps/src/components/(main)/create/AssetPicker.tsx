@@ -12,6 +12,7 @@ interface AssetPickerProps {
   selectedSymbols: string[];
   matches: Record<string, Venue>;
   onToggle: (symbol: string) => void;
+  onPickVenue: (symbol: string, venueId: string) => void;
 }
 
 const CHIP =
@@ -94,6 +95,7 @@ export function AssetPicker({
   selectedSymbols,
   matches,
   onToggle,
+  onPickVenue,
 }: AssetPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const selected = assets.filter((asset) =>
@@ -132,7 +134,9 @@ export function AssetPicker({
         assets={assets}
         venues={venues}
         selectedSymbols={selectedSymbols}
+        matches={matches}
         onToggle={onToggle}
+        onPickVenue={onPickVenue}
       />
     </>
   );

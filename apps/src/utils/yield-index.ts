@@ -12,18 +12,32 @@ export interface WeightedApy {
   apy: number;
 }
 
+export function assetMarkets(
+  venues: Venue[],
+  assetSymbol: string,
+): BestMarket[] {
+  return venues
+    .flatMap((venue) => {
+      const market = venue.markets.find((m) => m.assetSymbol === assetSymbol);
+      return market ? [{ venue, apy: market.apy }] : [];
+    })
+    .sort((a, b) => b.apy - a.apy);
+}
+
 export function findBestMarket(
   venues: Venue[],
   assetSymbol: string,
 ): BestMarket | undefined {
-  let best: BestMarket | undefined;
-  for (const venue of venues) {
-    const market = venue.markets.find((m) => m.assetSymbol === assetSymbol);
-    if (market && (!best || market.apy > best.apy)) {
-      best = { venue, apy: market.apy };
-    }
-  }
-  return best;
+  return assetMarkets(venues, assetSymbol)[0];
+}
+
+export function findMarket(
+  venues: Venue[],
+  assetSymbol: string,
+  venueId?: string,
+): BestMarket | undefined {
+  const markets = assetMarkets(venues, assetSymbol);
+  return markets.find((m) => m.venue.id === venueId) ?? markets[0];
 }
 
 export function equalWeights(count: number): number[] {

@@ -12,6 +12,7 @@ function initialState(catalog: DraftCatalog): DraftState {
   return {
     name: "",
     assetSymbols: [],
+    venueIds: {},
     weightMode: "equal",
     customPercents: {},
     amount: "",
@@ -30,8 +31,17 @@ export function useIndexDraft(catalog: DraftCatalog) {
   });
   const update = (patch: Partial<DraftState>) =>
     setState((current) => ({ ...current, ...patch }));
-  const toggleAsset = (symbol: string) =>
-    update({ assetSymbols: toggle(state.assetSymbols, symbol) });
+  const toggleAsset = (symbol: string) => {
+    const { [symbol]: _dropped, ...venueIds } = state.venueIds;
+    update({ assetSymbols: toggle(state.assetSymbols, symbol), venueIds });
+  };
+  const pickVenue = (symbol: string, venueId: string) =>
+    update({
+      assetSymbols: state.assetSymbols.includes(symbol)
+        ? state.assetSymbols
+        : [...state.assetSymbols, symbol],
+      venueIds: { ...state.venueIds, [symbol]: venueId },
+    });
   const setCustomPercent = (symbol: string, percent: number) =>
     update({ customPercents: { ...state.customPercents, [symbol]: percent } });
 
@@ -41,6 +51,7 @@ export function useIndexDraft(catalog: DraftCatalog) {
     flow,
     update,
     toggleAsset,
+    pickVenue,
     setCustomPercent,
   };
 }

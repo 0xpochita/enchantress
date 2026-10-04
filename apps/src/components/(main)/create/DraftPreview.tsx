@@ -17,7 +17,8 @@ function EmptyPreview() {
         Pick assets to preview your index.
       </p>
       <p className="max-w-xs text-xs text-ink-subtle">
-        Each asset is matched to the protocol on Monad paying the most for it.
+        Each asset goes to the protocol you pick, or the one paying the most for
+        it.
       </p>
     </div>
   );

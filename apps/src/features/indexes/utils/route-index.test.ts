@@ -122,3 +122,51 @@ test("weightedAssets converts index weights to exact basis points", () => {
     [3333, 3333, 3334],
   );
 });
+
+test("routeIndex honors a pinned venue even when it pays less", () => {
+  const pinned: Index = {
+    ...index,
+    allocations: [{ assetSymbol: "USDC", weight: 1, venueId: "neverland" }],
+  };
+  const [routed] = routeIndex(pinned, 100, catalog);
+  assert.equal(routed?.venue.id, "neverland");
+  assert.equal(routed?.apy, 2);
+});
+
+test("routeSlices sends a pinned slice to its venue", () => {
+  const routing = routeSlices(
+    [{ assetSymbol: "USDC", weightBps: 10_000, venueId: "neverland" }],
+    catalog,
+  );
+  assert.deepEqual(routing, {
+    ok: true,
+    slices: [{ assetSymbol: "USDC", weightBps: 10_000, venueId: "neverland" }],
+  });
+});
+
+test("routeSlices falls back to the best market when the pinned venue lacks the asset", () => {
+  const routing = routeSlices(
+    [
+      { assetSymbol: "USDC", weightBps: 5000, venueId: "morpho" },
+      { assetSymbol: "WMON", weightBps: 5000, venueId: "aave" },
+    ],
+    catalog,
+  );
+  assert.deepEqual(routing, {
+    ok: true,
+    slices: [
+      { assetSymbol: "USDC", weightBps: 5000, venueId: "aave" },
+      { assetSymbol: "WMON", weightBps: 5000, venueId: "neverland" },
+    ],
+  });
+});
+
+test("weightedAssets carries the pinned venue", () => {
+  const pinned: Index = {
+    ...index,
+    allocations: [{ assetSymbol: "USDC", weight: 1, venueId: "neverland" }],
+  };
+  assert.deepEqual(weightedAssets(pinned), [
+    { assetSymbol: "USDC", weightBps: 10_000, venueId: "neverland" },
+  ]);
+});

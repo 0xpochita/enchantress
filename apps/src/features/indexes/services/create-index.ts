@@ -3,6 +3,7 @@ import { eq, like, or } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
 import { MONAD_TOKENS } from "@/features/chain/config/tokens";
 import { routeSwaps } from "@/features/executions/services/plan-deposit";
+import { venueSupportsAsset } from "@/features/vaults/services/vault-adapters";
 import { db } from "@/lib/db/client";
 import { indexAllocations, indexes, type UserRow } from "@/lib/db/schema";
 import type { CreateIndexBody } from "../types";
@@ -23,7 +24,21 @@ export class IndexRequestError extends Error {
   }
 }
 
+function assertKnownVenues(body: CreateIndexBody): void {
+  const unknown = body.allocations.find(
+    ({ venueId, assetSymbol }) =>
+      venueId !== undefined && !venueSupportsAsset(venueId, assetSymbol),
+  );
+  if (unknown)
+    throw new IndexRequestError(
+      422,
+      "UNKNOWN_VENUE",
+      `That protocol does not take ${unknown.assetSymbol}.`,
+    );
+}
+
 async function assertRoutable(body: CreateIndexBody): Promise<void> {
+  assertKnownVenues(body);
   const routing = routeSlices(body.allocations, await getMarketCatalog());
   if (!routing.ok)
     throw new IndexRequestError(
@@ -75,6 +90,7 @@ async function insertIndex({ id, body, ...creator }: NewIndex) {
         indexId: id,
         assetSymbol: allocation.assetSymbol,
         weightBps: allocation.weightBps,
+        venueId: allocation.venueId ?? null,
         position,
       })),
     );

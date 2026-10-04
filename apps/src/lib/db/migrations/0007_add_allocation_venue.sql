@@ -1,0 +1,1 @@
+ALTER TABLE "index_allocations" ADD COLUMN "venue_id" text;

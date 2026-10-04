@@ -59,7 +59,7 @@ export function CreateIndexForm({
     {
       label: "Protocols",
       value: String(protocolCount),
-      hint: "matched automatically",
+      hint: "chosen per asset",
     },
   ];
   return (
@@ -67,7 +67,8 @@ export function CreateIndexForm({
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <h1 className="text-2xl font-light tracking-tight">Create an index</h1>
         <p className="text-sm text-ink-muted">
-          Pick assets on Monad. We match each one to its best paying protocol.
+          Pick assets on Monad and the protocol for each, or keep the best
+          paying one.
         </p>
       </div>
       <Card className="-mt-4 flex flex-col gap-4 p-5">

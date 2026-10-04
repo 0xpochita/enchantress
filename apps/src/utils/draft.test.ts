@@ -18,6 +18,15 @@ const CATALOG: DraftCatalog = {
         { assetSymbol: "USDC", apy: 5, tvlUsd: 1_000_000, liquidityUsd: 1 },
       ],
     },
+    {
+      id: "m",
+      name: "M",
+      iconKey: "generic",
+      chainId: "monad",
+      markets: [
+        { assetSymbol: "USDC", apy: 3, tvlUsd: 1_000_000, liquidityUsd: 1 },
+      ],
+    },
   ],
   vaultAssets: [
     { symbol: "USDC", name: "USD Coin", iconKey: "usdc", priceUsd: 1 },
@@ -44,6 +53,7 @@ const CATALOG: DraftCatalog = {
 const STATE: DraftState = {
   name: "core",
   assetSymbols: ["USDC"],
+  venueIds: {},
   weightMode: "equal",
   customPercents: {},
   amount: "0.5",
@@ -82,6 +92,23 @@ test("deriveDraft allows creating without a deposit", () => {
     name: "core",
     allocations: [{ assetSymbol: "USDC", weightBps: 10_000 }],
   });
+});
+
+test("deriveDraft routes and sends a picked venue even when it pays less", () => {
+  const draft = deriveDraft(CATALOG, { ...STATE, venueIds: { USDC: "m" } });
+  assert.equal(draft.allocations[0]?.venue.id, "m");
+  assert.equal(draft.apy, 3);
+  assert.deepEqual(draft.recipe.allocations, [
+    { assetSymbol: "USDC", weightBps: 10_000, venueId: "m" },
+  ]);
+});
+
+test("deriveDraft drops a picked venue that no longer offers the asset", () => {
+  const draft = deriveDraft(CATALOG, { ...STATE, venueIds: { USDC: "x" } });
+  assert.equal(draft.allocations[0]?.venue.id, "v");
+  assert.deepEqual(draft.recipe.allocations, [
+    { assetSymbol: "USDC", weightBps: 10_000 },
+  ]);
 });
 
 test("deriveDraft rejects names outside 3 to 40 characters", () => {

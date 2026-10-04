@@ -19,6 +19,7 @@ const allocationSchema = z.object({
     .int("Weights must be whole basis points.")
     .min(1, "Every asset needs a weight above zero.")
     .max(TOTAL_WEIGHT_BPS, "A weight cannot exceed 100%."),
+  venueId: z.string().min(1).optional(),
 });
 
 type AllocationBody = z.infer<typeof allocationSchema>;

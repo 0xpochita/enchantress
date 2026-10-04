@@ -30,7 +30,11 @@ function toIndex(
     allocations: allocations
       .filter((a) => a.indexId === row.id)
       .sort((a, b) => a.position - b.position)
-      .map((a) => ({ assetSymbol: a.assetSymbol, weight: a.weightBps / BPS })),
+      .map((a) => ({
+        assetSymbol: a.assetSymbol,
+        weight: a.weightBps / BPS,
+        venueId: a.venueId ?? undefined,
+      })),
     isFeatured: row.isFeatured,
   };
 }

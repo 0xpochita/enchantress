@@ -51,6 +51,7 @@ export const indexAllocations = pgTable(
     assetSymbol: text("asset_symbol").notNull(),
     weightBps: integer("weight_bps").notNull(),
     position: integer("position").notNull(),
+    venueId: text("venue_id"),
   },
   (table) => [unique().on(table.indexId, table.assetSymbol)],
 );

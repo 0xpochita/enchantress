@@ -9,6 +9,7 @@ import {
   blendedApy,
   equalWeights,
   findBestMarket,
+  findMarket,
   yearlyRewardsUsd,
 } from "./yield-index.ts";
 
@@ -24,6 +25,7 @@ export interface DraftCatalog {
 export interface DraftState {
   name: string;
   assetSymbols: string[];
+  venueIds: Record<string, string>;
   weightMode: WeightMode;
   customPercents: Record<string, number>;
   amount: string;
@@ -39,7 +41,7 @@ export const MAX_INDEX_ASSETS = 6;
 
 export interface IndexRecipe {
   name: string;
-  allocations: { assetSymbol: string; weightBps: number }[];
+  allocations: { assetSymbol: string; weightBps: number; venueId?: string }[];
 }
 
 export function toWeightBps(weights: number[]): number[] {
@@ -57,10 +59,15 @@ function draftWeights(state: DraftState, assets: VaultAsset[]): number[] {
 function routeAssets(
   assets: VaultAsset[],
   weights: number[],
-  context: { venues: Venue[]; depositUsd: number },
+  context: {
+    venues: Venue[];
+    venueIds: Record<string, string>;
+    depositUsd: number;
+  },
 ): RoutedAllocation[] {
   return assets.flatMap((asset, position) => {
-    const best = findBestMarket(context.venues, asset.symbol);
+    const venueId = context.venueIds[asset.symbol];
+    const best = findMarket(context.venues, asset.symbol, venueId);
     if (!best) return [];
     const weight = weights[position] ?? 0;
     const valueUsd = context.depositUsd * weight;
@@ -101,6 +108,9 @@ function draftRecipe(
     allocations: allocations.map((a, position) => ({
       assetSymbol: a.asset.symbol,
       weightBps: bps[position] ?? 0,
+      ...(state.venueIds[a.asset.symbol] === a.venue.id && {
+        venueId: a.venue.id,
+      }),
     })),
   };
 }
@@ -119,7 +129,11 @@ export function deriveDraft(catalog: DraftCatalog, state: DraftState) {
   );
   const depositUsd =
     (Number(state.amount) || 0) * (depositToken?.priceUsd ?? 0);
-  const allocations = routeAssets(assets, weights, { venues, depositUsd });
+  const allocations = routeAssets(assets, weights, {
+    venues,
+    venueIds: state.venueIds,
+    depositUsd,
+  });
   const apy = blendedApy(allocations);
   const rewardsUsd = yearlyRewardsUsd(depositUsd, apy);
   const errors = draftErrors(state, weights);

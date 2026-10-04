@@ -47,6 +47,7 @@ export interface VaultAsset {
 export interface IndexAllocation {
   assetSymbol: string;
   weight: number;
+  venueId?: string;
 }
 
 export interface Index {

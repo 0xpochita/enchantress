@@ -5,7 +5,7 @@ import { useState } from "react";
 import { buttonClassName, CryptoIcon, Modal } from "@/components/ui";
 import type { VaultAsset, Venue } from "@/types/market";
 import { formatPercent } from "@/utils/format";
-import { findBestMarket } from "@/utils/yield-index";
+import { assetMarkets, type BestMarket } from "@/utils/yield-index";
 import { SearchInput } from "../token-select/SearchInput";
 
 interface AssetSelectModalProps {
@@ -14,7 +14,9 @@ interface AssetSelectModalProps {
   assets: VaultAsset[];
   venues: Venue[];
   selectedSymbols: string[];
+  matches: Record<string, Venue>;
   onToggle: (symbol: string) => void;
+  onPickVenue: (symbol: string, venueId: string) => void;
 }
 
 function matches(asset: VaultAsset, query: string): boolean {
@@ -25,24 +27,21 @@ function matches(asset: VaultAsset, query: string): boolean {
   );
 }
 
-function AssetRow({
+function AssetToggle({
   asset,
-  venues,
   isSelected,
   onToggle,
 }: {
   asset: VaultAsset;
-  venues: Venue[];
   isSelected: boolean;
   onToggle: () => void;
 }) {
-  const best = findBestMarket(venues, asset.symbol);
   return (
     <button
       type="button"
       aria-pressed={isSelected}
       onClick={onToggle}
-      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors duration-200 hover:bg-surface-raised aria-pressed:bg-surface-raised"
+      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors duration-200 hover:bg-surface-hover"
     >
       <CryptoIcon
         iconKey={asset.iconKey}
@@ -54,13 +53,6 @@ function AssetRow({
         <span className="font-medium">{asset.symbol}</span>
         <span className="truncate text-sm text-ink-muted">{asset.name}</span>
       </span>
-      {best && (
-        <span className="flex items-center gap-1.5 text-xs text-ink-muted">
-          <CryptoIcon iconKey={best.venue.iconKey} label="" size={16} />
-          {best.venue.name}
-          <span className="text-positive">up to {formatPercent(best.apy)}</span>
-        </span>
-      )}
       <span
         className={`flex size-5 items-center justify-center rounded-full border ${isSelected ? "border-accent bg-accent text-accent-ink" : "border-line"}`}
       >
@@ -70,13 +62,100 @@ function AssetRow({
   );
 }
 
+function VenueOption({
+  symbol,
+  market,
+  isBest,
+  isChecked,
+  onPick,
+}: {
+  symbol: string;
+  market: BestMarket;
+  isBest: boolean;
+  isChecked: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface py-1 pr-2.5 pl-1 text-xs text-ink-muted transition-colors duration-200 hover:border-ink-subtle has-checked:border-accent has-checked:text-ink has-focus-visible:outline-2 has-focus-visible:outline-accent">
+      <input
+        type="radio"
+        name={`venue-${symbol}`}
+        value={market.venue.id}
+        checked={isChecked}
+        onChange={onPick}
+        className="sr-only"
+      />
+      <CryptoIcon iconKey={market.venue.iconKey} label="" size={18} />
+      {market.venue.name}
+      <span className="text-positive">{formatPercent(market.apy)}</span>
+      {isBest && <span className="text-ink-subtle">Best</span>}
+    </label>
+  );
+}
+
+function VenueOptions({
+  asset,
+  venues,
+  checkedVenueId,
+  onPick,
+}: {
+  asset: VaultAsset;
+  venues: Venue[];
+  checkedVenueId?: string;
+  onPick: (venueId: string) => void;
+}) {
+  const markets = assetMarkets(venues, asset.symbol);
+  const checked = checkedVenueId ?? markets[0]?.venue.id;
+  return (
+    <fieldset className="flex flex-wrap gap-1.5 pr-3 pb-2.5 pl-15">
+      <legend className="sr-only">Protocol for {asset.symbol}</legend>
+      {markets.map((market, position) => (
+        <VenueOption
+          key={market.venue.id}
+          symbol={asset.symbol}
+          market={market}
+          isBest={position === 0}
+          isChecked={market.venue.id === checked}
+          onPick={() => onPick(market.venue.id)}
+        />
+      ))}
+    </fieldset>
+  );
+}
+
+function AssetRow({
+  isSelected,
+  onToggle,
+  ...options
+}: {
+  asset: VaultAsset;
+  venues: Venue[];
+  isSelected: boolean;
+  checkedVenueId?: string;
+  onToggle: () => void;
+  onPick: (venueId: string) => void;
+}) {
+  return (
+    <div className={`rounded-md ${isSelected ? "bg-surface-raised" : ""}`}>
+      <AssetToggle
+        asset={options.asset}
+        isSelected={isSelected}
+        onToggle={onToggle}
+      />
+      <VenueOptions {...options} />
+    </div>
+  );
+}
+
 export function AssetSelectModal({
   isOpen,
   onClose,
   assets,
   venues,
   selectedSymbols,
+  matches: routedVenues,
   onToggle,
+  onPickVenue,
 }: AssetSelectModalProps) {
   const [query, setQuery] = useState("");
   const visible = assets.filter((asset) => matches(asset, query));
@@ -112,7 +191,9 @@ export function AssetSelectModal({
                 asset={asset}
                 venues={venues}
                 isSelected={selectedSymbols.includes(asset.symbol)}
+                checkedVenueId={routedVenues[asset.symbol]?.id}
                 onToggle={() => onToggle(asset.symbol)}
+                onPick={(venueId) => onPickVenue(asset.symbol, venueId)}
               />
             ))
           )}

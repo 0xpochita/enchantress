@@ -102,13 +102,14 @@ export function BuilderPanel({
           className="rounded-md border border-line bg-surface px-3 py-2 outline-none placeholder:text-ink-subtle focus:border-accent"
         />
       </Step>
-      <Step number={2} title="Pick assets on Monad">
+      <Step number={2} title="Pick assets and protocols on Monad">
         <AssetPicker
           assets={draft.availableAssets}
           venues={venues}
           selectedSymbols={draft.assetSymbols}
           matches={matches}
           onToggle={draft.toggleAsset}
+          onPickVenue={draft.pickVenue}
         />
         <WeightControls
           mode={draft.weightMode}

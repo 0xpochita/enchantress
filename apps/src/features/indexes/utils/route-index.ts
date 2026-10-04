@@ -4,7 +4,7 @@ import type {
   VaultAsset,
   Venue,
 } from "../../../types/market";
-import { blendedApy, findBestMarket } from "../../../utils/yield-index.ts";
+import { blendedApy, findMarket } from "../../../utils/yield-index.ts";
 
 const BPS = 10_000;
 
@@ -22,6 +22,7 @@ export interface IndexSummary {
 export interface WeightedAsset {
   assetSymbol: string;
   weightBps: number;
+  venueId?: string;
 }
 
 export interface RoutedSlice extends WeightedAsset {
@@ -41,7 +42,11 @@ export function routeIndex(
     const asset = catalog.assets.find(
       (a) => a.symbol === allocation.assetSymbol,
     );
-    const best = findBestMarket(catalog.venues, allocation.assetSymbol);
+    const best = findMarket(
+      catalog.venues,
+      allocation.assetSymbol,
+      allocation.venueId,
+    );
     if (!asset || !best) return [];
     return [
       {
@@ -59,6 +64,7 @@ export function weightedAssets(index: Index): WeightedAsset[] {
   return index.allocations.map((allocation) => ({
     assetSymbol: allocation.assetSymbol,
     weightBps: Math.round(allocation.weight * BPS),
+    venueId: allocation.venueId,
   }));
 }
 
@@ -68,8 +74,8 @@ export function routeSlices(
 ): SliceRouting {
   const slices: RoutedSlice[] = [];
   for (const allocation of allocations) {
-    const { assetSymbol } = allocation;
-    const best = findBestMarket(catalog.venues, assetSymbol);
+    const { assetSymbol, venueId } = allocation;
+    const best = findMarket(catalog.venues, assetSymbol, venueId);
     const isPriced = catalog.assets.some((a) => a.symbol === assetSymbol);
     if (!best || !isPriced) return { ok: false, unroutableAsset: assetSymbol };
     slices.push({ ...allocation, venueId: best.venue.id });
