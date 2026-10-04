@@ -83,3 +83,36 @@ test("planDeposit drops slices that round down to nothing", () => {
     ],
   );
 });
+
+test("planDeposit routes through a hub token in two chained swaps", () => {
+  const steps = planDeposit({
+    depositAsset: "USDT0",
+    depositAmountBase: 1_000_000n,
+    slices: [
+      {
+        assetSymbol: "WETH",
+        weightBps: 10_000,
+        venueId: "aave-v3",
+        via: "USDC",
+      },
+    ],
+  });
+  assert.deepEqual(
+    steps.map((s) => [
+      s.position,
+      s.kind,
+      s.spender,
+      s.assetSymbol,
+      s.amountBase,
+      s.amountFromPosition,
+    ]),
+    [
+      [0, "approve", "router", "USDT0", "1000000", null],
+      [1, "swap", null, "USDC", "1000000", null],
+      [2, "approve", "router", "USDC", null, 1],
+      [3, "swap", null, "WETH", null, 1],
+      [4, "approve", "venue", "WETH", null, 3],
+      [5, "supply", null, "WETH", null, 3],
+    ],
+  );
+});

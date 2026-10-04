@@ -26,13 +26,14 @@ export function ExecutionSteps({
 }) {
   return (
     <ol className="flex flex-col gap-3 text-sm">
-      {(execution?.steps ?? []).map((step) => (
+      {(execution?.steps ?? []).map((step, index, steps) => (
         <li key={step.position} className="flex items-center gap-3">
           <StepIcon status={step.status} />
           <span className={step.status === "pending" ? "text-ink-muted" : ""}>
             <StepLabel
               step={step}
               depositAsset={execution?.depositAsset ?? fallbackAsset}
+              previous={steps[index - 1]}
             />
           </span>
           {step.txHash && (

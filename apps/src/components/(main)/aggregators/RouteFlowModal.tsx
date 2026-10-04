@@ -289,7 +289,7 @@ export function ProgressStep({
             </span>
             {stage === "executing" && bridge.stage === "executing" && (
               <ul className="ml-7 flex flex-col gap-1 text-xs text-ink-muted">
-                {(bridge.execution?.steps ?? []).map((step) => (
+                {(bridge.execution?.steps ?? []).map((step, index, steps) => (
                   <li key={step.position} className="flex items-center gap-2">
                     <StageIcon
                       tone={
@@ -305,6 +305,7 @@ export function ProgressStep({
                     <StepLabel
                       step={step}
                       depositAsset={bridge.execution?.depositAsset ?? "USDC"}
+                      previous={steps[index - 1]}
                     />
                   </li>
                 ))}

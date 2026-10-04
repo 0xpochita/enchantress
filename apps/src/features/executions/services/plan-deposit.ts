@@ -4,7 +4,7 @@ import { routeIndexForDeposit } from "@/features/indexes/services/index-catalog"
 import type { IndexSummary } from "@/features/indexes/utils/route-index";
 import { ExecutionRequestError } from "../types";
 import { type PlannedStep, type PlanSlice, planDeposit } from "../utils/plan";
-import { bestSwapQuote } from "./uniswap-quote";
+import { bestSwapQuote, NoLiquidityError } from "./uniswap-quote";
 
 const BPS = 10_000;
 
@@ -14,25 +14,77 @@ export interface DepositPlan {
   steps: PlannedStep[];
 }
 
-export async function assertSwappable(
+const HUB_TOKENS = ["USDC", "USDT0", "WMON"];
+
+type TokenSymbol = keyof typeof MONAD_TOKENS;
+
+async function quoteOut(
+  from: string,
+  to: string,
+  amountIn: bigint,
+): Promise<bigint> {
+  if (amountIn <= 0n) return 0n;
+  const quote = await bestSwapQuote({
+    tokenIn: MONAD_TOKENS[from as TokenSymbol].address,
+    tokenOut: MONAD_TOKENS[to as TokenSymbol].address,
+    amountIn,
+    expectedOut: 0n,
+    pairLabel: to,
+  }).catch((error: unknown) => {
+    if (error instanceof NoLiquidityError) return null;
+    throw error;
+  });
+  return quote?.amountOut ?? 0n;
+}
+
+async function hubOut(
+  from: string,
+  hub: string,
+  to: string,
+  amountIn: bigint,
+): Promise<bigint> {
+  return quoteOut(hub, to, await quoteOut(from, hub, amountIn));
+}
+
+async function routeSlice(
+  depositAsset: string,
+  slice: PlanSlice,
+  amountIn: bigint,
+): Promise<PlanSlice> {
+  if (slice.assetSymbol === depositAsset) return slice;
+  const hubs = HUB_TOKENS.filter(
+    (hub) => hub !== depositAsset && hub !== slice.assetSymbol,
+  );
+  const outputs = await Promise.all([
+    quoteOut(depositAsset, slice.assetSymbol, amountIn),
+    ...hubs.map((hub) =>
+      hubOut(depositAsset, hub, slice.assetSymbol, amountIn),
+    ),
+  ]);
+  const best = outputs.indexOf(outputs.reduce((a, b) => (b > a ? b : a)));
+  if (outputs[best] === 0n)
+    throw new ExecutionRequestError(
+      422,
+      "NO_LIQUIDITY",
+      `Not enough liquidity to swap into ${slice.assetSymbol} right now.`,
+    );
+  return best === 0 ? slice : { ...slice, via: hubs[best - 1] };
+}
+
+export function routeSwaps(
   depositAsset: string,
   slices: PlanSlice[],
   amountBase: bigint,
-) {
-  const from = MONAD_TOKENS[depositAsset as keyof typeof MONAD_TOKENS];
-  for (const slice of slices.filter((s) => s.assetSymbol !== depositAsset)) {
-    const to = MONAD_TOKENS[slice.assetSymbol as keyof typeof MONAD_TOKENS];
-    const probe = (amountBase * BigInt(slice.weightBps)) / BigInt(BPS);
-    await bestSwapQuote({
-      tokenIn: from.address,
-      tokenOut: to.address,
-      amountIn: probe,
-      expectedOut: 0n,
-      pairLabel: to.symbol,
-    }).catch((error: Error) => {
-      throw new ExecutionRequestError(422, "NO_LIQUIDITY", error.message);
-    });
-  }
+): Promise<PlanSlice[]> {
+  return Promise.all(
+    slices.map((slice) =>
+      routeSlice(
+        depositAsset,
+        slice,
+        (amountBase * BigInt(slice.weightBps)) / BigInt(BPS),
+      ),
+    ),
+  );
 }
 
 export async function buildDepositPlan(
@@ -61,11 +113,11 @@ export async function buildDepositPlan(
       `${routing.unroutableAsset} has no eligible vault right now, so this index cannot take deposits.`,
     );
   const { slices } = routing;
-  await assertSwappable(depositAsset, slices, amountBase);
+  const swapSlices = await routeSwaps(depositAsset, slices, amountBase);
   const steps = planDeposit({
     depositAsset,
     depositAmountBase: amountBase,
-    slices,
+    slices: swapSlices,
   });
-  return { summary, slices, steps };
+  return { summary, slices: swapSlices, steps };
 }

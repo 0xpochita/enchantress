@@ -17,10 +17,9 @@ function tokenIcon(symbol: string): string {
   return monadToken(symbol)?.iconKey ?? symbol.toLowerCase();
 }
 
-function describe(step: StepView, depositAsset: string): string {
+function describe(step: StepView, swapFrom: string): string {
   const venue = venueOf(step.venueId).name;
-  if (step.kind === "swap")
-    return `Swap ${depositAsset} to ${step.assetSymbol}`;
+  if (step.kind === "swap") return `Swap ${swapFrom} to ${step.assetSymbol}`;
   if (step.kind === "approve") return `Approve ${step.assetSymbol}`;
   if (step.kind === "withdraw" || step.kind === "redeem")
     return `Withdraw ${step.assetSymbol} from ${venue}`;
@@ -30,10 +29,14 @@ function describe(step: StepView, depositAsset: string): string {
 export function StepLabel({
   step,
   depositAsset,
+  previous,
 }: {
   step: StepView;
   depositAsset: string;
+  previous?: StepView;
 }) {
+  const swapFrom =
+    previous?.kind === "approve" ? previous.assetSymbol : depositAsset;
   const movesIntoVenue = step.kind !== "swap" && step.kind !== "approve";
   return (
     <span className="inline-flex items-center gap-2">
@@ -45,7 +48,7 @@ export function StepLabel({
           movesIntoVenue ? venueOf(step.venueId).iconKey : undefined
         }
       />
-      {describe(step, depositAsset)}
+      {describe(step, swapFrom)}
     </span>
   );
 }

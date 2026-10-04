@@ -2,7 +2,7 @@ import "server-only";
 import { eq, like, or } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
 import { MONAD_TOKENS } from "@/features/chain/config/tokens";
-import { assertSwappable } from "@/features/executions/services/plan-deposit";
+import { routeSwaps } from "@/features/executions/services/plan-deposit";
 import { db } from "@/lib/db/client";
 import { indexAllocations, indexes, type UserRow } from "@/lib/db/schema";
 import type { CreateIndexBody } from "../types";
@@ -31,7 +31,7 @@ async function assertRoutable(body: CreateIndexBody): Promise<void> {
       "NO_VENUE",
       `No protocol on Monad takes ${routing.unroutableAsset} right now.`,
     );
-  await assertSwappable(
+  await routeSwaps(
     MONAD_TOKENS.USDC.symbol,
     routing.slices,
     LIQUIDITY_PROBE_USDC,

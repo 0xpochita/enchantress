@@ -108,8 +108,17 @@ async function expectedSwapOutput(
   return BigInt(Math.floor((usd / priceOut) * 10 ** to.decimals));
 }
 
+function swapInput(ctx: StepContext): string {
+  const source = ctx.loaded.steps.find(
+    (step) => step.position === ctx.step.amountFromPosition,
+  );
+  return source?.kind === "swap"
+    ? source.assetSymbol
+    : ctx.loaded.execution.depositAsset;
+}
+
 async function buildSwap(ctx: StepContext, amountIn: bigint) {
-  const tokenIn = token(ctx.loaded.execution.depositAsset);
+  const tokenIn = token(swapInput(ctx));
   const tokenOut = token(ctx.step.assetSymbol);
   const quote = await ctx.ports.swaps.quote({
     tokenIn: tokenIn.address,

@@ -15,6 +15,7 @@ export interface PlanSlice {
   assetSymbol: string;
   weightBps: number;
   venueId: string;
+  via?: string;
 }
 
 export interface DepositPlanInput {
@@ -53,6 +54,30 @@ function directSteps(slice: PlanSlice, amount: bigint): StepDraft[] {
   ];
 }
 
+function swapLeg(
+  from: string,
+  to: string,
+  venueId: string,
+  amount: StepAmount,
+): StepDraft[] {
+  return [
+    {
+      kind: "approve",
+      spender: "router",
+      assetSymbol: from,
+      venueId,
+      ...amount,
+    },
+    { kind: "swap", spender: null, assetSymbol: to, venueId, ...amount },
+  ];
+}
+
+type StepAmount = Pick<PlannedStep, "amountBase" | "amountFromPosition">;
+
+function fromStep(position: number): StepAmount {
+  return { amountBase: null, amountFromPosition: position };
+}
+
 function swappedSteps(
   slice: PlanSlice,
   amount: bigint,
@@ -60,19 +85,23 @@ function swappedSteps(
   start: number,
 ): StepDraft[] {
   const fixed = { amountBase: amount.toString(), amountFromPosition: null };
-  const fromSwap = { amountBase: null, amountFromPosition: start + 1 };
+  const hops = slice.via
+    ? [
+        ...swapLeg(depositAsset, slice.via, slice.venueId, fixed),
+        ...swapLeg(
+          slice.via,
+          slice.assetSymbol,
+          slice.venueId,
+          fromStep(start + 1),
+        ),
+      ]
+    : swapLeg(depositAsset, slice.assetSymbol, slice.venueId, fixed);
+  const output = fromStep(start + hops.length - 1);
   const target = { assetSymbol: slice.assetSymbol, venueId: slice.venueId };
   return [
-    {
-      kind: "approve",
-      spender: "router",
-      assetSymbol: depositAsset,
-      venueId: slice.venueId,
-      ...fixed,
-    },
-    { kind: "swap", spender: null, ...target, ...fixed },
-    { kind: "approve", spender: "venue", ...target, ...fromSwap },
-    { kind: "supply", spender: null, ...target, ...fromSwap },
+    ...hops,
+    { kind: "approve", spender: "venue", ...target, ...output },
+    { kind: "supply", spender: null, ...target, ...output },
   ];
 }
 
