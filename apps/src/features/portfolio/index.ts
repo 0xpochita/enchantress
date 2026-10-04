@@ -1,5 +1,5 @@
 export { UserPositionValue } from "./components/UserPositionValue";
-export { usePortfolio } from "./hooks/usePortfolio";
+export { isRunning, usePortfolio } from "./hooks/usePortfolio";
 export { useWalletBalances } from "./hooks/useWalletBalances";
 export {
   type IndexIcon,

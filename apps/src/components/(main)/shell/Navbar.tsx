@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ThemedLogoMark } from "@/components/ui";
 import { AccountButton } from "@/features/wallet";
+import { ActiveDepositPill } from "../portfolio/ActiveDepositPill";
 import { NavLinks } from "./NavLinks";
 import { ThemeIconButton } from "./ThemeIconButton";
 
@@ -17,6 +18,7 @@ export function Navbar() {
         </Link>
         <NavLinks />
         <div className="ml-auto flex items-center gap-2">
+          <ActiveDepositPill />
           <AccountButton />
           <ThemeIconButton />
         </div>
