@@ -4,12 +4,11 @@ import type { BridgeCatalog } from "@/features/bridge";
 import { type Portfolio, usePortfolio } from "@/features/portfolio";
 import { useSession } from "@/features/wallet";
 import { PortfolioBodySkeleton } from "../shell/PageSkeletons";
-import { ActivityTable } from "./ActivityTable";
+import { ActivityHistory } from "./ActivityHistory";
 import { DepositsSummary } from "./DepositsSummary";
 import { EmptyCard, ErrorCard } from "./PortfolioStates";
 import { PortfolioTabs } from "./PortfolioTabs";
 import { PositionsTable } from "./PositionsTable";
-import { PurchaseHistory } from "./PurchaseHistory";
 import { WalletBalances } from "./WalletBalances";
 import { WalletHeader } from "./WalletHeader";
 
@@ -69,16 +68,11 @@ function PortfolioBody({ catalog }: { catalog: BridgeCatalog }) {
           <PositionsPanel portfolio={portfolio.data} catalog={catalog} />
         ),
         Activity: (
-          <div className="flex flex-col gap-6">
-            <PurchaseHistory
-              rows={portfolio.data.purchases}
-              indexIcons={portfolio.data.indexIcons}
-            />
-            <ActivityTable
-              rows={portfolio.data.activity}
-              indexIcons={portfolio.data.indexIcons}
-            />
-          </div>
+          <ActivityHistory
+            rows={portfolio.data.purchases}
+            activity={portfolio.data.activity}
+            indexIcons={portfolio.data.indexIcons}
+          />
         ),
       }}
     />

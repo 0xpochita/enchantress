@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownLeft, ArrowUpRight, ExternalLink } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { Card, CryptoIcon, LocalDate } from "@/components/ui";
 import { TX_EXPLORER_URL } from "@/config/explorer";
 import { monadToken } from "@/features/chain/config/tokens";
@@ -8,6 +8,7 @@ import { type ActivityRow, useIndexActivity } from "@/features/executions";
 import type { Venue } from "@/types/market";
 import { formatAmount, formatUsd, shortenAddress } from "@/utils/format";
 import { RouteCell } from "../flow/RouteCell";
+import { TxLink } from "../flow/TxLink";
 
 const HEAD =
   "px-3 py-3 text-left text-[0.7rem] font-medium tracking-wider text-ink-subtle uppercase first:pl-6 last:pr-6";
@@ -52,16 +53,7 @@ function AssetCell({ row, venue }: { row: ActivityRow; venue?: Venue }) {
 function TxCell({ row }: { row: ActivityRow }) {
   return (
     <>
-      <a
-        href={`${TX_EXPLORER_URL}${row.txHash}`}
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex items-center gap-1 font-mono text-xs text-brand hover:underline"
-      >
-        {row.txHash.slice(0, 8)}…{" "}
-        <ExternalLink aria-hidden className="size-3" />
-        <span className="sr-only">(opens in a new tab)</span>
-      </a>
+      <TxLink href={`${TX_EXPLORER_URL}${row.txHash}`} />
       <span className="block text-xs text-ink-subtle">
         <LocalDate iso={row.at} />
       </span>

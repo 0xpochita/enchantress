@@ -32,6 +32,8 @@ const activitySchema = z.object({
   valueUsd: z.number(),
   txHash: z.string(),
   viaAurora: z.boolean(),
+  executionId: z.string().nullable(),
+  venueName: z.string(),
   at: z.string(),
 });
 

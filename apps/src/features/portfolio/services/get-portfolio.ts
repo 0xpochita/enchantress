@@ -73,6 +73,9 @@ function toActivity(row: LedgerRow, names: IndexNames): PortfolioActivity {
     valueUsd: Number(row.valueUsd),
     txHash: row.txHash,
     viaAurora: row.originChain !== null,
+    executionId: row.executionId,
+    venueName:
+      VENUE_CONFIGS.find((v) => v.id === row.venueId)?.name ?? row.venueId,
     at: row.at.toISOString(),
   };
 }
