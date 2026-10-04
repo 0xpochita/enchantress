@@ -28,6 +28,10 @@ function toQuote({ index, allocations, apy }: IndexSummary): IndexQuote {
   };
 }
 
+function isListed({ index }: IndexSummary): boolean {
+  return index.isFeatured || index.tvlUsd > 0;
+}
+
 function toHubProtocol(venue: Venue): HubProtocol {
   return {
     name: venue.name,
@@ -55,7 +59,7 @@ export async function AggregatorsView() {
       </div>
       <DepositAggregator
         catalog={source.catalog}
-        quotes={summaries.filter((s) => s.index.isFeatured).map(toQuote)}
+        quotes={summaries.filter(isListed).map(toQuote)}
         protocols={venues.map(toHubProtocol)}
         venues={venues}
         defaultTokenId={MONAD_USDC_ASSET_ID}
