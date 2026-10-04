@@ -43,6 +43,6 @@ test("rules stay byte-identical to the live Privy policy", () => {
   const json = JSON.stringify(buildVaultPolicyRules());
   assert.equal(
     createHash("sha256").update(json).digest("hex"),
-    "a862ad7e4ec0329ef9b9c6839d0103d8906d034dfe90746755d1b35f4d281aeb",
+    "05ac9c6f08931036eaebd34e750fad3fa7129cad6a909284d91df98b19d5ea83",
   );
 });

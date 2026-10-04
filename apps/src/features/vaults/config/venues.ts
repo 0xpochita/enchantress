@@ -41,7 +41,7 @@ export const VENUE_CONFIGS: VenueConfig[] = [
     pool: "0x80F00661b13CC5F6ccd3885bE7b4C9c67545D585",
     dataProvider: "0xfd0b6b6F736376F7B99ee989c749007c7757fDba",
     oracle: "0x94bbA11004B9877d13bb5E1aE29319b6f7bDEdD4",
-    assets: ["USDC", "USDT0", "AUSD", "WETH", "WMON", "cbBTC"],
+    assets: ["USDC", "USDT0", "AUSD", "WETH", "WMON", "cbBTC", "WBTC"],
   },
   {
     id: "morpho",

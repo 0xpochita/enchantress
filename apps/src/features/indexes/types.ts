@@ -4,14 +4,14 @@ import {
   INDEX_NAME_MIN_LENGTH,
   MAX_INDEX_ASSETS,
 } from "../../utils/draft.ts";
-import { monadToken } from "../chain/config/tokens.ts";
+import { isOfferedForNewIndex } from "../chain/config/tokens.ts";
 
 export const TOTAL_WEIGHT_BPS = 10_000;
 
 const nameMessage = `Use ${INDEX_NAME_MIN_LENGTH} to ${INDEX_NAME_MAX_LENGTH} characters for the name.`;
 
 const allocationSchema = z.object({
-  assetSymbol: z.string().refine((symbol) => monadToken(symbol) !== undefined, {
+  assetSymbol: z.string().refine(isOfferedForNewIndex, {
     message: "Pick assets from the Monad list.",
   }),
   weightBps: z

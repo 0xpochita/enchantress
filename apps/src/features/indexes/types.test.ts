@@ -71,7 +71,7 @@ test("rejects unknown assets, duplicates and too many slices", () => {
     }),
     "Each asset can appear only once.",
   );
-  const seven = ["USDC", "USDT0", "AUSD", "WETH", "WMON", "cbBTC", "USDC"];
+  const seven = ["USDC", "USDT0", "WETH", "WMON", "WBTC", "USDC", "USDT0"];
   assert.equal(
     firstError({
       ...VALID,
@@ -83,4 +83,15 @@ test("rejects unknown assets, duplicates and too many slices", () => {
     firstError({ ...VALID, allocations: [] }),
     "Pick at least one asset.",
   );
+});
+
+test("rejects assets closed to new indexes", () => {
+  for (const assetSymbol of ["AUSD", "cbBTC"])
+    assert.equal(
+      firstError({
+        ...VALID,
+        allocations: [{ assetSymbol, weightBps: 10_000 }],
+      }),
+      "Pick assets from the Monad list.",
+    );
 });
