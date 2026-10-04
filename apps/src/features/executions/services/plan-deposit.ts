@@ -4,7 +4,11 @@ import { routeIndexForDeposit } from "@/features/indexes/services/index-catalog"
 import type { IndexSummary } from "@/features/indexes/utils/route-index";
 import { ExecutionRequestError } from "../types";
 import { type PlannedStep, type PlanSlice, planDeposit } from "../utils/plan";
-import { bestSwapQuote, NoLiquidityError } from "./uniswap-quote";
+import {
+  bestSwapQuote,
+  NoLiquidityError,
+  QuoteUnavailableError,
+} from "./uniswap-quote";
 
 const BPS = 10_000;
 
@@ -32,6 +36,8 @@ async function quoteOut(
     pairLabel: to,
   }).catch((error: unknown) => {
     if (error instanceof NoLiquidityError) return null;
+    if (error instanceof QuoteUnavailableError)
+      throw new ExecutionRequestError(503, "QUOTE_UNAVAILABLE", error.message);
     throw error;
   });
   return quote?.amountOut ?? 0n;
@@ -71,20 +77,21 @@ async function routeSlice(
   return best === 0 ? slice : { ...slice, via: hubs[best - 1] };
 }
 
-export function routeSwaps(
+export async function routeSwaps(
   depositAsset: string,
   slices: PlanSlice[],
   amountBase: bigint,
 ): Promise<PlanSlice[]> {
-  return Promise.all(
-    slices.map((slice) =>
-      routeSlice(
+  const routed: PlanSlice[] = [];
+  for (const slice of slices)
+    routed.push(
+      await routeSlice(
         depositAsset,
         slice,
         (amountBase * BigInt(slice.weightBps)) / BigInt(BPS),
       ),
-    ),
-  );
+    );
+  return routed;
 }
 
 export async function buildDepositPlan(

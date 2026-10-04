@@ -10,6 +10,7 @@ const TRANSIENT_NAMES = new Set([
   "APIConnectionError",
   "APIConnectionTimeoutError",
   "RetryableStepError",
+  "QuoteUnavailableError",
 ]);
 
 const TRANSIENT_CODES = new Set([
