@@ -9,6 +9,7 @@
 </p>
 
 <p align="center">
+  <a href="https://enchantress-monad.vercel.app"><img src="https://img.shields.io/badge/LIVE%20DEMO-VERCEL-000000?style=flat-square&labelColor=555555&logo=vercel&logoColor=white" alt="Live demo" /></a>
   <a href="https://github.com/0xpochita/enchantress"><img src="https://img.shields.io/badge/SOURCE-GITHUB-000000?style=flat-square&labelColor=555555&logo=github&logoColor=white" alt="Source on GitHub" /></a>
   <a href="https://monad.xyz"><img src="https://img.shields.io/badge/NETWORK-MONAD%20MAINNET-836EF9?style=flat-square&labelColor=555555" alt="Monad mainnet" /></a>
   <a href="https://privy.io"><img src="https://img.shields.io/badge/WALLETS-PRIVY-010110?style=flat-square&labelColor=555555" alt="Privy" /></a>
@@ -313,7 +314,7 @@ pnpm db:seed
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). The hosted version runs at [enchantress-monad.vercel.app](https://enchantress-monad.vercel.app).
 
 ### Scripts
 
@@ -508,6 +509,7 @@ position_snapshots  # daily portfolio value per index
 - [x] Partial withdraw from every venue back to the user's wallet
 - [x] Portfolio with snapshots, ledger history and explorer links
 - [x] Unit tests (43 files) and a Postgres repository test
+- [x] Live demo deployed: [enchantress-monad.vercel.app](https://enchantress-monad.vercel.app)
 - [x] Demo video
 
 **One limitation worth naming.** Cross chain deposits depend on Aurora having a live route into Monad. When Aurora cannot quote a pair, the form says so before anything is signed and Monad native deposits keep working.
@@ -521,6 +523,7 @@ position_snapshots  # daily portfolio value per index
 | **Event** | Metropolis Hackathon |
 | **Bounties** | Privy (beyond authentication), Aurora Intents |
 | **Network** | Monad mainnet (chainId 143) |
+| **Live demo** | [enchantress-monad.vercel.app](https://enchantress-monad.vercel.app) |
 | **Source** | [github.com/0xpochita/enchantress](https://github.com/0xpochita/enchantress) |
 
 ---
